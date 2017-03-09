@@ -1,0 +1,9 @@
+.idea/
+*.iml
+*.pyc
+out/
+*.db
+.coverage
+build/
+dist/
+*.egg-info/
