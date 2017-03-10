@@ -46,7 +46,7 @@ setup(
         long_description=long_description,
 
         # The project's main homepage.
-        url='https://github.com/m2bright/rapid-framework',
+        url='https://github.com/BambooHR/rapid',
 
         # Author details
         author='Michael Bright',
