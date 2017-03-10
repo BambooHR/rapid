@@ -214,7 +214,7 @@ class PipelineDal(GeneralDal, Injectable):
                         if "commit" == parameter:
                             # Look for vcs and get the ID
                             if vcs_id is None:
-                                vcs = self.ci_module.get_vcs_by_pipeline_id()
+                                vcs = self.ci_module.get_vcs_by_pipeline_id(pipeline_id)
                                 vcs_id = vcs.id if vcs is not None else None
 
                             if vcs_id is not None:
