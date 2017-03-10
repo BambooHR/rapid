@@ -61,7 +61,6 @@ setup(
             'Development Status :: 4 - Beta',
 
             # Indicate who your project is intended for
-            'Intended Audience :: Internal',
             'Topic :: Software Development :: Build Tools',
 
             # Specify the Python versions you support here. In particular, ensure
