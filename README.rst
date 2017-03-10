@@ -48,6 +48,7 @@ Installation
 .. code-block:: bash
   $ pip install rapid-framework
 
+
 Options
 -------
 
