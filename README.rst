@@ -46,6 +46,7 @@ Installation
 ------------
 
 .. code-block:: bash
+
   $ pip install rapid-framework
 
 
@@ -53,7 +54,10 @@ Options
 -------
 
 .. code-block:: bash
+
   $ rapid --help
+
+
 usage: rapid [-h] [-f CONFIG_FILE] [-p PORT] [-m] [-c] [-l] [-d LOG_DIR]
              [-q QA_DIR] [--downgrade DB_DOWNGRADE] [--create_db]
              [--create_migration MIGRATE]
