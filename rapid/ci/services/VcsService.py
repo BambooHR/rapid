@@ -48,5 +48,5 @@ class VcsService(Injectable, CiModule):
     def get_by_identifier(self, commit_identifier):
         return self.commit_dal.get_by_identifier(commit_identifier)
 
-    def get_vcs_by_pipeline_id(self, pipeline_id):
-        return self.commit_dal.get_vcs_by_pipeline_id(pipeline_id)
+    def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
+        return self.commit_dal.get_vcs_by_pipeline_id(pipeline_id, session)

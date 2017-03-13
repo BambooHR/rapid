@@ -110,7 +110,11 @@ class CommitDal(object):
             vcs = session.query(Vcs).filter(Vcs.name == repo_name).first()
             return vcs.serialize() if vcs is not None else None
 
-    def get_vcs_by_pipeline_id(self, pipeline_id):
-        for session in get_db_session():
+    def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
+        if session:
             vcs = session.query(Vcs).filter(Vcs.pipeline_id == pipeline_id).first()
             return vcs.serialize() if vcs is not None else None
+        else:
+            for session in get_db_session():
+                vcs = session.query(Vcs).filter(Vcs.pipeline_id == pipeline_id).first()
+                return vcs.serialize() if vcs is not None else None

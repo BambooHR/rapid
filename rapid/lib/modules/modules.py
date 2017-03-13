@@ -101,5 +101,5 @@ class CiModule(object):
         yield
 
     @abstractmethod
-    def get_vcs_by_pipeline_id(self, pipeline_id):
+    def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
         yield
