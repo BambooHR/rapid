@@ -204,20 +204,21 @@ class QaDal(GeneralDal):
         for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
                 .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
                 .filter(QaTest.name.in_(test_keys)).all():
-            (area, feature, bp) = test_mapper[test.name]['__key__'].split(':')
-            if qa_test_mapping is None:
-                qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
-                                                test_id=test.id,
-                                                feature_id=feature_mapper[feature]['model'].id,
-                                                behavior_id=bp_mapper[bp]['model'].id)
-                session.add(qa_test_mapping)
-            else:
-                if qa_test_mapping.area_id != area_mapper[area]['model'].id:
-                    qa_test_mapping.area_id = area_mapper[area]['model'].id
-                if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
-                    qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
-                if qa_test_mapping.behavior_id != bp_mapper[bp]['model'].id:
-                    qa_test_mapping.behavior_id = bp_mapper[bp]['model'].id
+            if test.name in test_mapper:
+                (area, feature, bp) = test_mapper[test.name]['__key__'].split(':')
+                if qa_test_mapping is None:
+                    qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
+                                                    test_id=test.id,
+                                                    feature_id=feature_mapper[feature]['model'].id,
+                                                    behavior_id=bp_mapper[bp]['model'].id)
+                    session.add(qa_test_mapping)
+                else:
+                    if qa_test_mapping.area_id != area_mapper[area]['model'].id:
+                        qa_test_mapping.area_id = area_mapper[area]['model'].id
+                    if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
+                        qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
+                    if qa_test_mapping.behavior_id != bp_mapper[bp]['model'].id:
+                        qa_test_mapping.behavior_id = bp_mapper[bp]['model'].id
 
         session.flush()
         session.commit()
