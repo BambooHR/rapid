@@ -31,7 +31,7 @@ class TapParser(AbstractParser):
         stacktrace = None
 
         for line in lines:
-            line = line.strip()
+            line = line.rstrip()
             if line.startswith("ok"):
                 if self.failures_only:
                     continue
