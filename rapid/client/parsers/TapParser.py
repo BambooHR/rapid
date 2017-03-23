@@ -31,6 +31,7 @@ class TapParser(AbstractParser):
         stacktrace = None
 
         for line in lines:
+            line = line.strip()
             if line.startswith("ok"):
                 if self.failures_only:
                     continue
@@ -39,10 +40,10 @@ class TapParser(AbstractParser):
                 summary['SUCCESS'] += 1
             elif line.startswith('not ok'):
                 check_stacktrace = True
-                split = line.split(' ', 3)
-                current_failure = split[3]
+                split = line.split(' ', 4)
+                current_failure = split[4]
                 stacktrace = ""
-            elif line.endswith('  ...'):
+            elif line.endswith('...'):
                 results[current_failure] = {'status': 'FAILED', 'stacktrace': stacktrace}
                 stacktrace = None
                 current_failure = None
