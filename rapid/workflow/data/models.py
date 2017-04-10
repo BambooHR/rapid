@@ -96,7 +96,7 @@ class Pipeline(ActiveModel, db.Model):
 
     def convert_to_instance(self):
         instance = PipelineInstance()
-        instance.pipeline_id = self.id
+        instance.pipeline_id = self.id                                                                                                                                   
         return ObjectConverter.copy_attributes(self, instance, [])
 
 
@@ -106,6 +106,7 @@ class PipelineInstance(BaseModel, DateModel, db.Model):
     priority = db.Column(db.Integer, default=0, index=True)
 
     stage_instances = relationship("StageInstance", backref="pipeline_instance", order_by="asc(StageInstance.order)")
+    action_instances = relationship("ActionInstance", order_by="ActionInstance.id")
     parameters = relationship('PipelineParameters', backref="pipeline_instance")
     stats = relationship('PipelineStatistics', backref="pipeline_instance")
     pipeline = relationship('Pipeline')
