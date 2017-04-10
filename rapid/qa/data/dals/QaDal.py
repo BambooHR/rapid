@@ -306,10 +306,6 @@ class QaDal(GeneralDal):
                            .options(joinedload(QaTestMapping.feature))\
                            .options(joinedload(QaTestMapping.behavior_point))\
                            .options(joinedload(QaTestMapping.test))\
-                           .join(QaTestMapping.area)\
-                           .join(QaTestMapping.feature)\
-                           .join(QaTestMapping.behavior_point)\
-                           .join(QaTestMapping.test)\
                            .join(QaTestHistory, QaTestHistory.test_id == QaTestMapping.test_id)\
                            .filter(QaTestHistory.pipeline_instance_id == pipeline_instance_id)
 
