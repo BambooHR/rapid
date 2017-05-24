@@ -184,6 +184,17 @@ class PHPFile(QaTestFile):
         return False
 
 
+class JSFile(QaTestFile):
+    _CUSTOM_RE = re.compile('it\([\'"`]([^\'`"]*)')
+
+    @property
+    def regex(self):
+        return self._CUSTOM_RE
+
+    def is_reversed(self):
+        return False
+
+
 class FileTestFactory(object):
     @staticmethod
     def create_file_test(filename, rootdir):
@@ -195,6 +206,8 @@ class FileTestFactory(object):
             return PHPFile(filename, rootdir)
         elif file_type == 'py':
             return PythonFile(filename, rootdir)
+        elif file_type == 'js':
+            return JSFile(filename, rootdir)
         return None
 
 
