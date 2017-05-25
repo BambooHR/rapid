@@ -71,7 +71,7 @@ class APIRouter(Injectable):
         self.workflow_service = workflow_service
 
     def register_url_rules(self, flask_app):
-        flask_app.add_url_rule('/api/<path:endpoint>', 'api_list', api_key_required(self.list), methods=['GET'])
+        flask_app.add_url_rule('/api/<path:endpoint>', 'api_list', api_key_required(self.list), methods=['GET', 'POST'])
         flask_app.add_url_rule('/api/<path:endpoint>/metadata', 'api_meta', api_key_required(self.metadata), methods=['GET'])
         flask_app.add_url_rule('/api/metadata', 'all_api_meta', api_key_required(self.metadata), methods=['GET'])
         flask_app.add_url_rule('/api/bulk_create', 'bulk_create', api_key_required(self.bulk_create), methods=['PUT'])
