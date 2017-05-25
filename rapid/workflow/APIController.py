@@ -224,11 +224,11 @@ class APIRouter(Injectable):
 
     def _set_limit(self, query):
         limit = 100
-        if 'limit' in request.args:
-            try:
-                limit = min(limit, int(request.args['limit']))
-            except:
-                pass
+
+        try:
+            limit = int(request.args['limit'])
+        except:
+            pass
         return query.limit(limit + 1)
 
     def bulk_create(self):
