@@ -92,6 +92,15 @@ class APIRouter(Injectable):
 
         self.app = flask_app
 
+    def _get_args(self):
+        try:
+            if request.content_type == 'application/json':
+                return request.get_json()
+            else:
+                return request.args
+        except:
+            return request.args
+
     def reset_pipeline_instance(self, id):
         response = self.action_instance_service.reset_pipeline_instance(id)
         return Response(json.dumps({'message': ('Success!' if response else 'Failure!')}), content_type='application/json', status=(200 if response else 500))
@@ -105,7 +114,7 @@ class APIRouter(Injectable):
     def action_instance_results(self, id):
         filter = None
         try:
-            filter = request.args['filter']
+            filter = self._get_args()['filter']
         except:
             pass
 
@@ -156,16 +165,16 @@ class APIRouter(Injectable):
         return session.query(clazz)
 
     def _set_filter(self, clazz, query):
-        filter = request.args['filter'] if 'filter' in request.args else None
+        filter = self._get_args()['filter'] if 'filter' in self._get_args() else None
         return ORMUtil.get_filtered_query(query, filter, clazz)
 
     def _set_joins(self, query):
-        if 'joins' in request.args:
-            if 'orderby' not in request.args:
+        if 'joins' in self._get_args():
+            if 'orderby' not in self._get_args():
                 raise Exception("You can't join with out an orderby")
             current_attribute = None
             queries = []
-            for join in request.args['joins'].split(';'):
+            for join in self._get_args()['joins'].split(';'):
                 split = join.split('=')
                 attribute = split[0]
 
@@ -187,9 +196,9 @@ class APIRouter(Injectable):
         return query
 
     def _set_orderby_direction(self, query, clazz):
-        if 'orderby' in request.args:
+        if 'orderby' in self._get_args():
             map = {'desc': desc, 'asc': asc}
-            for orderby in request.args['orderby'].split(','):
+            for orderby in self._get_args()['orderby'].split(','):
                 try:
                     column, order = orderby.split(':')
                     if hasattr(clazz, column):
@@ -205,7 +214,7 @@ class APIRouter(Injectable):
     def _get_additional_fields(self, clazz, fields=None):
         fields = {clazz.__tablename__: []} if fields is None else fields
         try:
-            for tmp_string in request.args['fields'].split(';'):
+            for tmp_string in self._get_args()['fields'].split(';'):
                 relation_split = tmp_string.split('=')
                 if len(relation_split) == 1:
                     for field in relation_split[0].split(','):
@@ -226,7 +235,7 @@ class APIRouter(Injectable):
         limit = 100
 
         try:
-            limit = int(request.args['limit'])
+            limit = int(self._get_args()['limit'])
         except:
             pass
         return query.limit(limit + 1)
