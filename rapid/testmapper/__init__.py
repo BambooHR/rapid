@@ -97,7 +97,13 @@ class QaTestFile(object):
         self._current_settings['tags'] = re.split('rapid-tags:?', line)[1].strip().split()
 
     def parse_test_levels(self, string):
-        (area, feature, behavior_point) = string.split(':')
+        """
+        :param string: 
+        :type string: str 
+        :return: 
+        :rtype: 
+        """
+        (area, feature, behavior_point) = string.split(':', 2)
         self._current_settings[self.AREA] = area
         self._current_settings[self.FEATURE] = feature
         self._current_settings[self.BP] = behavior_point
