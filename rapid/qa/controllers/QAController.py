@@ -46,7 +46,11 @@ class QAController(Injectable):
     @json_response()
     def analyze_qa_tests(self):
         if 'X-Pipeline-Instance-Id' in request.headers:
-            return self.qa_service.analyze_tests(int(request.headers['X-Pipeline-Instance-Id']), request.json)
+            try:
+                return self.qa_service.analyze_tests(int(request.headers['X-Pipeline-Instance-Id']), request.json)
+            except Exception as exception:
+                logger.exception(exception)
+                
         raise HTTPException("Missing Pipeline Instance Id")
 
     @json_response()
