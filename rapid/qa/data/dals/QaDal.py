@@ -146,7 +146,7 @@ class QaDal(GeneralDal):
 
         for area, area_map in json.items():
             area_keys.append(area)
-            area_mapper[area] = {'result': area_mapper, 'model': None}
+            area_mapper[area] = {'result': area_map, 'model': None}
             for feature, feature_map in area_map.items():
                 feature_keys.append(feature)
                 feature_mapper[feature] = {'result': feature_map, 'model': None}
@@ -162,9 +162,9 @@ class QaDal(GeneralDal):
         for area in session.query(QaArea).filter(QaArea.name.in_(area_keys)):
             try:
                 area_keys.remove(area.name)
+                area_mapper[area.name]['model'] = area
             except:
                 pass
-            area_mapper[area.name]['model'] = area
 
         for area in area_keys:
             area_model = QaArea(name=area, product_id=product_id)
