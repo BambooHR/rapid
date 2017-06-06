@@ -205,7 +205,7 @@ class QaDal(GeneralDal):
                 .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
                 .filter(QaTest.name.in_(test_keys)).all():
             if test.name in test_mapper:
-                (area, feature, bp) = test_mapper[test.name]['__key__'].split(':')
+                (area, feature, bp) = test_mapper[test.name]['__key__'].split(':', 2)
                 if qa_test_mapping is None:
                     qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
                                                     test_id=test.id,
