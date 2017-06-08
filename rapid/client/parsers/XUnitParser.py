@@ -41,11 +41,13 @@ class XUnitParser(AbstractParser):
                     continue
                 testcase = node
                 try:
-                    class_name = testcase.getAttribute('classname')
-                    if not class_name:
-                        class_name = testsuite.getAttribute('name')
+                    class_name = ''
+                    for class_attr in ['classname', 'class']:
+                        class_name = testcase.getAttribute(class_attr)
+                        if class_name:
+                            break
 
-                    name = "{}.{}".format(class_name, testcase.getAttribute('name'))
+                    name = "{}~{}".format(class_name, testcase.getAttribute('name'))
                 except:
                     import traceback
                     traceback.print_exc()

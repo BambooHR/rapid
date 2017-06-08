@@ -197,8 +197,8 @@ class Executor(object):
         name_map = {}
         if results:
             for name in results.keys():
-                sp = name.split('.')
-                last = sp[-1].split(' ')[0]
+                sp = name.split('~')
+                last = sp[-1]
                 name_map[last] = name
         return name_map
 
