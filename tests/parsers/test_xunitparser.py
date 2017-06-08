@@ -57,20 +57,20 @@ class TestXunitParser(TestCase):
 
         results = parser.parse(self.example.split("\n"))
         testing = {
-            'JUnitXmlReporter.constructor.should default path to an empty string': {
+            'JUnitXmlReporter.constructor~should default path to an empty string': {
                 'status': 'FAILED',
                 'stacktrace': 'Assertion failed',
                 'time': '0.006'
             },
-            'JUnitXmlReporter.constructor.should default consolidate to true': {
+            'JUnitXmlReporter.constructor~should default consolidate to true': {
                 'status': 'SKIPPED',
                 'time': '0'
             },
-            'JUnitXmlReporter.constructor.should default useDotNotation to true': {
+            'JUnitXmlReporter.constructor~should default useDotNotation to true': {
                 'status': 'SUCCESS',
                 'time': '0'
             },
-            'tests.api.routing.test_api_routing.TestAPIRouting.test_configure_routing_features_enabled': {
+            'tests.api.routing.test_api_routing.TestAPIRouting~test_configure_routing_features_enabled': {
                 'status': 'FAILED',
                 'time': '0.001',
                 'stacktrace': 'Traceback (most recent call last):  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/unittest/case.py", line 331, in run testMethod()  File "/private/tmp/rapidci/workspace/123145312403456/cihub/tests/api/routing/test_api_routing.py", line 29, in test_configure_routing_features_enabled     eq_(13, flask_app.add_url_rule.call_count)  File "/private/tmp/rapidci/workspace/123145312403456/cihub/env/lib/python2.7/site-packages/nose/tools/trivial.py", line 29, in eq_    raise AssertionError(msg or "%r != %r" % (a, b)) AssertionError: 13 != 14'
@@ -96,4 +96,4 @@ class TestXunitParser(TestCase):
     def test_workspace_replace(self):
         parser = XUnitParser('/home/trial')
 
-        eq_({'__summary__': {'FAILED': 1, 'SKIPPED': 0, 'SUCCESS': 0}, '/testing.php.should default path to an empty string': {'status': 'FAILED', 'stacktrace': 'Assertion failed', 'time': '0.006'}}, parser.parse(['<testsuite name="trial">', '<testcase classname="/home/trial/testing.php" name="/home/trialshould default path to an empty string" time="0.006">', '<failure message="test failure">Assertion failed</failure>', '</testcase>', "</testsuite>"], True))
+        eq_({'__summary__': {'FAILED': 1, 'SKIPPED': 0, 'SUCCESS': 0}, '/testing.php~should default path to an empty string': {'status': 'FAILED', 'stacktrace': 'Assertion failed', 'time': '0.006'}}, parser.parse(['<testsuite name="trial">', '<testcase classname="/home/trial/testing.php" name="/home/trialshould default path to an empty string" time="0.006">', '<failure message="test failure">Assertion failed</failure>', '</testcase>', "</testsuite>"], True))

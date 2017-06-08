@@ -90,16 +90,16 @@ class TestExecutor(TestCase):
         file_name = '{}/parsers/*.xml'.format(os.path.dirname(os.path.realpath(__file__)))
 
         eq_({
-            'JUnitXmlReporter.constructor.should default path to an empty string': {
+            'JUnitXmlReporter.constructor~should default path to an empty string': {
                 'status': 'FAILED',
                 'stacktrace': 'Assertion failed',
                 'time': '0.006'
             },
-            'JUnitXmlReporter.constructor.should default consolidate to true': {
+            'JUnitXmlReporter.constructor~should default consolidate to true': {
                 'status': 'SKIPPED',
                 'time': '0'
             },
-            'JUnitXmlReporter.constructor.should default useDotNotation to true': {
+            'JUnitXmlReporter.constructor~should default useDotNotation to true': {
                 'status': 'SUCCESS',
                 'time': '0'
             },
@@ -304,10 +304,10 @@ class TestExecutor(TestCase):
     def test_get_name_map(self):
         executor = Executor(None, None)
         results = {
-            'LegacyDateTest::testGetDateDiffString.testGetDateDiffString with data set #0': "success",
-            'OfferLettersControllerTest.testSendOfferLetterMissingRequestDataException': "success"
+            'LegacyDateTest::testGetDateDiffString~testGetDateDiffString with data set #0': "success",
+            'OfferLettersControllerTest~testSendOfferLetterMissingRequestDataException': "success"
         }
         name_map = executor._get_name_map(results)
 
-        ok_('testGetDateDiffString' in name_map)
+        ok_('testGetDateDiffString with data set #0' in name_map)
         ok_('testSendOfferLetterMissingRequestDataException' in name_map)
