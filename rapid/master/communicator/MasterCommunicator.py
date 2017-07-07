@@ -109,6 +109,8 @@ class MasterCommunicator(Communicator):
             logger.error(exception)
             is_still_working = False
         except Exception as exception:
-            logger.error(exception)
+            logger.info("is_still_working failed with: {}".format(exception.message))
+            logger.exception(exception)
+
         return is_still_working
 

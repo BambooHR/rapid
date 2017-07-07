@@ -89,7 +89,7 @@ class Queue(Injectable):
             for action_instance in self.queue_service.get_verify_working(self.flask_app.rapid_config.queue_consider_late_time):
                 reset_action_instance = False
                 if ':' not in action_instance['assigned_to']:
-                    logger.info("Action Instance {} assinged without port: {}".format(action_instance['id'], action_instance['assinged_to']))
+                    logger.info("Action Instance {} assigned without port: {}".format(action_instance['id'], action_instance['assigned_to']))
                     reset_action_instance = True
                 else:
                     ip_address, port = action_instance['assigned_to'].split(':')
@@ -100,5 +100,5 @@ class Queue(Injectable):
 
                 if reset_action_instance:
                     if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
-                        logger.info("Resetting Action Instance:{}".format(action_instance.id))
+                        logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance.id, action_instance['assigned_to']))
 
