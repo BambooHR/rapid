@@ -101,7 +101,7 @@ class MasterCommunicator(Communicator):
             except:
                 is_still_working = True
 
-        except ConnectTimeout:
+        except (ConnectTimeout, requests.exceptions.Timeout):
             """ Not sure if there is a network issue, don't do anything """
             is_still_working = True
         except ConnectionError as exception:
