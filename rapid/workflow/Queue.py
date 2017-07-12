@@ -57,17 +57,22 @@ class Queue(Injectable):
                             self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.INPROGRESS,
                                                                                                                 "start_date": datetime.datetime.utcnow(),
                                                                                                                 "assigned_to": "{}:{}".format(client.ip_address, client.port)})
-
-                            response = client.send_work(work_request, self.flask_app.rapid_config.verify_certs)
-                            if response.status_code == 423:
-                                client.sleep = True
-                            elif response.status_code == 201:
-                                if 'X-Exclude-Resource'.lower() in response.headers:
+                            try:
+                                response = client.send_work(work_request, self.flask_app.rapid_config.verify_certs)
+                                if response.status_code == 423:
                                     client.sleep = True
-                            else:
-                                logger.info("Client didn't respond right: {} returned {}".format(client.ip_address, response.status_code))
+                                elif response.status_code == 201:
+                                    if 'X-Exclude-Resource'.lower() in response.headers:
+                                        client.sleep = True
+                                else:
+                                    logger.info("Client didn't respond right: {} returned {}".format(client.ip_address, response.status_code))
 
-                            break  # Break, we sent work to the other client
+                                break  # Break, we sent work to the other client
+                            except Exception as exception:
+                                logger.error("Could not send work to worker: [{}]".format(exception.message))
+                                self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
+                                                                                                                    "start_date": None,
+                                                                                                                    "assigned_to": None})
                         except ConnectTimeout:
                             # Should reset, this is a problem, server not there.
                             self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
