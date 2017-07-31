@@ -27,7 +27,7 @@ class Commit(BaseModel, db.Model):
     commit_identifier = db.Column(db.String(255), nullable=False, index=True)
     vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
 
-    pipeline_instances = relationship("PipelineInstance", secondary="pipeline_instance_commits", order_by=desc("created_date"))
+    pipeline_instances = relationship("PipelineInstance", backref="commit", secondary="pipeline_instance_commits", order_by=desc("created_date"))
     versions = relationship('Version', backref="commit", order_by=desc('date_created'))
     vcs = relationship('Vcs')
 
