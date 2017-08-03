@@ -18,7 +18,6 @@ import datetime
 import logging
 from requests.exceptions import ConnectionError, Timeout, ConnectTimeout, ReadTimeout
 
-from lib.StoreService import StoreService
 from rapid.lib.Constants import StatusConstants
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.communicator.MasterCommunicator import MasterCommunicator
@@ -104,7 +103,7 @@ class Queue(Injectable):
                         reset_action_instance = MasterCommunicator.is_still_working_on(action_instance['id'], client,
                                                                                        self.flask_app.rapid_config.verify_certs) is False
 
-                if reset_action_instance and not StoreService.is_completing(action_instance['id']):
+                if reset_action_instance:
                     if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
                         logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance.id, action_instance['assigned_to']))
 
