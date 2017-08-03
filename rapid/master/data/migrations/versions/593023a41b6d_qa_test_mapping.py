@@ -7,7 +7,6 @@ Create Date: 2016-05-19 16:09:12.356379
 """
 
 # revision identifiers, used by Alembic.
-from rapid.qa.data.models import QaTestType
 
 revision = '593023a41b6d'
 down_revision = '63ed28aeec3d'
@@ -79,13 +78,6 @@ def upgrade():
     op.create_index(op.f('ix_qa_test_map_tags_qa_testmap_id'), 'qa_test_map_tags', ['qa_testmap_id'], unique=False)
     op.create_index(op.f('ix_qa_test_map_tags_tag_id'), 'qa_test_map_tags', ['tag_id'], unique=False)
     ### end Alembic commands ###
-
-    op.bulk_insert(QaTestType.__table__, [
-        {"id": 1, "name": "Unit", "active": True},
-        {"id": 2, "name": "Integration", "active": True},
-        {"id": 3, "name": "Selenium", "active": True},
-        {"id": 4, "name": "Smoke", "active": True},
-    ])
 
 
 def downgrade():
