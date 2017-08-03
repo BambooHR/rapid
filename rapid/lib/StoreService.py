@@ -134,7 +134,7 @@ class StoreService(object):
     @staticmethod
     def set_completing(action_instance_id):
         try:
-            uwsgi.cache_update('_completing_{}'.format(action_instance_id))
+            uwsgi.cache_update('_completing_{}'.format(action_instance_id), "true")
         except:
             pass
 
