@@ -101,7 +101,7 @@ class Queue(Injectable):
                     if ip_address in clients:
                         client = clients[ip_address]
                         reset_action_instance = MasterCommunicator.is_still_working_on(action_instance['id'], client,
-                                                                                       self.flask_app.rapid_config.verify_certs) == False
+                                                                                       self.flask_app.rapid_config.verify_certs) is False
 
                 if reset_action_instance:
                     if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
