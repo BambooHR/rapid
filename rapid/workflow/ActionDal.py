@@ -108,8 +108,8 @@ class ActionDal(GeneralDal, Injectable):
             action_instance.end_date = datetime.datetime.utcnow()
 
             try:
-                self._save_status(action_instance, session, post_data)
                 self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
+                self._save_status(action_instance, session, post_data)
                 self._save_stats(action_instance.pipeline_instance_id, session, post_data)
                 if self.qa_module is not None:
                     self.qa_module.save_results(action_instance, session, post_data)
