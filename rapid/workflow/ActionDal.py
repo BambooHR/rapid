@@ -20,6 +20,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import asc
 
+from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusConstants, StatusTypes, ModuleConstants
 from rapid.lib.WorkRequest import WorkRequest
 from rapid.lib.framework.Injectable import Injectable
@@ -34,16 +35,18 @@ from rapid.master.data.database.dal.GeneralDal import GeneralDal
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService}
     last_sent = None
 
-    def __init__(self, qa_module=None):
+    def __init__(self, qa_module=None, store_service=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
+        :type  store_service: StoreService
         :return:
         """
         self.qa_module = qa_module
+        self.store_service = store_service
 
     def get_workable_work_requests(self):
         results = []
@@ -107,6 +110,7 @@ class ActionDal(GeneralDal, Injectable):
             action_instance = self.get_action_instance_by_id(id, session)
             action_instance.end_date = datetime.datetime.utcnow()
 
+            self.store_service.set_completing(id)
             try:
                 self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
                 self._save_status(action_instance, session, post_data)
@@ -116,6 +120,9 @@ class ActionDal(GeneralDal, Injectable):
             except:
                 import traceback
                 traceback.print_exc()
+            finally:
+                self.store_service.clear_completing(id)
+
             session.commit()
 
         return True
