@@ -125,8 +125,7 @@ class StoreService(object):
     @staticmethod
     def is_completing(action_instance_id):
         try:
-            uwsgi.cache_get("_completing_{}".format(action_instance_id))
-            return True
+            return "true" == uwsgi.cache_get("_completing_{}".format(action_instance_id))
         except:
             pass
         return False
@@ -142,5 +141,7 @@ class StoreService(object):
     def clear_completing(action_instance_id):
         try:
             uwsgi.cache_del("_completing_{}".format(action_instance_id))
+            return True
         except:
-            pass
+            logger.info("FAILED TO clear_completing")
+        return False

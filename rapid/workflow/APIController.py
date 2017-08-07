@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.lib.StoreService import StoreService
 from rapid.workflow.WorkflowService import WorkflowService
 
 try:
@@ -83,6 +84,10 @@ class APIRouter(Injectable):
         flask_app.add_url_rule('/api/action_instances/<int:id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
+
+        flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/is_completing', 'action_instance_is_completing', api_key_required(self.action_instance_is_completing), methods=['GET'])
+        flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/clear_completing', 'action_instance_clear_completing', api_key_required(self.action_instance_clear_completing), methods=['GET'])
+
         flask_app.add_url_rule('/api/pipeline_instances/<int:id>/failure_count', 'failure_count_instance', api_key_required(self.failure_count_instance))
         flask_app.add_url_rule('/api/queue', 'get_queue', api_key_required(self.get_queue), methods=['GET'])
         flask_app.add_url_rule('/api/pipeline_instances/<int:id>/reset', 'reset_pipeline_instance', api_key_required(self.reset_pipeline_instance), methods=['POST', 'GET'])
@@ -323,6 +328,14 @@ class APIRouter(Injectable):
     @json_response()
     def list_canned_reports(self):
         return self.workflow_service.list_canned_reports()
+
+    @json_response()
+    def action_instance_is_completing(self, action_instance_id):
+        return {"status": StoreService.is_completing(action_instance_id)}
+
+    @json_response()
+    def action_instance_clear_completing(self, action_instance_id):
+        return {"status": StoreService.clear_completing(action_instance_id)}
 
     def _explode_class(self, clazz):
         columns = {}

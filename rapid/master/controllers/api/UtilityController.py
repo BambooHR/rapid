@@ -19,6 +19,7 @@ from rapid.lib.Exceptions import HttpException, VcsNotFoundException
 from rapid.lib.StoreService import StoreService
 from rapid.master.communicator.Client import Client
 from rapid.master.communicator.MasterCommunicator import MasterCommunicator
+from rapid.workflow.ActionDal import ActionDal
 from ... import app
 import jsonpickle
 try:
@@ -44,6 +45,8 @@ class UtilityRouter(object):
         self.flask_app.add_url_rule('/clients/show', 'get_clients', api_key_required(self.show_clients))
         self.flask_app.add_url_rule('/client/register', 'register_client', self.register_client, methods=["POST"])
         self.flask_app.add_url_rule('/clients/working', 'get_clients_working', api_key_required(self.working_clients), methods=['GET'])
+        self.flask_app.add_url_rule('/clients/<path:client_ip>/still_working/<path:action_instance_id>', 'client_still_working_on', api_key_required(self.client_still_working_on), methods=['GET'])
+        self.flask_app.add_url_rule('/clients/verify_working', 'client_verify_working', api_key_required(self.client_verify_working), methods=['GET'])
 
         self.flask_app.register_error_handler(HttpException, self.http_exception_handler)
         self.flask_app.register_error_handler(VcsNotFoundException, self.http_exception_handler)
@@ -53,6 +56,24 @@ class UtilityRouter(object):
         response.status_code = exception.status_code
         response.content_type = 'application/json'
         return response
+
+    @json_response()
+    def client_still_working_on(self, client_ip, action_instance_id):
+        clients = []
+        try:
+            clients = StoreService.get_clients(self.flask_app)
+        except:
+            pass
+
+        if client_ip in clients:
+            return {'status': MasterCommunicator.is_still_working_on(action_instance_id, clients[client_ip], self.flask_app.rapid_config.verify_certs)}
+        else:
+            return {"status": "No client found"}
+
+    @json_response()
+    def client_verify_working(self):
+        action_dal = ActionDal(None, None)
+        return action_dal.get_verify_working(self.flask_app.rapid_config.queue_consider_late_time)
 
     def working_clients(self):
         clients = {}
