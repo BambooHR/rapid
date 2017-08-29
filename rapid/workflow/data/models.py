@@ -25,7 +25,7 @@ from rapid.master.data.database.models.base.DateModel import DateModel
 from rapid.master.data.database.models.base.ActiveModel import ActiveModel
 
 
-class Action(db.Model, BaseModel):
+class Action(BaseModel, db.Model):
     cmd = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     executable = db.Column(db.String(100), nullable=False)
@@ -53,7 +53,7 @@ class Action(db.Model, BaseModel):
                                                                        'grain'])
 
 
-class ActionInstance(db.Model, DateModel, BaseModel):
+class ActionInstance(DateModel, BaseModel, db.Model):
     cmd = db.Column(db.String(255), nullable=False)
     executable = db.Column(db.String(100), nullable=False)
     args = db.Column(db.String(255), nullable=False)
