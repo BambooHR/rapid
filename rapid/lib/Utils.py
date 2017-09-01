@@ -159,8 +159,9 @@ class UpgradeUtil(object):
 
     @staticmethod
     def _install(version, configuration):
-        # os.system("pip install -i http://pipserver package==version)
         version = version.split(';')[0]
+        assert re.search('[^a-zA-Z\-0-9.]', version) is None, "Invalid Version string."
+        
         try:
             logger.info("installing version: {}".format(version))
             return_code = os.system("{}/bin/pip install -i {} {} rapid-framework=={}".format(sys.prefix, configuration.install_uri, configuration.install_options, version))

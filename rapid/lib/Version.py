@@ -13,7 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-__version__='1.0.93'
+__version__='1.0.94'
+
 
 class Version(object):
     HEADER = 'X-RAPIDCI-VERSION'
