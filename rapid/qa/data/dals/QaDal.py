@@ -192,7 +192,10 @@ class QaDal(GeneralDal):
                 bp_keys.remove(bp.name)
             except:
                 pass
-            bp_mapper[bp.name]['model'] = bp
+            try:
+                bp_mapper[bp.name]['model'] = bp
+            except:
+                pass
 
         for bp in bp_keys:
             bp_model = QaBehaviorPoint(name=bp, product_id=product_id)
