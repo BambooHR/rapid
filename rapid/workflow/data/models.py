@@ -112,6 +112,15 @@ class PipelineInstance(BaseModel, DateModel, db.Model):
     pipeline = relationship('Pipeline')
     status = relationship('Status')
 
+    def get_parameters_dict(self):
+        results = {}
+        try:
+            for parameter in self.parameters:
+                results[parameter.paramter] = parameter.value
+        except:
+            pass
+        return results
+
 
 class PipelineParameters(BaseModel, db.Model):
     pipeline_instance_id = db.Column(db.Integer, db.ForeignKey("pipeline_instances.id"), nullable=False, index=True)
@@ -185,3 +194,14 @@ class WorkflowInstance(BaseModel, DateModel, db.Model):
     status = relationship('Status')
     workflow = relationship('Workflow')
     action_instances = relationship('ActionInstance', backref="workflow_instance", order_by="asc(ActionInstance.order)")
+
+
+class EventType(ActiveModel, db.Model):
+    pass
+
+
+class PipelineEvent(BaseModel, db.Model):
+    pipeline_id = db.Column(db.Integer, nullable=False, index=True)
+    event_type_id = db.Column(db.Integer, nullable=False, index=True)
+    conditional = db.Column(db.TEXT, nullable=False)
+    config = db.Column(db.TEXT, nullable=False)

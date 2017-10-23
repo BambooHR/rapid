@@ -8,3 +8,4 @@ mysql-python
 enum34==1.0.4
 pygithub
 simplejson==3.10.0
+simpleeval

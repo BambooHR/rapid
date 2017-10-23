@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from enum import Enum
 
 
 class Constants(object):
@@ -72,4 +73,15 @@ status_type_severity_mapping = {
     StatusTypes.WARNING: 2,
     StatusTypes.CANCELED: 3,
     StatusTypes.FAILED: 100
+}
+
+
+class EventTypes(Enum):
+    RemoteNotification = 1
+    UserNotification = 2
+
+
+event_type_mapping = {
+    1: EventTypes.RemoteNotification,
+    2: EventTypes.UserNotification
 }

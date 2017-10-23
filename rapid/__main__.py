@@ -64,6 +64,7 @@ def main():
     else:
         app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))
 
+
 if '__main__' == __name__:
     main()
 
