@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from rapid.lib.Constants import EventTypes
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.data.database.dal.GeneralDal import GeneralDal
 from rapid.workflow.data.dal.PipelineDal import PipelineDal
@@ -42,7 +43,7 @@ class EventDal(GeneralDal, Injectable):
         """
         for event in self.pipeline_dal.get_pipeline_events_by_pipeline_id(pipeline_instance.pipeline_id, session=session):
             try:
-                handler = EventHandlerFactory.get_event_handler(event['event_type_id'])
+                handler = EventHandlerFactory.get_event_handler(EventTypes(event.event_type_id))
                 handler.handle_event(pipeline_instance, action_instance, event)
             except:
                 pass

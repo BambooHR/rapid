@@ -89,7 +89,7 @@ class EventHandler(object):
         :rtype:
         """
         new_conditional = conditional
-        for parameter, value in pipeline_instance.get_parameters_dict().items():
+        for parameter, value in pipeline_instance._get_parameters_dict().items():
             if "{{{}}}".format(parameter) in new_conditional:
                 new_conditional = new_conditional.replace("{{{}}}".format(parameter), str(value))
 

@@ -38,7 +38,7 @@ class RemoteNotification(object):
                 pass
 
     def send(self):
-        response = requests.post(self.url, headers=self.headers, json=self.payload, verify=self.verify)
+        response = requests.post(self.url, headers=self.headers, json=self.payload, verify=self.verify, timeout=5)
         if response.status_code != 200:
             logger.error("Remote Notification Failed to send to [{}] with status: {}".format(self.url, response.status_code))
         return response
@@ -66,12 +66,11 @@ class RemoteNotificationHandler(EventHandler):
         """
         if self.passes_conditional(pipeline_instance, action_instance, event.conditional):
             config_dict = {}
-            if type(event.config) == str:
-                try:
-                    config_dict = json.loads(event.config)
-                except:
-                    pass
-            config = self.prepare(config_dict, pipeline_instance.get_parameters_dict())
+            try:
+                config_dict = json.loads(event.config)
+            except:
+                pass
+            config = self.prepare(config_dict, pipeline_instance._get_parameters_dict())
             notification = RemoteNotification(config)
             response = notification.send()
 

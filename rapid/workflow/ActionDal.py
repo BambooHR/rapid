@@ -211,7 +211,7 @@ class ActionDal(GeneralDal, Injectable):
                     joinedload(PipelineInstance.stage_instances)
                         .joinedload(StageInstance.workflow_instances)
                         .joinedload(WorkflowInstance.action_instances)
-            ).get(action_instance.pipeline_instance_id)
+            ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
             workflow_engine.complete_an_action(action_instance.id, status.id)
             for instance in workflow_engine.instances_to_add:

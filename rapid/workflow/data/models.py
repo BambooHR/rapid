@@ -114,11 +114,11 @@ class PipelineInstance(BaseModel, DateModel, db.Model):
     pipeline = relationship('Pipeline')
     status = relationship('Status')
 
-    def get_parameters_dict(self):
+    def _get_parameters_dict(self):
         results = {}
         try:
             for parameter in self.parameters:
-                results[parameter.paramter] = parameter.value
+                results[parameter.parameter] = parameter.value
 
             results['pipeline_instance_id'] = self.id
         except:
