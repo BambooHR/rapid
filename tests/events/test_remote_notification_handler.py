@@ -15,10 +15,9 @@ limitations under the License.
 """
 from unittest.case import TestCase
 
-from mock.mock import MagicMock
 from nose.tools.trivial import eq_
 
-from workflow.events.handlers.RemoteNotificationHandler import RemoteNotificationHandler, RemoteNotification
+from rapid.workflow.events.handlers.RemoteNotificationHandler import RemoteNotificationHandler, RemoteNotification
 
 
 class TestRemoteNotificationHandler(TestCase):

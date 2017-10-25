@@ -16,8 +16,8 @@ limitations under the License.
 import logging
 import requests
 
-from lib.Constants import EventTypes
-from workflow.events.event_handler import EventHandler
+from rapid.lib.Constants import EventTypes
+from rapid.workflow.events.event_handler import EventHandler
 
 logger = logging.getLogger('rapid')
 
