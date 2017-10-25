@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+
+import json
 import requests
 
 from rapid.lib.Constants import EventTypes
@@ -63,7 +65,13 @@ class RemoteNotificationHandler(EventHandler):
         :rtype:
         """
         if self.passes_conditional(pipeline_instance, action_instance, event.conditional):
-            config = self.prepare(event.config, pipeline_instance.get_parameters_dict())
+            config_dict = {}
+            if type(event.config) == str:
+                try:
+                    config_dict = json.loads(event.config)
+                except:
+                    pass
+            config = self.prepare(config_dict, pipeline_instance.get_parameters_dict())
             notification = RemoteNotification(config)
             response = notification.send()
 
