@@ -119,6 +119,8 @@ class PipelineInstance(BaseModel, DateModel, db.Model):
         try:
             for parameter in self.parameters:
                 results[parameter.paramter] = parameter.value
+
+            results['pipeline_instance_id'] = self.id
         except:
             pass
         return results
