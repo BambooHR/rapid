@@ -15,6 +15,9 @@
 """
 
 import datetime
+
+from rapid.workflow.data.models import PipelineEvent
+
 try:
     import simplejson as out_json
 except:
@@ -96,6 +99,13 @@ class PipelineDal(GeneralDal, Injectable):
                 return db_session.query(Pipeline).get(pipeline_id).serialize()
         else:
             return session.query(Pipeline).get(pipeline_id)
+
+    def get_pipeline_events_by_pipeline_id(self, pipeline_id, session=None):
+        if session is None:
+            for db_session in get_db_session():
+                return [event.serialize() for event in db_session.query(PipelineEvent).filter(PipelineEvent.pipeline_id == pipeline_id).all()]
+        else:
+            return session.query(PipelineEvent).filter(PipelineEvent.pipeline_id == pipeline_id).all()
 
     def get_pipeline_instance_by_id(self, pipeline_instance_id, session=None):
         if session is None:

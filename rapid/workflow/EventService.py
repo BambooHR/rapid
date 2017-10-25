@@ -13,7 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from rapid.lib.framework.Injectable import Injectable
+from rapid.workflow.events.EventDal import EventDal
 
 
-class EventService(object):
-    pass
+class EventService(Injectable):
+    __injectables__ = {'event_dal': EventDal}
+
+    def __init__(self, event_dal=None):
+        """
+        :param event_dal:
+        :type event_dal: workflow.events.EventDal.EventDal
+        """
+        self.event_dal = event_dal
+
+    def trigger_possible_event(self, pipeline_instance, action_instance, session=None):
+        return self.event_dal.trigger_possible_event(pipeline_instance, action_instance, session)

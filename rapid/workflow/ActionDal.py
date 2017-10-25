@@ -32,21 +32,24 @@ from rapid.workflow.data.models import ActionInstance, PipelineInstance, Pipelin
     PipelineStatistics, Statistics, StageInstance, WorkflowInstance
 
 from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.workflow.EventService import EventService
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
         :type  store_service: StoreService
+        :type event_service: EventService
         :return:
         """
         self.qa_module = qa_module
         self.store_service = store_service
+        self.event_service = event_service
 
     def get_workable_work_requests(self):
         results = []
@@ -214,6 +217,8 @@ class ActionDal(GeneralDal, Injectable):
             for instance in workflow_engine.instances_to_add:
                 session.add(instance)
             session.commit()
+
+            self.event_service.trigger_possible_event(pipeline_instance, action_instance, session)
 
     def _save_parameters(self, pipeline_instance_id, session, post_data):
         if 'parameters' in post_data:

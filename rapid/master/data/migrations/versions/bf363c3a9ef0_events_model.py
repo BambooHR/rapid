@@ -49,6 +49,8 @@ def upgrade():
     sa.Column('event_type_id', sa.Integer(), nullable=False),
     sa.Column('conditional', sa.TEXT(), nullable=False),
     sa.Column('config', sa.TEXT(), nullable=False),
+    sa.ForeignKeyConstraint(['pipeline_id'], ['pipelines.id'], ),
+    sa.ForeignKeyConstraint(['event_type_id'], ['event_types.id'], ),
     sa.PrimaryKeyConstraint('id'),
     mysql_engine='InnoDB'
     )
@@ -58,8 +60,7 @@ def upgrade():
     ### end Alembic commands ###
 
     op.bulk_insert(EventType.__table__, [
-        {"id": 1, "name": "Remote Webhook", "active": True},
-        {"id": 2, "name": "User Notification", "active": True}
+        {"id": 1, "name": "Remote Webhook", "active": True}
     ])
 
 

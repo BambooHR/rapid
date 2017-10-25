@@ -127,6 +127,8 @@ class InstanceWorkflowEngine(WorkflowEngine):
                     self._mark_action_instance_complete(instance, StatusConstants.CANCELED)
             self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.FAILED)
 
+
+
     def complete_a_workflow(self, workflow_instance_id, status_id):
         workflow_instance = self._get_workflow(workflow_instance_id)
         self._mark_workflow_instance_complete(workflow_instance, status_id)

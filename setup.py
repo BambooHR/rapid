@@ -36,7 +36,8 @@ requirements = [
     'futures',
     'jsonpickle',
     'enum34==1.0.4',
-    'simplejson==3.10.0'
+    'simplejson==3.10.0',
+    'simpleeval'
 ]
 
 setup(

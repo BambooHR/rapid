@@ -78,10 +78,3 @@ status_type_severity_mapping = {
 
 class EventTypes(Enum):
     RemoteNotification = 1
-    UserNotification = 2
-
-
-event_type_mapping = {
-    1: EventTypes.RemoteNotification,
-    2: EventTypes.UserNotification
-}

@@ -28,7 +28,7 @@ class EventHandlerFactory(object):
         :param type:
         :type type: lib.Constants.EventTypes
         :return:
-        :rtype:
+        :rtype: EventHandler
         """
         import rapid.workflow.events.handlers as handlers
         for importer, modname, ispkg in pkgutil.iter_modules(handlers.__path__):
@@ -53,7 +53,6 @@ class EventHandler(object):
     @abstractmethod
     def handle_event(self, pipeline_instance, action_instance, event):
         """
-
         :param pipeline_instance:
         :type pipeline_instance: rapid.workflow.data.models.PipelineInstance
         :param action_instance:

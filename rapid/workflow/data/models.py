@@ -94,6 +94,8 @@ class Integration(BaseModel, db.Model):
 class Pipeline(ActiveModel, db.Model):
     stages = relationship("Stage", backref="pipeline", order_by="asc(Stage.order)")
 
+    pipeline_events = relationship('PipelineEvent', backref="pipeline")
+
     def convert_to_instance(self):
         instance = PipelineInstance()
         instance.pipeline_id = self.id                                                                                                                                   
@@ -201,7 +203,7 @@ class EventType(ActiveModel, db.Model):
 
 
 class PipelineEvent(BaseModel, db.Model):
-    pipeline_id = db.Column(db.Integer, nullable=False, index=True)
-    event_type_id = db.Column(db.Integer, nullable=False, index=True)
+    pipeline_id = db.Column(db.ForeignKey('pipelines.id'), nullable=False, index=True)
+    event_type_id = db.Column(db.ForeignKey('event_types.id'), nullable=False, index=True)
     conditional = db.Column(db.TEXT, nullable=False)
     config = db.Column(db.TEXT, nullable=False)
