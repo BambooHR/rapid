@@ -65,6 +65,7 @@ class ORMUtil(object):
     @staticmethod
     def get_filtered_query(query, filter, clazz):
         if filter is not None:
+            joined_classes = []
             for token in filter.split(':=:'):
                 m = re.match('(.*)(_eq_|_ne_|_gt_|_lt_|_in_|_ge_|_le_|_like_)(.*)', token)
                 if not m:
@@ -86,7 +87,12 @@ class ORMUtil(object):
                         attr = getattr(current_class, column_name, None)
                         final_class = attr.property.mapper.class_
                         final_column = getattr(final_class, nested_attribute, None)
-                        query = query.join(final_column.parent.mapper.class_)
+
+                        parent_name = final_column.parent.mapper.class_
+                        if parent_name not in joined_classes:
+                            query = query.join(final_column.parent.mapper.class_)
+                            joined_classes.append(parent_name)
+
                         current_class = final_column.parent.mapper.class_
 
                     if final_class is not None and final_column is not None:
