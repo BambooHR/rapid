@@ -94,16 +94,10 @@ class EventHandler(object):
                 new_conditional = new_conditional.replace("{{{}}}".format(parameter), str(value))
 
         if 'pipelineInstance.' in new_conditional:
-            copy = new_conditional
-            for term in re.findall('(pipelineInstance\.[^\s]{0,})', copy):
-                replaced_term = term.replace('pipelineInstance.', '', 1)
-                new_conditional = new_conditional.replace(term, str(self._get_attribute_trait(pipeline_instance, replaced_term)))
+            new_conditional = self._translate_string_for_pipeline_instance(pipeline_instance, new_conditional)
 
         if 'actionInstance.' in new_conditional:
-            copy = new_conditional
-            for term in re.findall('(actionInstance\.[^\s]{0,})', copy):
-                replaced_term = term.replace('actionInstance.', '', 1)
-                new_conditional = new_conditional.replace(term, str(self._get_attribute_trait(action_instance, replaced_term)))
+            new_conditional = self._translate_string_for_action_instance(action_instance, new_conditional)
 
         return new_conditional
 
@@ -112,6 +106,22 @@ class EventHandler(object):
             return simple_eval(condition)
         except:
             return False
+
+    def _translate_string_for_pipeline_instance(self, pipeline_instance, string):
+        return self._translate_string_for_key_string('pipelineInstance', pipeline_instance, string)
+
+    def _translate_string_for_action_instance(self, action_instance, string):
+        return self._translate_string_for_key_string('actionInstance', action_instance, string)
+
+    def _translate_string_for_key_string(self, key_string, obj_instance, string):
+        new_string = string
+        try:
+            for term in re.findall('(' + key_string + '\.[^\s]{0,})', new_string):
+                replaced_term = term.replace('{}.'.format(key_string), '', 1)
+                new_string = new_string.replace(term, str(self._get_attribute_trait(obj_instance, replaced_term)))
+        except:
+            pass
+        return new_string
 
     def _get_attribute_trait(self, obj, trait):
         if '.' in trait:

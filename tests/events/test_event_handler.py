@@ -15,7 +15,7 @@ limitations under the License.
 """
 from unittest.case import TestCase
 
-from mock.mock import MagicMock
+from mock.mock import MagicMock, patch
 from nose.tools.trivial import ok_, eq_
 
 from rapid.lib.Constants import EventTypes
@@ -94,3 +94,27 @@ class TestEventHandler(TestCase):
         ok_(not handler.passes_conditional(mock_pipeline_instance,
                                            MagicMock(),
                                            '(pipelineInstance.status_id == 2 && {__testing__} == 1) || {__trial__}'))
+
+    def test_translate_string_for_key_string(self):
+        handler = RemoteNotificationHandler()
+        eq_('2 == 2', handler._translate_string_for_key_string('pipelineInstance', MagicMock(status_id=2), 'pipelineInstance.status_id == 2'))
+
+    def test_translate_string_for_key_not_found_key_string_returns_original(self):
+        handler = RemoteNotificationHandler()
+        eq_('pipelineInstance.status_id == "testing"', handler._translate_string_for_key_string('pipelineIn', MagicMock(status_id=2), 'pipelineInstance.status_id == "testing"'))
+
+    @patch('rapid.workflow.events.handlers.RemoteNotificationHandler.RemoteNotificationHandler._translate_string_for_key_string')
+    def test_translate_string_for_pipeline_instance_contract(self, key_string):
+        handler = RemoteNotificationHandler()
+        magicMock = MagicMock()
+        handler._translate_string_for_pipeline_instance(magicMock, '')
+        eq_(1, key_string.call_count)
+        key_string.assert_called_with('pipelineInstance', magicMock, '')
+
+    @patch('rapid.workflow.events.handlers.RemoteNotificationHandler.RemoteNotificationHandler._translate_string_for_key_string')
+    def test_translate_string_for_action_instance_contract(self, key_string):
+        handler = RemoteNotificationHandler()
+        magicMock = MagicMock()
+        handler._translate_string_for_action_instance(magicMock, '')
+        eq_(1, key_string.call_count)
+        key_string.assert_called_with('actionInstance', magicMock, '')

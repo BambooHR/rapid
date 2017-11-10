@@ -16,6 +16,8 @@ limitations under the License.
 import logging
 
 import json
+import re
+
 import requests
 
 from rapid.lib.Constants import EventTypes
@@ -70,40 +72,44 @@ class RemoteNotificationHandler(EventHandler):
                 config_dict = json.loads(event.config)
             except:
                 pass
-            config = self.prepare(config_dict, pipeline_instance._get_parameters_dict())
+            config = self.prepare(config_dict, pipeline_instance, action_instance)
             notification = RemoteNotification(config)
             response = notification.send()
 
             if response.status_code >= 400:
                 logger.error("Remote Notification was not sent for: {} with status: {}".format(pipeline_instance.id, response.status_code))
 
-    def prepare(self, config, parameters):
-        config['payload'] = self.prepare_payload(config, parameters)
-        config['headers'] = self.prepare_headers(config, parameters)
-        config['url'] = self.prepare_url(config, parameters)
+    def prepare(self, config, pipeline_instance, action_instance):
+        parameters = pipeline_instance._get_parameters_dict()
+        config['payload'] = self.prepare_payload(config, pipeline_instance, action_instance, parameters)
+        config['headers'] = self.prepare_headers(config, pipeline_instance, action_instance, parameters)
+        config['url'] = self.prepare_url(config, pipeline_instance, action_instance, parameters)
         return config
 
-    def prepare_headers(self, config, parameters):
+    def prepare_headers(self, config, pipeline_instance, action_instance, parameters):
         headers = None
         try:
-            headers = self.__replace_with_parameters(config['headers'], parameters)
+            headers = self.__replace_with_parameters(config['headers'], pipeline_instance, action_instance, parameters)
         except:
             pass
         return headers
 
-    def prepare_url(self, config, parameters):
+    def prepare_url(self, config, pipeline_instance, action_instance, parameters):
         new_url = None
         try:
             new_url = config['url']
+            new_url = self._translate_string_for_pipeline_instance(pipeline_instance, new_url)
+            new_url = self._translate_string_for_action_instance(action_instance, new_url)
+
             if '{' in new_url and '}' in new_url:
-                for key, value in parameters.items():
-                    if "{{{}}}".format(key) in new_url:
-                        new_url = new_url.replace('{{{}}}'.format(key), value)
+                    for key, value in parameters.items():
+                        if "{{{}}}".format(key) in new_url:
+                            new_url = new_url.replace('{{{}}}'.format(key), value)
         except:
             pass
         return new_url
 
-    def prepare_payload(self, config, parameters):
+    def prepare_payload(self, config, pipeline_instance, action_instance, parameters):
         """
 
         :param config:
@@ -114,15 +120,21 @@ class RemoteNotificationHandler(EventHandler):
         """
         payload = None
         try:
-            payload = self.__replace_with_parameters(config['payload'], parameters)
+            payload = self.__replace_with_parameters(config['payload'], pipeline_instance, action_instance, parameters)
         except:
             pass
         return payload
 
-    def __replace_with_parameters(self, config_dict, parameters):
+    def __replace_with_parameters(self, config_dict, pipeline_instance, action_instance, parameters):
         new_dict = config_dict
         try:
             for key, value in config_dict.items():
+                key = self._translate_string_for_pipeline_instance(pipeline_instance, key)
+                key = self._translate_string_for_action_instance(action_instance, key)
+
+                value = self._translate_string_for_pipeline_instance(pipeline_instance, value)
+                value = self._translate_string_for_action_instance(action_instance, value)
+
                 try:
                     if value.startswith('{') and value[-1] == '}':
                         new_dict[key] = parameters[value.replace('{', '').replace('}', '')]
