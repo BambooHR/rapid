@@ -138,6 +138,8 @@ class RemoteNotificationHandler(EventHandler):
                 try:
                     if value.startswith('{') and value[-1] == '}':
                         new_dict[key] = parameters[value.replace('{', '').replace('}', '')]
+                    elif '{' in value and '}' in value:
+                        new_dict[key] = value.replace('{', '').replace('}', '')
                 except:
                     pass
         except:

@@ -116,7 +116,7 @@ class EventHandler(object):
     def _translate_string_for_key_string(self, key_string, obj_instance, string):
         new_string = string
         try:
-            for term in re.findall('(' + key_string + '\.[^\s]{0,})', new_string):
+            for term in re.findall('(' + key_string + '\.[^\s^}]{0,})', new_string):
                 replaced_term = term.replace('{}.'.format(key_string), '', 1)
                 new_string = new_string.replace(term, str(self._get_attribute_trait(obj_instance, replaced_term)))
         except:

@@ -37,4 +37,20 @@ class TestRemoteNotificationHandler(TestCase):
         eq_('nope', notification.payload)
         eq_(False, notification.verify)
 
+    def test_multiple_key_expansion_not_at_beginning(self):
+        handler = RemoteNotificationHandler()
+        config = handler.prepare(
+                                  {"url": "",
+                                   "verify": False,
+                                   "headers": {},
+                                   "payload": {"message": "This is a test {actionInstance.id}. Pipeline {pipelineInstance.id}"},
+                                   "conditional": "actionInstance.action.id == 1 and actionInstance.status_id > 4 and {release_id} != ''"}, TrialMock(1), TrialMock(2))
+        eq_('This is a test 2. Pipeline 1', config['payload']['message'])
 
+
+class TrialMock():
+    def __init__(self, id):
+        self.id = id
+
+    def _get_parameters_dict(self):
+        return {"id": self.id}
