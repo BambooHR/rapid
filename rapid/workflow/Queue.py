@@ -50,9 +50,9 @@ class Queue(Injectable):
                 3. Send the work to the client
                 3a. If the client fails, unassign the work
                 """
-                pages = MasterCommunicator.find_available_clients(clients.values(), work_request.grain, self.flask_app.rapid_config.verify_certs)
-                random.shuffle(pages)
-                
+                clients_array = clients.values()
+                random.shuffle(clients_array)
+                pages = MasterCommunicator.find_available_clients(clients_array, work_request.grain, self.flask_app.rapid_config.verify_certs)
                 for client in pages:
                     if client:
                         if hasattr(client, 'sleep') and client.sleep:
