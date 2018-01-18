@@ -16,6 +16,7 @@
 
 import datetime
 import logging
+import random
 from requests.exceptions import ConnectionError, Timeout, ConnectTimeout, ReadTimeout
 
 from rapid.lib.StoreService import StoreService
@@ -50,6 +51,8 @@ class Queue(Injectable):
                 3a. If the client fails, unassign the work
                 """
                 pages = MasterCommunicator.find_available_clients(clients.values(), work_request.grain, self.flask_app.rapid_config.verify_certs)
+                random.shuffle(pages)
+                
                 for client in pages:
                     if client:
                         if hasattr(client, 'sleep') and client.sleep:
