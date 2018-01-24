@@ -59,9 +59,8 @@ class StoreService(object):
     @staticmethod
     def save_executor(executor):
         try:
-            f = open('/tmp/rapid-{}-{}'.format(executor.work_request.action_instance_id, executor.pid), 'w')
-            f.write("{}".format(executor.pid))
-            f.close()
+            with open('/tmp/rapid-{}-{}'.format(executor.work_request.action_instance_id, executor.pid), 'w') as file_out:
+                file_out.write("{}".format(executor.pid))
         except:
             import traceback
             traceback.print_exc()
