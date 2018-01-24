@@ -13,6 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from os.path import basename
+
 try:
     import simplejson as json
 except:
@@ -47,6 +49,9 @@ except:
 class WorkController(BaseController):
     executors = []
 
+    def __init__(self):
+        self.app = None
+
     def register_url_rules(self, flask_app):
         """
         This is the entry point for the controller. All URL ruls are add_url_rule(d) here.
@@ -55,6 +60,7 @@ class WorkController(BaseController):
         """
         flask_app.add_url_rule('/work/request', 'work_request', api_key_required(self.work_request))
         flask_app.add_url_rule('/work/execute', 'work_execute', api_key_required(self.work_execute), methods=['POST'])
+        flask_app.add_url_rule('/work/cancel/<path:action_instance_id>', 'work_cancel', api_key_required(self.work_cancel), methods=['POST'])
         self.app = flask_app
 
     def work_request(self):
@@ -131,7 +137,7 @@ class WorkController(BaseController):
         try:
             if work['action_instance_id'] is not None:
                 pid_exists = StoreService.check_for_pidfile(work['action_instance_id'])
-                if pid_exists:
+                if pid_exists is not None:
                     logger.info("Request was sent, but was already running, ignoring for [{}]".format(work['action_instance_id']))
         except:
             pass
@@ -206,3 +212,16 @@ class WorkController(BaseController):
                             rapid_config=self.app.rapid_config)
         executor.verify_work_request()
         executor.start()
+
+    def work_cancel(self, action_instance_id):
+        pid_file = StoreService.check_for_pidfile(action_instance_id)
+        if pid_file is not None:
+            try:
+                base_name = basename(pid_file)
+                os.kill(int(base_name.split('-')[-1]), 9)
+                return Response(json.dumps({"message": "Killed process."}), 200)
+            except:
+                pass
+
+        return Response(json.dumps({"message": "Failed to kill process"}), 501)
+

@@ -193,3 +193,34 @@ class TestWorkController(TestCase):
 
         controller._perform_upgrade("12345")
         upgrade_util.upgrade_version.assert_called_with("12345", "testing")
+
+    @patch("rapid.client.controllers.work_controller.StoreService")
+    @patch("rapid.client.controllers.work_controller.os")
+    @patch("rapid.client.controllers.work_controller.Response")
+    def test_work_cancel_should_not_cancel_if_action_instance_not_found(self, response, mock_os, store_service):
+        controller = WorkController()
+        store_service.check_for_pidfile.return_value = None
+
+        controller.work_cancel(12345)
+        eq_(501, response.call_args_list[0][0][1])
+
+    @patch("rapid.client.controllers.work_controller.StoreService")
+    @patch("rapid.client.controllers.work_controller.os")
+    @patch("rapid.client.controllers.work_controller.Response")
+    def test_work_cancel_should_cancel_if_action_instance_found(self, response, mock_os, store_service):
+        controller = WorkController()
+        store_service.check_for_pidfile.return_value = 'testing-1-2-3'
+
+        controller.work_cancel(12345)
+        mock_os.kill.assert_called_with(3, 9)
+
+    @patch("rapid.client.controllers.work_controller.StoreService")
+    @patch("rapid.client.controllers.work_controller.os")
+    @patch("rapid.client.controllers.work_controller.Response")
+    def test_work_cancel_should_not_cancel_if_pid_not_found(self, response, mock_os, store_service):
+        controller = WorkController()
+        store_service.check_for_pidfile.return_value = "testing-1-2-3"
+        mock_os.kill.side_effect = Exception("Booo")
+
+        controller.work_cancel(124545)
+        eq_(501, response.call_args_list[0][0][1])

@@ -117,9 +117,10 @@ class StoreService(object):
             pid_name = 'rapid-{}'.format(action_instance_id)
             for filename in os.listdir("/tmp"):
                 if pid_name in filename:
-                    return True
+                    return filename
         except:
             pass
+        return None
 
     @staticmethod
     def is_completing(action_instance_id):
