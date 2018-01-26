@@ -20,6 +20,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import asc
 
+from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusConstants, StatusTypes, ModuleConstants
 from rapid.lib.WorkRequest import WorkRequest
@@ -36,10 +37,10 @@ from rapid.workflow.EventService import EventService
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
@@ -50,6 +51,7 @@ class ActionDal(GeneralDal, Injectable):
         self.qa_module = qa_module
         self.store_service = store_service
         self.event_service = event_service
+        self.flask_app = flask_app
 
     def get_workable_work_requests(self):
         results = []
@@ -199,6 +201,18 @@ class ActionDal(GeneralDal, Injectable):
                 action_instance.pipeline_instance.status_id = StatusConstants.INPROGRESS
             session.commit()
         return True
+
+    def cancel_action_instance(self, action_instance_id):
+        for session in get_db_session():
+            action_instance = self.get_action_instance_by_id(action_instance_id, session)
+            if action_instance:
+                for client in StoreService.get_clients(self.flask_app):
+                    if client.get_uri() == action_instance.assigned_to:
+                        client.cancel_work(action_instance.id, self.flask_app.rapid_config.verify_certs)
+                        break
+            else:
+                raise InvalidObjectException("Action Instance not found", 404)
+        return {"message": "Action Instance has been canceled."}
 
     def _save_status(self, action_instance, session, post_data, allow_save=False):
         if 'status' in post_data:

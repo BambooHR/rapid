@@ -95,6 +95,9 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/reports/canned/<path:report_name>", 'canned_report', api_key_required(self.canned_report), methods=['GET'])
         flask_app.add_url_rule("/api/reports/canned/list", 'list_canned_report', api_key_required(self.list_canned_reports), methods=['GET'])
 
+        flask_app.add_url_rule("/api/pipeline_instances/<int:id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
+        flask_app.add_url_rule("/api/action_instances/<int:id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
+
         self.app = flask_app
 
     def _get_args(self):
@@ -161,6 +164,14 @@ class APIRouter(Injectable):
                     session = None
         else:
             return Response(status=404)
+
+    @json_response()
+    def cancel_pipeline_instance(self, pipeline_instance_id):
+        return self.workflow_service.cancel_pipeline_instance(pipeline_instance_id)
+
+    @json_response()
+    def cancel_action_instance(self, action_instance_id):
+        return self.workflow_service.cancel_action_instance(action_instance_id)
 
     def _get_clazz(self, endpoint):
         return self.class_map[endpoint]

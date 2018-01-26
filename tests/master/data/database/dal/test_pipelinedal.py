@@ -13,6 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.lib.Constants import StatusConstants
+from rapid.lib.Exceptions import InvalidObjectException
+
 try:
     import simplejson as json
 except:
@@ -20,7 +23,7 @@ except:
 
 from unittest import TestCase
 
-from mock.mock import Mock
+from mock.mock import Mock, patch
 from nose.tools import eq_
 
 from rapid.workflow.data.dal.PipelineDal import PipelineDal
@@ -105,4 +108,51 @@ class TestPipelineDal(TestCase):
         eq_(self.dal.app, mock_app)
         eq_(self.registry['/api/pipelines/create'], {'name': 'create_pipeline', 'func': 'create_pipeline', 'methods': ['POST']})
         eq_(self.registry['/api/pipelines/<int:pipeline_id>/start'], {'name': 'start_pipeline_instance', 'func': 'start_pipeline_instance', 'methods': ['POST']})
+
+    @patch('rapid.workflow.data.dal.PipelineDal.PipelineDal.get_pipeline_instance_by_id')
+    @patch('rapid.workflow.data.dal.PipelineDal.get_db_session')
+    def test_cancel_pipeline_instance_returns_404_if_invalid(self, db_session, pipeline_instance_by_id):
+        """
+        @rapid-unit Workflow:Cancel Pipeline Instance:Should indicate not found if instance not found
+        :return:
+        :rtype:
+        """
+        pipeline_instance_by_id.return_value = None
+        db_session.return_value = [Mock()]
+        
+        with self.assertRaises(InvalidObjectException) as exception:
+            self.dal.cancel_pipeline_instance(12345)
+
+        eq_(404, exception.exception.code)
+        eq_("Pipeline Instance not found", exception.exception.description)
+
+    @patch('rapid.workflow.data.dal.PipelineDal.StoreService')
+    @patch('rapid.workflow.data.dal.PipelineDal.PipelineDal.get_pipeline_instance_by_id')
+    @patch('rapid.workflow.data.dal.PipelineDal.get_db_session')
+    def test_cancel_pipeline_instance_cancels_current_running_clients(self, db_session, pipeline_instance_by_id, store_service):
+        """
+        @rapid-unit Workflow:Cancel Pipeline Instance:Should cancel current assigned clients
+        :return:
+        :rtype:
+        """
+        db_session.return_value = [Mock()]
+        mock_pipeline_instance = Mock()
+        client1 = Mock()
+        client1.get_uri.return_value = '12345'
+
+        client2 = Mock()
+        store_service.get_clients.return_value = [client1, client2]
+
+        mock_pipeline_instance.action_instances = [Mock(assigned_to="12345", status_id=StatusConstants.INPROGRESS),
+                                                   Mock(assinged_to="12345", status_id=StatusConstants.SUCCESS),
+                                                   Mock(assinged_to="12345", status_id=StatusConstants.FAILED),
+                                                   Mock(assigned_to="other", status_id=StatusConstants.INPROGRESS)]
+        pipeline_instance_by_id.return_value = mock_pipeline_instance
+
+        self.dal.app = Mock(rapid_config=Mock(verify_certs=False))
+
+        eq_("Running clients have been canceled and pipeline canceled.", self.dal.cancel_pipeline_instance(12345)['message'])
+        
+        eq_(1, client1.cancel_work.call_count)
+        eq_(0, client2.cancel_work.call_count)
 

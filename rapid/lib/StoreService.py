@@ -76,6 +76,12 @@ class StoreService(object):
 
     @staticmethod
     def get_clients(app):
+        """
+        :param app:
+        :type app:
+        :return:
+        :rtype: list of rapid.master.communicator.Client.Client
+        """
         try:
             return jsonpickle.loads(uwsgi.cache_get("_rapidci_clients"))
         except:

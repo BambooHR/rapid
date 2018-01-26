@@ -16,6 +16,8 @@
 
 import datetime
 
+from rapid.lib.Exceptions import InvalidObjectException
+from rapid.lib.StoreService import StoreService
 from rapid.workflow.data.models import PipelineEvent
 
 try:
@@ -237,6 +239,20 @@ class PipelineDal(GeneralDal, Injectable):
             session.commit()
             create_pipeline_instance = pipeline_instance.serialize()
         return create_pipeline_instance
+
+    def cancel_pipeline_instance(self, pipeline_instance_id):
+        for session in get_db_session():
+            pipeline_instance = self.get_pipeline_instance_by_id(pipeline_instance_id, session)
+            if pipeline_instance:
+                for action_instance in pipeline_instance.action_instances:
+                    for client in StoreService.get_clients(self.app):
+                        if action_instance.status_id <= StatusConstants.SUCCESS and client.get_uri() == action_instance.assigned_to:
+                            client.cancel_work(action_instance.id, self.app.rapid_config.verify_certs)
+                pipeline_instance.status_id = StatusConstants.CANCELED
+                session.commit()
+            else:
+                raise InvalidObjectException("Pipeline Instance not found", 404)
+        return {"message": "Running clients have been canceled and pipeline canceled."}
 
     def _setup_pipeline(self, session, pipeline_id, pipeline_instance_id):
         current_stage = None

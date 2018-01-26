@@ -17,10 +17,11 @@
 import datetime
 from unittest.case import TestCase
 
-from mock.mock import patch
+from mock.mock import patch, Mock
 from nose.tools.trivial import eq_, ok_
 from sqlalchemy.sql.sqltypes import NullType
 
+from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.Constants import StatusConstants
 from rapid.workflow.ActionDal import ActionDal
 from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance
@@ -203,6 +204,54 @@ class TestActionDal(TestCase):
 
         eq_([action_instance.serialize()], results)
 
+    @patch('rapid.workflow.ActionDal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.ActionDal.get_db_session')
+    def test_action_instance_returns_404_when_not_found(self, db_session, get_action_instance):
+        """
+        @rapid-unit Workflow:Cancel Action Instance:Should return a 404 if not found
+        :return:
+        :rtype:
+        """
+        db_session.return_value = [Mock()]
+        get_action_instance.return_value = None
+
+        action_dal = ActionDal(flask_app=Mock())
+        with self.assertRaises(InvalidObjectException) as exception:
+            action_dal.cancel_action_instance(12345)
+
+        eq_(404, exception.exception.code)
+        eq_("Action Instance not found", exception.exception.description)
+
+    @patch('rapid.workflow.ActionDal.StoreService')
+    @patch('rapid.workflow.ActionDal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.ActionDal.get_db_session')
+    def test_action_instance_cancels_current_running_clients(self, db_session, get_action_instance, store_service):
+        """
+        @rapid-unit Workflow:Cancel Action Instance:Should cancel active client
+        :param db_session:
+        :type db_session:
+        :param get_action_instance:
+        :type get_action_instance:
+        :param store_service:
+        :type store_service:
+        :return:
+        :rtype:
+        """
+        db_session.return_value = [Mock()]
+        get_action_instance.return_value = Mock(assigned_to='12345', status_id=StatusConstants.INPROGRESS)
+
+        client1 = Mock()
+        client1.get_uri.return_value = '12345'
+
+        client2 = Mock()
+        store_service.get_clients.return_value = [client1, client2]
+
+        action_dal = ActionDal(flask_app=Mock())
+
+        eq_("Action Instance has been canceled.", action_dal.cancel_action_instance(123455)['message'])
+
+        eq_(1, client1.cancel_work.call_count)
+        eq_(0, client2.cancel_work.call_count)
 
 
 class WrapperHelper(object):

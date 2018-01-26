@@ -65,16 +65,25 @@ class Client(object):
         return True
 
     def get_availability_uri(self):
-        return "{}://{}:{}/work/request".format(self._get_prefix(), self.ip_address, self.port)
+        return "{}://{}/work/request".format(self._get_prefix(), self.get_uri())
 
     def get_work_uri(self):
-        return "{}://{}:{}/work/execute".format(self._get_prefix(), self.ip_address, self.port)
+        return "{}://{}/work/execute".format(self._get_prefix(), self.get_uri())
+
+    def get_cancel_uri(self, action_instance_id):
+        return "{}://{}/work/cancel/{}".format(self._get_prefix(), self.get_uri(), action_instance_id)
 
     def get_status_uri(self):
-        return "{}://{}:{}/status".format(self._get_prefix(), self.ip_address, self.port)
+        return "{}://{}/status".format(self._get_prefix(), self.get_uri())
 
     def send_work(self, work_request, verify_certs=True):
         return requests.post(self.get_work_uri(), json=json.dumps(work_request.__dict__), headers=self.get_headers(), verify=verify_certs, timeout=4)
+
+    def cancel_work(self, action_instance_id, verify_certs=True):
+        return requests.post(self.get_cancel_uri(action_instance_id), headers=self.get_headers(), verify=verify_certs, timeout=4)
+
+    def get_uri(self):
+        return "{}:{}".format(self.ip_address, self.port)
 
     def _get_prefix(self):
         return 'https' if self.is_ssl else 'http'

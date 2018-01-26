@@ -288,6 +288,8 @@ class Executor(object):
         if return_code > 0:
             status = 'FAILED'
             status = self.status_overrides[return_code] if return_code in self.status_overrides else status
+        elif return_code < 0:
+            status = 'CANCELED'
         return status
 
     def _read_process_output(self, logger, child_process):

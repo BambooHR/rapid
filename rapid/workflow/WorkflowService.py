@@ -48,3 +48,9 @@ class WorkflowService(WorkflowModule, Injectable):
 
     def list_canned_reports(self):
         return self.action_service.list_canned_reports()
+
+    def cancel_pipeline_instance(self, pipeline_instance_id):
+        return self.action_service.cancel_pipeline_instance(pipeline_instance_id)
+
+    def cancel_action_instance(self, action_instance_id):
+        return self.action_service.cancel_action_instance(action_instance_id)
