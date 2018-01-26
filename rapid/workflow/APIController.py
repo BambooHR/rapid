@@ -95,8 +95,8 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/reports/canned/<path:report_name>", 'canned_report', api_key_required(self.canned_report), methods=['GET'])
         flask_app.add_url_rule("/api/reports/canned/list", 'list_canned_report', api_key_required(self.list_canned_reports), methods=['GET'])
 
-        flask_app.add_url_rule("/api/pipeline_instances/<int:id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
-        flask_app.add_url_rule("/api/action_instances/<int:id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
+        flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
+        flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
 
         self.app = flask_app
 
