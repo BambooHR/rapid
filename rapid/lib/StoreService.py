@@ -80,7 +80,7 @@ class StoreService(object):
         :param app:
         :type app:
         :return:
-        :rtype: list of rapid.master.communicator.Client.Client
+        :rtype: dict
         """
         try:
             return jsonpickle.loads(uwsgi.cache_get("_rapidci_clients"))

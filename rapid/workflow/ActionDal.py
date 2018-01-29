@@ -206,7 +206,7 @@ class ActionDal(GeneralDal, Injectable):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
             if action_instance:
-                for client in StoreService.get_clients(self.flask_app):
+                for client in StoreService.get_clients(self.flask_app).values():
                     if client.get_uri() == action_instance.assigned_to:
                         client.cancel_work(action_instance.id, self.flask_app.rapid_config.verify_certs)
                         break
