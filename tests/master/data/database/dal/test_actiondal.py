@@ -244,7 +244,7 @@ class TestActionDal(TestCase):
         client1.get_uri.return_value = '12345'
 
         client2 = Mock()
-        store_service.get_clients.return_value = [client1, client2]
+        store_service.get_clients.return_value = {"12345": client1, "54321": client2}
 
         action_dal = ActionDal(flask_app=Mock())
 
