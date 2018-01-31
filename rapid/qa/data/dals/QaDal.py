@@ -288,7 +288,7 @@ class QaDal(GeneralDal):
                                                   pipeline_instance_id=action_instance.pipeline_instance_id,
                                                   action_instance_id=action_instance.id,
                                                   status_id=status_id,
-                                                  duration=value['time'] if 'time' in value else 0)
+                                                  duration=value['time'] if 'time' in value and value['time'] else 0)
 
                     session.add(qaTestHistory)
 
