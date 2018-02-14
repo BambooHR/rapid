@@ -248,7 +248,11 @@ class PipelineDal(GeneralDal, Injectable):
                     for client in StoreService.get_clients(self.app).values():
                         if action_instance.status_id <= StatusConstants.SUCCESS and client.get_uri() == action_instance.assigned_to:
                             client.cancel_work(action_instance.id, self.app.rapid_config.verify_certs)
+                            action_instance.status_id = StatusConstants.CANCELED
+                            action_instance.end_date = datetime.datetime.utcnow()
+
                 pipeline_instance.status_id = StatusConstants.CANCELED
+                pipeline_instance.end_date = datetime.datetime.utcnow()
                 session.commit()
             else:
                 raise InvalidObjectException("Pipeline Instance not found", 404)

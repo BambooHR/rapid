@@ -210,6 +210,8 @@ class ActionDal(GeneralDal, Injectable):
                     if client.get_uri() == action_instance.assigned_to:
                         client.cancel_work(action_instance.id, self.flask_app.rapid_config.verify_certs)
                         break
+                action_instance.status_id = StatusConstants.CANCELED
+                session.commit()
             else:
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
