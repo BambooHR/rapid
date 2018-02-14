@@ -60,7 +60,7 @@ class ActionService(Injectable):
         return self.report_dal.get_canned_report_names()
 
     def cancel_pipeline_instance(self, pipeline_instance_id):
-        return self.pipeline_dal.cancel_pipeline_instace(pipeline_instance_id)
+        return self.pipeline_dal.cancel_pipeline_instance(pipeline_instance_id)
 
     def cancel_action_instance(self, action_instance_id):
         return self.action_dal.cancel_action_instance(action_instance_id)
