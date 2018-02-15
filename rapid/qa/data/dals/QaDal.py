@@ -178,7 +178,10 @@ class QaDal(GeneralDal):
                 feature_keys.remove(feature.name)
             except:
                 pass
-            feature_mapper[feature.name]['model'] = feature
+            try:
+                feature_mapper[feature.name]['model'] = feature
+            except:
+                pass
 
         for feature in feature_keys:
             feature_model = QaFeature(name=feature, product_id=product_id)
