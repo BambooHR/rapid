@@ -183,7 +183,10 @@ class QaDal(GeneralDal):
         for feature in feature_keys:
             feature_model = QaFeature(name=feature, product_id=product_id)
             session.add(feature_model)
-            feature_mapper[feature]['model'] = feature_model
+            try:
+                feature_mapper[feature]['model'] = feature_model
+            except:
+                pass
 
         session.flush()
 
@@ -200,7 +203,10 @@ class QaDal(GeneralDal):
         for bp in bp_keys:
             bp_model = QaBehaviorPoint(name=bp, product_id=product_id)
             session.add(bp_model)
-            bp_mapper[bp]['model'] = bp_model
+            try:
+                bp_mapper[bp]['model'] = bp_model
+            except:
+                pass
 
         session.flush()
 
