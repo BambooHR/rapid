@@ -62,8 +62,9 @@ class BaseModel(object):
         relationships = self.__relationships__()
         fields = [x for x in dir(self) if not x.startswith('_') and x != 'metadata']
         if len(fields) > 1:
-            self._serialize_fields(serialized, fields[:len(fields)/2], previous_relationship, allowed_children, relationships)
-            self._serialize_fields(serialized, fields[len(fields)/2:], previous_relationship, allowed_children, relationships)
+            middle = int(len(fields)/2)
+            self._serialize_fields(serialized, fields[:middle], previous_relationship, allowed_children, relationships)
+            self._serialize_fields(serialized, fields[middle:], previous_relationship, allowed_children, relationships)
         else:
             self._serialize_fields(serialized, fields, previous_relationship, allowed_children, relationships)
         return serialized
