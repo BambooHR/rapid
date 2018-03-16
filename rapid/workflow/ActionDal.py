@@ -89,8 +89,9 @@ class ActionDal(GeneralDal, Injectable):
         :rtype:
         """
         action_alias = aliased(ActionInstance)
-        inner_query = exists().where(action_alias.status_id == StatusConstants.READY) \
+        inner_query = exists().where(action_alias.status_id <= StatusConstants.READY) \
             .where(action_alias.workflow_instance_id == WorkflowInstance.id) \
+            .where(action_alias.order < ActionInstance.order)\
             .correlate(ActionInstance) \
             .correlate(WorkflowInstance)
         for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
