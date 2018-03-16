@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from .. import db
+from rapid.master.data import db
 
 
 def get_db_session():

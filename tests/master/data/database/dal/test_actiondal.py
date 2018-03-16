@@ -42,7 +42,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_([ActionInstance, PipelineParameters], session.query_args)
+        eq_([ActionInstance, PipelineParameters, ActionInstance, PipelineParameters], session.query_args)
 
     @patch('rapid.workflow.ActionDal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
@@ -74,12 +74,16 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_(4, len(session.filter_args))
+        eq_(8, len(session.filter_args))
 
         filter_1 = session.filter_args[0]
         filter_2 = session.filter_args[1]
         filter_3 = session.filter_args[2]
         filter_4 = session.filter_args[3]
+        filter_5 = session.filter_args[4]
+        filter_6 = session.filter_args[5]
+        filter_7 = session.filter_args[6]
+        filter_8 = session.filter_args[7]
 
         eq_(ActionInstance.__table__.columns['status_id'], filter_1.left)
         eq_(StatusConstants.READY, filter_1.right.value)

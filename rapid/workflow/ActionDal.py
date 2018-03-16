@@ -17,8 +17,8 @@
 import datetime
 
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.expression import asc
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.sql.expression import asc, exists
 
 from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.StoreService import StoreService
@@ -53,35 +53,94 @@ class ActionDal(GeneralDal, Injectable):
         self.event_service = event_service
         self.flask_app = flask_app
 
+    def _get_ready_work_requests(self, session, work_requests, results):
+        """
+        :param session:
+        :type session: sqlalchemy.orm.scoping.scoped_session
+        :param work_requests:
+        :type work_requests: dict
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+                .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
+                .filter(ActionInstance.status_id == StatusConstants.READY) \
+                .filter(ActionInstance.manual == 0) \
+                .filter(ActionInstance.pipeline_instance_id == PipelineInstance.id) \
+                .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
+                .order_by(PipelineInstance.priority.desc(),
+                          PipelineInstance.created_date.asc(),
+                          PipelineInstance.id.asc(),
+                          ActionInstance.order.asc(),
+                          ActionInstance.slice.asc()).all():
+            self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
+
+    def _get_stalled_work_requests(self, session, work_requests, results):
+        """
+        :param session:
+        :type session:
+        :param work_requests:
+        :type work_requests: dict
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        action_alias = aliased(ActionInstance)
+        inner_query = exists().where(action_alias.status_id == StatusConstants.READY) \
+            .where(action_alias.workflow_instance_id == WorkflowInstance.id) \
+            .correlate(ActionInstance) \
+            .correlate(WorkflowInstance)
+        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+                .join(PipelineInstance, PipelineInstance.id == ActionInstance.pipeline_instance_id) \
+                .join(WorkflowInstance, WorkflowInstance.id == ActionInstance.workflow_instance_id) \
+                .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
+                .filter(ActionInstance.status_id == StatusConstants.NEW) \
+                .filter(ActionInstance.manual == 0) \
+                .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
+                .filter(~inner_query) \
+                .order_by(PipelineInstance.priority.desc(),
+                          PipelineInstance.created_date.asc(),
+                          PipelineInstance.id.asc(),
+                          ActionInstance.order.asc(),
+                          ActionInstance.slice.asc()).all():
+            self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
+
+    def configure_work_request(self, action_instance, pipeline_parameters, work_requests, results):
+        """
+        :param action_instance:
+        :type action_instance: ActionInstance
+        :param pipeline_parameters:
+        :type pipeline_parameters: PipelineParameters
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        work_request = None
+        if action_instance.id not in work_requests:
+            work_request = WorkRequest(action_instance.serialize())
+            work_request.action_instance_id = action_instance.id
+            work_request.pipeline_instance_id = action_instance.pipeline_instance_id
+            work_request.workflow_instance_id = action_instance.workflow_instance_id
+            work_request.slice = action_instance.slice
+            results.append(work_request)
+            work_requests[action_instance.id] = work_request
+        else:
+            work_request = work_requests[action_instance.id]
+
+        if pipeline_parameters:
+            work_request.environment[pipeline_parameters.parameter] = pipeline_parameters.value
+
     def get_workable_work_requests(self):
         results = []
         for session in get_db_session():
             work_requests = {}
-            for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
-                    .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
-                    .filter(ActionInstance.status_id == StatusConstants.READY) \
-                    .filter(ActionInstance.manual == 0) \
-                    .filter(ActionInstance.pipeline_instance_id == PipelineInstance.id) \
-                    .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
-                    .order_by(PipelineInstance.priority.desc(),
-                              PipelineInstance.created_date.asc(),
-                              PipelineInstance.id.asc(),
-                              ActionInstance.order.asc(),
-                              ActionInstance.slice.asc()).all():
-                work_request = None
-                if action_instance.id not in work_requests:
-                    work_request = WorkRequest(action_instance.serialize())
-                    work_request.action_instance_id = action_instance.id
-                    work_request.pipeline_instance_id = action_instance.pipeline_instance_id
-                    work_request.workflow_instance_id = action_instance.workflow_instance_id
-                    work_request.slice = action_instance.slice
-                    results.append(work_request)
-                    work_requests[action_instance.id] = work_request
-                else:
-                    work_request = work_requests[action_instance.id]
+            self._get_ready_work_requests(session, work_requests, results)
+            self._get_stalled_work_requests(session, work_requests, results)
 
-                if pipeline_parameters:
-                    work_request.environment[pipeline_parameters.parameter] = pipeline_parameters.value
         return results
 
     def get_verify_working(self, time_difference):
@@ -225,8 +284,8 @@ class ActionDal(GeneralDal, Injectable):
                 return
             pipeline_instance = session.query(PipelineInstance).options(
                     joinedload(PipelineInstance.stage_instances)
-                        .joinedload(StageInstance.workflow_instances)
-                        .joinedload(WorkflowInstance.action_instances)
+                    .joinedload(StageInstance.workflow_instances)
+                    .joinedload(WorkflowInstance.action_instances)
             ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
             workflow_engine.complete_an_action(action_instance.id, status.id)
