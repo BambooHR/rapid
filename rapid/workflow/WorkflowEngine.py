@@ -142,7 +142,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
         stage_instance = self._get_stage(stage_instance_id)
         self._mark_stage_instance_complete(stage_instance, status_id)
 
-        if self._reconciled_stages(self.pipeline, stage_instance):
+        if self._reconciled_stages(self._load_pipeline(), stage_instance):
             all_complete, all_passed, failed_type = self._check_and_verify_statuses(self._get_stages(self.pipeline))
 
             if all_complete:
@@ -161,6 +161,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 elif next:
                     new_instance = stage.convert_to_instance()
                     new_instance.start_date = datetime.datetime.utcnow()
+                    new_instance.status_id = StatusConstants.INPROGRESS
                     new_instance.pipeline_instance_id = pipeline_instance.id
                     for workflow in stage.workflows:
                         w_instance = workflow.convert_to_instance()
