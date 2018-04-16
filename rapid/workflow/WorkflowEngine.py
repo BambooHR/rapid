@@ -172,6 +172,19 @@ class InstanceWorkflowEngine(WorkflowEngine):
                     self.instances_to_add.append(new_instance)
                     break
             return False
+        elif StatusConstants.SUCCESS == stage_instance.status_id:
+            found = False
+            for s_instance in self._get_stages(pipeline_instance):
+                if found:
+                    s_instance.start_date = datetime.datetime.utcnow()
+                    s_instance.status_id = StatusConstants.INPROGRESS
+
+                    for w_instance in s_instance.workflows:
+                        w_instance.start_date = datetime.datetime.utcnow()
+                    break
+                if s_instance.id == stage_instance.id:
+                    found = True
+
         return True
 
     def _create_action_instances(self, pipeline_instance, w_instance, workflow):

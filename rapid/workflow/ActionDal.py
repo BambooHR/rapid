@@ -213,7 +213,7 @@ class ActionDal(GeneralDal, Injectable):
                 stage_instance.start_date = now if first_stage else None
                 stage_instance.end_date = None
                 for workflow_instance in stage_instance.workflow_instances:
-                    workflow_instance.status_id = StatusConstants.READY
+                    workflow_instance.status_id = StatusConstants.INPROGRESS
                     workflow_instance.start_date = now if first_stage else None
                     workflow_instance.end_date = None
                 first_stage = False
