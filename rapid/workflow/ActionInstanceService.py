@@ -22,6 +22,10 @@ class ActionInstanceService(Injectable):
     __injectables__ = {'action_dal': ActionDal}
 
     def __init__(self, action_dal):
+        """
+        :param action_dal:
+        :type action_dal: ActionDal
+        """
         self.action_dal = action_dal
 
     def finish_action_instance(self, id, post_data):

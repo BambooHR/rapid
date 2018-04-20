@@ -310,6 +310,82 @@ class TestInstanceWorkflowEngine(TestCase):
         eq_('test2', workflow_instance.action_instances[4].cmd)
         eq_(StatusConstants.NEW, workflow_instance.action_instances[4].status_id)
 
+    def test_reset_pipeline_instance_status_set_to_inprogress(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1', '7:1-1-1-1,1,4,1-1-1-1'])
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        workflow_engine.reset_pipeline()
+        self.assertEqual(StatusConstants.INPROGRESS, pipeline_instance.status_id)
+
+    def test_reset_pipeline_instance_first_action_instance_and_orders_are_set_to_inprogress(self):
+        pipeline_instance = self._build_pipeline_instance(['2:1-2,1'])
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        workflow_engine.reset_pipeline()
+        self.assertEqual(StatusConstants.READY, pipeline_instance.stage_instances[0].workflow_instances[0].action_instances[0].status_id)
+        self.assertEqual(StatusConstants.READY, pipeline_instance.stage_instances[0].workflow_instances[1].action_instances[0].status_id)
+        self.assertEqual(StatusConstants.READY, pipeline_instance.stage_instances[0].workflow_instances[1].action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, pipeline_instance.stage_instances[0].workflow_instances[1].action_instances[2].status_id)
+
+    def test_reset_pipeline_instance_sets_appropriate_dates(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1', '1:1'])
+        pipeline_instance.end_date = datetime.datetime.utcnow()
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        workflow_engine.reset_pipeline()
+        self.assertTrue(pipeline_instance.start_date is not None, "Start date was not set.")
+        self.assertTrue(pipeline_instance.end_date is None, 'End date was not reset.')
+
+    def test_reset_action_instance(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1', '2:1-2,1'], True)
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        action_instance = workflow_engine.get_action_instance_by_id(3)
+        workflow_engine.reset_action(action_instance)
+
+        self.assertEquals(None, pipeline_instance.end_date)
+        self.assertEquals(None, pipeline_instance.stage_instances[1].end_date)
+        self.assertEquals(None, pipeline_instance.stage_instances[1].workflow_instances[1].end_date)
+        self.assertEquals(None, action_instance.end_date)
+        self.assertEquals(StatusConstants.READY, action_instance.status_id)
+
+    def test_complete_an_action_instance_sets_dates_and_status(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1'])
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        action_instance = workflow_engine.get_action_instance_by_id(1)
+        workflow_engine.complete_an_action(action_instance.id, StatusConstants.CANCELED)
+
+        self.assertEqual(StatusConstants.CANCELED, action_instance.status_id)
+        self.assertEqual(StatusConstants.CANCELED, pipeline_instance.status_id)
+        self.assertEqual(StatusConstants.CANCELED, pipeline_instance.stage_instances[0].status_id)
+        self.assertEqual(StatusConstants.CANCELED, pipeline_instance.stage_instances[0].workflow_instances[0].status_id)
+
+    def test_complete_an_action_instance_starts_next(self):
+        pipeline_instance = self._build_pipeline_instance(['1:2'])
+        pipeline_instance.status_id = StatusConstants.INPROGRESS
+        
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        action_instance = workflow_engine.get_action_instance_by_id(2)
+        workflow_engine.complete_an_action(1, StatusConstants.SUCCESS)
+
+        self._print_pipeline_instance(pipeline_instance)
+
+        self.assertEqual(StatusConstants.READY, action_instance.status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, pipeline_instance.status_id)
+        self.assertEqual(StatusConstants.SUCCESS, pipeline_instance.stage_instances[0].workflow_instances[0].action_instances[0].status_id)
+        self.assertEqual(StatusConstants.READY, pipeline_instance.stage_instances[0].workflow_instances[0].action_instances[1].status_id)
+
+    @staticmethod
+    def _print_pipeline_instance(pipeline_instance):
+        print("pipeline: {}, Status: {}, Start Date: {}, End Date:{}".format(pipeline_instance.id, pipeline_instance.status_id, pipeline_instance.start_date, pipeline_instance.end_date))
+        for stage_instance in pipeline_instance.stage_instances:
+            print("stage: {}, Status: {}, Start Date: {}, End Date: {}".format(stage_instance.id, stage_instance.status_id, stage_instance.start_date, stage_instance.end_date))
+            for workflow_instance in stage_instance.workflow_instances:
+                print("  workflow: {}, Status: {}, Start Date: {}, End Date: {}".format(workflow_instance.id, workflow_instance.status_id, workflow_instance.start_date, workflow_instance.end_date))
+                for action_instance in workflow_instance.action_instances:
+                    print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
+
     def _testing_check_verify(self, objects, expected):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_engine.status_cache[StatusConstants.NEW] = Status(id=StatusConstants.NEW, name="Test NEW", type=StatusTypes.SUCCESS)
@@ -333,3 +409,82 @@ class TestInstanceWorkflowEngine(TestCase):
         pipeline_instance = PipelineInstance(id=1, stages=[stage_instance, stage_instance])
 
         return action_instance, workflow_instance, stage_instance, pipeline_instance
+
+    def _build_pipeline_instance(self, actions, completed=False):
+        pipeline_instance = PipelineInstance()
+        status_id = StatusConstants.NEW if not completed else StatusConstants.SUCCESS
+
+        if completed:
+            pipeline_instance.created_date = datetime.datetime.utcnow()
+            pipeline_instance.start_date = datetime.datetime.utcnow()
+            pipeline_instance.end_date = datetime.datetime.utcnow()
+            pipeline_instance.status_id = status_id
+
+        stage_instances = {}
+
+        s_idcount = w_idcount = a_idcount = 1
+        pipeline_instance.pipeline = Mock(stages=[])
+
+        for action in actions:
+            sp = action.split(':')
+
+            stage_instance = StageInstance(id=s_idcount, status_id=status_id)
+            stage_instances[s_idcount] = stage_instance
+
+            if completed:
+                stage_instance.created_date = datetime.datetime.utcnow()
+                stage_instance.start_date = datetime.datetime.utcnow()
+                stage_instance.end_date = datetime.datetime.utcnow()
+
+            w_number = int(sp[0])
+            a_sp = sp[1].split('-')
+            for workflow_id in range(0, w_number):
+                workflow_instance = WorkflowInstance(id=w_idcount, stage_instance_id=stage_instance.id, status_id=status_id)
+
+                if completed:
+                    workflow_instance.created_date = datetime.datetime.utcnow()
+                    workflow_instance.start_date = datetime.datetime.utcnow()
+                    workflow_instance.end_date = datetime.datetime.utcnow()
+
+                try:
+                    order = 0
+                    for action_count in a_sp[workflow_id].split(','):
+                        a_count = int(action_count)
+                        for num in range(0, a_count):
+                            action_instance = ActionInstance(id=a_idcount, order=order, slice="{}/{}".format(num+1, a_count), workflow_instance_id=workflow_instance.id, status_id=status_id)
+                            if completed:
+                                action_instance.created_date = datetime.datetime.utcnow()
+                                action_instance.start_date = datetime.datetime.utcnow()
+                                action_instance.end_date = datetime.datetime.utcnow()
+
+                            workflow_instance.action_instances.append(action_instance)
+                            a_idcount += 1
+                        order += 1
+                except:
+                    action_instance = ActionInstance(id=a_idcount, order=0, workflow_instance_id=workflow_instance.id, status_id=status_id)
+                    if completed:
+                        action_instance.created_date = datetime.datetime.utcnow()
+                        action_instance.start_date = datetime.datetime.utcnow()
+                        action_instance.end_date = datetime.datetime.utcnow()
+
+                    workflow_instance.action_instances.append()
+                w_idcount += 1
+                stage_instance.workflow_instances.append(workflow_instance)
+            pipeline_instance.stage_instances.append(stage_instance)
+            pipeline_instance.pipeline.stages.append(stage_instance)
+
+            s_idcount += 1
+        return pipeline_instance
+
+    @staticmethod
+    def _get_mocked_dal():
+        mocked_dal = Mock()
+
+        def mocked_get(id):
+            return {9: Status(id=9, name="UNSTABLE", display_name='Unstable', type=StatusTypes.FAILED),
+                    8: Status(id=8, name="CANCELED", display_name='Canceled', type=StatusTypes.FAILED),
+                    4: Status(id=4, name="SUCCESS", display_name='Success', type=StatusTypes.SUCCESS),
+                    5: Status(id=5, name="FAILED", display_name='Failed', type=StatusTypes.FAILED),
+                    2: Status(id=2, name="READY", display_name='Ready', type=StatusTypes.SUCCESS)}[id]
+        mocked_dal.get_status_by_id = mocked_get
+        return mocked_dal

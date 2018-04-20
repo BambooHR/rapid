@@ -109,6 +109,6 @@ class Queue(Injectable):
                                                                                        self.flask_app.rapid_config.verify_certs) is False
 
                 if reset_action_instance and not StoreService.is_completing(action_instance['id']):
-                    if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
+                    if self.action_instance_service.reset_action(action_instance['id'], check_status=True):
                         logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance.id, action_instance['assigned_to']))
 

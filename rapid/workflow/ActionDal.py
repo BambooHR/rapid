@@ -37,21 +37,23 @@ from rapid.workflow.EventService import EventService
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None, 'status_dal': StatusDal}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
         :type  store_service: StoreService
         :type event_service: EventService
+        :type status_dal: StatusDal
         :return:
         """
         self.qa_module = qa_module
         self.store_service = store_service
         self.event_service = event_service
         self.flask_app = flask_app
+        self.status_dal = status_dal
 
     def _get_ready_work_requests(self, session, work_requests, results):
         """
@@ -200,27 +202,26 @@ class ActionDal(GeneralDal, Injectable):
 
     def reset_pipeline_instance(self, pipeline_instance_id):
         for session in get_db_session():
-            now = datetime.datetime.utcnow()
-            pipeline_instance = session.query(PipelineInstance).get(pipeline_instance_id)
-            pipeline_instance.status_id = StatusConstants.INPROGRESS
-            pipeline_instance.start_date = now
-            pipeline_instance.end_date = None
+            pipeline_instance = session.query(PipelineInstance)\
+                                              .options(joinedload('stage_instances'))\
+                                              .options(joinedload('stage_instances.workflow_instances'))\
+                                              .options(joinedload('stage_instances.workflow_instances.action_instances')).filter(PipelineInstance.id == pipeline_instance_id).first()
 
-            first_stage = True
-            for stage_instance in session.query(StageInstance).filter(StageInstance.pipeline_instance_id == pipeline_instance_id).all():
-                stage_instance.status_id = StatusConstants.READY
-                stage_instance.created_date = now
-                stage_instance.start_date = now if first_stage else None
-                stage_instance.end_date = None
-                for workflow_instance in stage_instance.workflow_instances:
-                    workflow_instance.status_id = StatusConstants.INPROGRESS
-                    workflow_instance.start_date = now if first_stage else None
-                    workflow_instance.end_date = None
-                first_stage = False
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
+            instance_workflow_engine.reset_pipeline()
+            self._print_pipeline_instance(pipeline_instance)
+            session.commit()
+        return True
 
-            return self.reset_action_instance(session.query(ActionInstance)\
-                                       .filter(ActionInstance.pipeline_instance_id == pipeline_instance_id)\
-                                       .order_by(asc(ActionInstance.order)).first().id, True)
+    @staticmethod
+    def _print_pipeline_instance(pipeline_instance):
+        print("pipeline: {}, Status: {}, Start Date: {}, End Date:{}".format(pipeline_instance.id, pipeline_instance.status_id, pipeline_instance.start_date, pipeline_instance.end_date))
+        for stage_instance in pipeline_instance.stage_instances:
+            print("stage: {}, Status: {}, Start Date: {}, End Date: {}".format(stage_instance.id, stage_instance.status_id, stage_instance.start_date, stage_instance.end_date))
+            for workflow_instance in stage_instance.workflow_instances:
+                print("  workflow: {}, Status: {}, Start Date: {}, End Date: {}".format(workflow_instance.id, workflow_instance.status_id, workflow_instance.start_date, workflow_instance.end_date))
+                for action_instance in workflow_instance.action_instances:
+                    print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
 
     def reset_action_instance(self, id, complete_reset=False, check_status=False):
         for session in get_db_session():
@@ -229,37 +230,12 @@ class ActionDal(GeneralDal, Injectable):
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
 
-            action_instance.assigned_to = None
-            action_instance.status_id = StatusConstants.NEW if complete_reset else StatusConstants.READY
-            action_instance.created_date = now
-            action_instance.start_date = None
-            action_instance.end_date = None
-
-            action_instance.pipeline_instance.status_id = StatusConstants.INPROGRESS
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance)
+            instance_workflow_engine.reset_action(action_instance)
 
             if self.qa_module is not None:
                 self.qa_module.reset_results(action_instance.id, session)
-
-            if complete_reset:
-                current_order = action_instance.order
-                first = True
-                for instance in action_instance.workflow_instance.action_instances:
-                    if instance.order < current_order or instance.id == id or instance.order == current_order:
-                        instance.status_id = StatusConstants.NEW if not first else StatusConstants.READY
-                        instance.start_date = None
-                        instance.assigned_to = None
-                        instance.end_date = None
-
-                        if first:
-                            first = False
-                    elif instance.order == current_order:
-                        continue
-                    else:
-                        break
-
-                action_instance.workflow_instance.status_id = StatusConstants.INPROGRESS
-                action_instance.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS
-                action_instance.pipeline_instance.status_id = StatusConstants.INPROGRESS
+            
             session.commit()
         return True
 

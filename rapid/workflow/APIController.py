@@ -57,7 +57,7 @@ class APIRouter(Injectable):
         """
 
         :param action_instance_service:
-        :type action_instance_service:
+        :type action_instance_service: ActionInstanceService
         :param queue_service:
         :type queue_service:
         :param qa_module:
@@ -97,6 +97,7 @@ class APIRouter(Injectable):
 
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
         flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
+        flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/print", "print_pipeline_instance", api_key_required(self.print_pipeline_instance), methods=['GET'])
 
         self.app = flask_app
 
@@ -347,6 +348,19 @@ class APIRouter(Injectable):
     @json_response()
     def action_instance_clear_completing(self, action_instance_id):
         return {"status": StoreService.clear_completing(action_instance_id)}
+
+    @json_response()
+    def print_pipeline_instance(self, pipeline_instance_id):
+        pipeline_instance = self.workflow_service.get_pipeline_instance_by_id(pipeline_instance_id)
+        response = ""
+        response = "pipeline: {}, Status: {}, Start Date: {}, End Date:{}\n".format(pipeline_instance.id, pipeline_instance.status_id, pipeline_instance.start_date, pipeline_instance.end_date)
+        for stage_instance in pipeline_instance.stage_instances:
+            response += "stage: {}, Status: {}, Start Date: {}, End Date: {}\n".format(stage_instance.id, stage_instance.status_id, stage_instance.start_date, stage_instance.end_date)
+            for workflow_instance in stage_instance.workflow_instances:
+                response += "  workflow: {}, Status: {}, Start Date: {}, End Date: {}\n".format(workflow_instance.id, workflow_instance.status_id, workflow_instance.start_date, workflow_instance.end_date)
+                for action_instance in workflow_instance.action_instances:
+                    response += "    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}\n".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice)
+        return {"message": response}
 
     def _explode_class(self, clazz):
         columns = {}
