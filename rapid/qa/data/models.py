@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import UniqueConstraint
 
@@ -43,6 +43,7 @@ class QaTestHistory(BaseModel, db.Model):
     action_instance_id = db.Column(db.Integer, db.ForeignKey('action_instances.id'), nullable=False, index=True)
     duration = db.Column(db.Integer)
     status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), index=True)
+    date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow)
 
     test = relationship('QaTest')
     pipeline_instance = relationship('PipelineInstance')
