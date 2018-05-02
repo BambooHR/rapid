@@ -236,28 +236,15 @@ class Executor(object):
         if results_files:
             # Wire in the registered parsers.
             results = {}
-            from ..parsers import parse_file, get_parser
+            from ..parsers import parse_file, FileWrapper
 
             for file_glob in results_files:
-                glob_tmp = file_glob
-                selected_parser = None
+                wrapper = FileWrapper(self.workspace, file_glob)
 
-                if '#' in file_glob:
-                    sp = file_glob.split('#')
-                    glob_tmp = sp[1]
-
-                    identifier = sp[0]
-                    failures_only = False
-                    try:
-                        failures_only = sp[0].split('-')[1] == 'failures'
-                        identifier = sp[0].split('-')[0]
-                    except:
-                        pass
-
-                    selected_parser = get_parser(identifier, self.workspace, failures_only)
+                selected_parser = wrapper.parser
 
                 file_was_read = False
-                for results_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
+                for results_file in glob.glob("{}/{}".format(workspace, wrapper.file_name)):
                     file_was_read = True
                     with open(results_file) as glob_file:
                         try:

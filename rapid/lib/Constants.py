@@ -21,6 +21,9 @@ class Constants(object):
     REQUIRED_WITH_DIR = "__RAPIDCI_REQUIRED_WD__:"
     RESULTS = "__RAPIDCI_RESULTS__:"
     STATUS_OVERRIDE = "__RAPIDCI_STATUSES__:"
+    STATUS_FAILED = 'FAILED'
+    STATUS_SUCCESS = 'SUCCESS'
+    STATUS_SKIPPED = 'SKIPPED'
     PARAMETERS = "__RAPIDCI_PARAMETERS__:"
     STATS = "__RAPIDCI_STATS__:"
     THRESHOLD = "__RAPIDCI_FAILURE_THRESHOLD__:"
@@ -28,6 +31,8 @@ class Constants(object):
     RESULTS_SUMMARY = "__summary__"
     RESULTS_TYPE = "__results_type__"
     API_PREFIX = "/api/"
+    FAILURES = 'failures'
+    FAILURES_COUNT = 'failures_count'
 
     @staticmethod
     def get_api_url(uri):

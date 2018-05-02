@@ -103,7 +103,7 @@ class TestExecutor(TestCase):
                 'status': 'SUCCESS',
                 'time': '0'
             },
-            '__summary__': {'FAILED': 1, 'SKIPPED': 1, 'SUCCESS': 1}}, executor._get_results('/', [file_name]))
+            '__summary__': {'FAILED': 1, 'SKIPPED': 1, 'SUCCESS': 1, Constants.FAILURES_COUNT: False}}, executor._get_results('/', [file_name]))
 
     def test_get_environment(self):
         executor = Executor(WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2, 'environment': {'Something': 'More'}}), None)

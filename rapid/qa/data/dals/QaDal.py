@@ -237,6 +237,13 @@ class QaDal(GeneralDal):
 
         return {"message": "Success!"}
 
+    def _get_summary_results(self, results):
+        try:
+            return results[Constants.RESULTS_SUMMARY]
+        except:
+            pass
+        return None
+
     def _save_summary(self, action_instance, results, session):
         try:
             if Constants.RESULTS_SUMMARY in results:
@@ -260,6 +267,12 @@ class QaDal(GeneralDal):
     def _save_results(self, action_instance, session, post_data):
         if 'results' in post_data:
             try:
+                failures_count = False
+                try:
+                    failures_count = self._get_summary_results(post_data['results'])[Constants.FAILURES_COUNT]
+                except:
+                    pass
+
                 results = self._save_summary(action_instance, post_data['results'], session)
 
                 should_create = dict(results)
@@ -293,18 +306,19 @@ class QaDal(GeneralDal):
                         else:
                             status_id = status_cache[value['status']].id
 
-                    qaTestHistory = QaTestHistory(test_id=test_cache[test].id,
-                                                  pipeline_instance_id=action_instance.pipeline_instance_id,
-                                                  action_instance_id=action_instance.id,
-                                                  status_id=status_id,
-                                                  duration=value['time'] if 'time' in value and value['time'] else 0)
+                    if not failures_count or status_id == StatusConstants.FAILED:
+                        qaTestHistory = QaTestHistory(test_id=test_cache[test].id,
+                                                      pipeline_instance_id=action_instance.pipeline_instance_id,
+                                                      action_instance_id=action_instance.id,
+                                                      status_id=status_id,
+                                                      duration=value['time'] if 'time' in value and value['time'] else 0)
 
-                    session.add(qaTestHistory)
+                        session.add(qaTestHistory)
 
-                    session.flush()
+                        session.flush()
 
-                    if 'stacktrace' in value:
-                        session.add(Stacktrace(qa_test_history_id=qaTestHistory.id, stacktrace=value['stacktrace']))
+                        if 'stacktrace' in value:
+                            session.add(Stacktrace(qa_test_history_id=qaTestHistory.id, stacktrace=value['stacktrace']))
 
                 session.commit()
             except:
