@@ -16,6 +16,7 @@
 
 from xml.dom.minidom import parseString
 from AbstractParser import AbstractParser
+from rapid.lib.Constants import Constants
 from . import register
 
 
@@ -33,13 +34,14 @@ class XUnitParser(AbstractParser):
         """
         results = {}
         dom = parseString("".join(lines))
-        summary = {'FAILED': 0, 'SUCCESS': 0, 'SKIPPED': 0}
+        summary = self.prepare_summary()
 
         for testsuite in dom.getElementsByTagName('testsuite'):
             for node in testsuite.childNodes:
                 if 'testcase' != node.nodeName:
                     continue
                 testcase = node
+                name = ''
                 try:
                     class_name = ''
                     for class_attr in ['classname', 'class']:
@@ -56,7 +58,7 @@ class XUnitParser(AbstractParser):
                     name = name.replace(self.workspace, '')
 
                 test_result = {
-                    'status': 'SUCCESS',
+                    'status': Constants.STATUS_SUCCESS,
                     'time': testcase.getAttribute('time')
                 }
 
@@ -68,7 +70,7 @@ class XUnitParser(AbstractParser):
                     continue
 
                 if failure_tags:
-                    test_result['status'] = "FAILED"
+                    test_result['status'] = Constants.STATUS_FAILED
                     test_result['stacktrace'] = ""
 
                     count = 0
@@ -81,9 +83,9 @@ class XUnitParser(AbstractParser):
                         if length > count:
                             test_result['stacktrace'] += "\n"
 
-                    summary['FAILED'] += 1
+                    summary[Constants.STATUS_FAILED] += 1
                 elif error_tags:
-                    test_result['status'] = "FAILED"
+                    test_result['status'] = Constants.STATUS_FAILED
                     test_result['stacktrace'] = ""
 
                     count = 0
@@ -96,12 +98,12 @@ class XUnitParser(AbstractParser):
                         if length > count:
                             test_result['stacktrace'] += "\n"
 
-                    summary['FAILED'] += 1
+                    summary[Constants.STATUS_FAILED] += 1
                 elif skipped_tags:
-                    test_result['status'] = "SKIPPED"
-                    summary['SKIPPED'] += 1
+                    test_result['status'] = Constants.STATUS_SKIPPED
+                    summary[Constants.STATUS_SKIPPED] += 1
                 else:
-                    summary['SUCCESS'] += 1
+                    summary[Constants.STATUS_SUCCESS] += 1
 
                 results[name] = test_result
 
