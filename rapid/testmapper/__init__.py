@@ -103,7 +103,10 @@ class QaTestFile(object):
         :return: 
         :rtype: 
         """
-        (area, feature, behavior_point) = string.split(':', 2)
+        split_char = ':'
+        if '|' in string:
+            split_char = '|'
+        (area, feature, behavior_point) = string.split(split_char, 2)
         self._current_settings[self.AREA] = area
         self._current_settings[self.FEATURE] = feature
         self._current_settings[self.BP] = behavior_point
