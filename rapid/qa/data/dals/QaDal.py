@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import select, union_all
 from sqlalchemy.sql.functions import func
@@ -328,13 +328,13 @@ class QaDal(GeneralDal):
     def get_qa_testmap_coverage(self, pipeline_instance_id):
         for session in get_db_session():
             query = session.query(QaTestMapping)\
-                           .options(joinedload(QaTestMapping.area))\
                            .options(joinedload(QaTestMapping.feature))\
                            .options(joinedload(QaTestMapping.behavior_point))\
-                           .options(joinedload(QaTestMapping.test))\
-                           .join(QaTestHistory, QaTestHistory.test_id == QaTestMapping.test_id)\
-                           .filter(QaTestHistory.pipeline_instance_id == pipeline_instance_id)
-
+                           .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
+                           .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
+                           .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
+                           .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))\
+                           .join(QaTest, QaTest.id == QaTestMapping.test_id)
             mapping = {}
             objects = []
             for (qaTestMapping) in query.all():

@@ -83,18 +83,18 @@ class QaTestFile(object):
 
     def handle_unit(self, line):
         self._current_settings['level'] = 'unit'
-        self.parse_test_levels(re.split('rapid-unit:?', line)[1].strip())
+        self.parse_test_levels(re.split('\s{1,}rapid-unit:?', line)[1].strip())
 
     def handle_integration(self, line):
         self._current_settings['level'] = 'integration'
-        self.parse_test_levels(re.split('rapid-integration:?', line)[1].strip())
+        self.parse_test_levels(re.split('\s{1,}rapid-integration:?', line)[1].strip())
 
     def handle_selenium(self, line):
         self._current_settings['level'] = 'selenium'
-        self.parse_test_levels(re.split('rapid-selenium:?', line)[1].strip())
+        self.parse_test_levels(re.split('\s{1,}rapid-selenium:?', line)[1].strip())
 
     def handle_tags(self, line):
-        self._current_settings['tags'] = re.split('rapid-tags:?', line)[1].strip().split()
+        self._current_settings['tags'] = re.split('\s{1,}rapid-tags:?', line)[1].strip().split()
 
     def parse_test_levels(self, string):
         """
@@ -169,7 +169,7 @@ class QaTestFile(object):
 
 
 class PythonFile(QaTestFile):
-    _CUSTOM_RE = re.compile('def (test[\S]*)\(.*$')
+    _CUSTOM_RE = re.compile('\s{1,}def (test[\S]*)\(.*$')
 
     @property
     def regex(self):
@@ -180,7 +180,7 @@ class PythonFile(QaTestFile):
 
 
 class PHPFile(QaTestFile):
-    _CUSTOM_RE = re.compile('function (test[\S]*)\(.*$')
+    _CUSTOM_RE = re.compile('\s{1,}function (test[\S]*)\(.*$')
 
     @property
     def regex(self):
@@ -191,7 +191,7 @@ class PHPFile(QaTestFile):
 
 
 class JSFile(QaTestFile):
-    _CUSTOM_RE = re.compile('it\([\'"`]([^\'`"]*)')
+    _CUSTOM_RE = re.compile('\s{1,}it\([\'"`]([^\'`"]*)')
 
     @property
     def regex(self):
