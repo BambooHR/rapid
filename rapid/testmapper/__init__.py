@@ -83,18 +83,18 @@ class QaTestFile(object):
 
     def handle_unit(self, line):
         self._current_settings['level'] = 'unit'
-        self.parse_test_levels(re.split('\s{1,}rapid-unit:?', line)[1].strip())
+        self.parse_test_levels(re.split('rapid-unit:?', line)[1].strip())
 
     def handle_integration(self, line):
         self._current_settings['level'] = 'integration'
-        self.parse_test_levels(re.split('\s{1,}rapid-integration:?', line)[1].strip())
+        self.parse_test_levels(re.split('rapid-integration:?', line)[1].strip())
 
     def handle_selenium(self, line):
         self._current_settings['level'] = 'selenium'
-        self.parse_test_levels(re.split('\s{1,}rapid-selenium:?', line)[1].strip())
+        self.parse_test_levels(re.split('rapid-selenium:?', line)[1].strip())
 
     def handle_tags(self, line):
-        self._current_settings['tags'] = re.split('\s{1,}rapid-tags:?', line)[1].strip().split()
+        self._current_settings['tags'] = re.split('rapid-tags:?', line)[1].strip().split()
 
     def parse_test_levels(self, string):
         """
