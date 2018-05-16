@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import time
 
 try:
     import simplejson as json
@@ -150,6 +151,7 @@ class ClientCommunicator(Communicator):
         headers = {'Content-Type': 'application/json',
                    'X-RAPIDCI-PORT': client_config.port if hasattr(client_config, 'port') else None,
                    'X-RAPIDCI-REGISTER-KEY': client_config.register_api_key if hasattr(client_config, 'register_api_key') else None,
+                   'X-RAPIDCI-TIME': time.time() * 1000,
                    'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else None}
         if hasattr(client_config, 'use_ssl') and client_config.use_ssl:
             headers['X-Is-Ssl'] = 'true'

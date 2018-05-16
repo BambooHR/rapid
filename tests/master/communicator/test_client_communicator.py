@@ -49,12 +49,15 @@ class TestClientCommunicator(TestCase):
         test = {"grains": "one;two", "grain_restrict": False, "hostname": 'bogus'}
         eq_(test, json.loads(ClientCommunicator._get_register_post_data(config)))
 
-    def test_get_register_headers(self):
+    @patch("rapid.client.communicator.ClientCommunicator.time")
+    def test_get_register_headers(self, time):
+        time.time.return_value = 1
         config = MasterConfiguration()
         config.register_api_key = 'Testing!@$%^'
 
         test = {'Content-Type': 'application/json',
                 'X-RAPIDCI-PORT': config.port,
                 'X-RAPIDCI-REGISTER-KEY': config.register_api_key,
+                'X-RAPIDCI-TIME': 1000,
                 'X-RAPIDCI-CLIENT-KEY': config.api_key}
         eq_(test, ClientCommunicator._get_register_headers(config))

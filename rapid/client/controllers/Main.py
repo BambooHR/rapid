@@ -14,6 +14,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import time
+
 try:
     import simplejson as json
 except:
@@ -39,7 +41,9 @@ class Main(BaseController):
     def fire_registration(self):
         r = requests.post('http://rapidci.local/client/register',
                           data=json.dumps({'grains': {'something': 'more'}}),
-                          headers={'content-type': 'application/json', 'X-RapidCI-Port': '8002'},
+                          headers={'content-type': 'application/json',
+                                   'X-RapidCI-Port': '8002',
+                                   'X-RapidCI-Time': time.time() * 1000},
                           verify=self.flask_app.rapid_config.ignore_cert_verify)
         if r.status_code == 200:
             return "Success!"
