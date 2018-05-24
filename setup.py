@@ -32,6 +32,7 @@ execfile('./rapid/lib/Version.py')
 
 requirements = [
     'flask',
+    'flask-sqlalchemy>=2.3.0',
     'requests==2.7.0',
     'futures',
     'jsonpickle',
@@ -87,7 +88,7 @@ setup(
         # for example:
         # $ pip install -e .[dev,test]
         extras_require={
-            'test': ['coverage', 'nose'],
+            'test': ['coverage', 'nose', 'ddt', 'mock', 'MagicMock'],
             'master': ['alembic', 'SQLAlchemy==1.0.6', 'Flask-SQLAlchemy==2.0', 'mysql-python', 'pygithub', 'simpleeval'],
             'client': []
         },
