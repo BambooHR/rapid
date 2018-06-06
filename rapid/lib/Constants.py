@@ -83,3 +83,8 @@ status_type_severity_mapping = {
 
 class EventTypes(Enum):
     RemoteNotification = 1
+
+
+class VcsReleaseStepType(Enum):
+    PRE = 'PRE'
+    POST = 'POST'

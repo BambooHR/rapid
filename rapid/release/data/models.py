@@ -20,6 +20,7 @@ from sqlalchemy.orm import relationship, backref
 
 from rapid.master.data import db
 from rapid.master.data.database.models.base.BaseModel import BaseModel
+from rapid.lib.Constants import VcsReleaseStepType
 
 
 class Release(BaseModel, db.Model):
@@ -67,3 +68,24 @@ class User(BaseModel, db.Model):
     name = db.Column(db.String(150), nullable=False)
     username = db.Column(db.String(150), nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+
+
+class VcsRelease(BaseModel, db.Model):
+    search_filter = db.Column(db.String(500), nullable=False)
+    notification_id = db.Column(db.String(250), nullable=False)
+    vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
+
+    vcs = relationship('Vcs', lazy='subquery', backref='product_release')
+    steps = relationship("VcsReleaseStep", backref='vcs_release')
+
+
+class VcsReleaseStep(BaseModel, db.Model):
+    name = db.Column(db.String(250), nullable=False)
+    custom_id = db.Column(db.String(250), nullable=False)
+    user_required = db.Column(db.Boolean, default=False, nullable=False)
+    sort_order = db.Column(db.Integer, default=0)
+    type = db.Column(db.Enum(*list(map(lambda x: x.name, VcsReleaseStepType))), nullable=False, default='PRE')
+    vcs_release_id = db.Column(db.Integer, db.ForeignKey('vcs_releases.id'), nullable=False, index=True)
+
+
+__all__ = [Release, StepIntegration, Step, StepUser, StepUserComment, StepIntegration, User, VcsRelease, VcsReleaseStep]
