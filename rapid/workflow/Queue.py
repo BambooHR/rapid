@@ -33,6 +33,14 @@ class Queue(Injectable):
     __injectables__ = {'queue_service': QueueService, 'action_instance_service': ActionInstanceService}
 
     def __init__(self, queue_service, action_instance_service, flask_app):
+        """
+        :param queue_service:
+        :type queue_service:
+        :param action_instance_service:
+        :type action_instance_service:ActionInstanceService
+        :param flask_app:
+        :type flask_app:
+        """
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
         self.flask_app = flask_app
@@ -109,6 +117,6 @@ class Queue(Injectable):
                                                                                        self.flask_app.rapid_config.verify_certs) is False
 
                 if reset_action_instance and not StoreService.is_completing(action_instance['id']):
-                    if self.action_instance_service.reset_action(action_instance['id'], check_status=True):
+                    if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
                         logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance.id, action_instance['assigned_to']))
 
