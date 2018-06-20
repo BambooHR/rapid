@@ -74,6 +74,7 @@ class VcsRelease(BaseModel, db.Model):
     search_filter = db.Column(db.String(500), nullable=False)
     notification_id = db.Column(db.String(250), nullable=False)
     vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
+    auto_release = db.Column(db.Boolean, nullable=False, default=False)
 
     vcs = relationship('Vcs', lazy='subquery', backref='product_release')
     steps = relationship("VcsReleaseStep", backref='vcs_release')
