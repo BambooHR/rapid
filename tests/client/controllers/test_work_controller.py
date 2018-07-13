@@ -143,7 +143,7 @@ class TestWorkController(TestCase):
 
         store_service.get_executors = decrease
         work_time = datetime.datetime.now()
-        WorkController._sleep_for_executors(.3, 2)
+        WorkController._sleep_for_executors(.001, 2)
         now_time = datetime.datetime.now()
 
         ok_(400000 > (now_time - work_time).microseconds)

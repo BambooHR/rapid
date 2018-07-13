@@ -16,6 +16,7 @@
 
 import datetime
 
+import time
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql.expression import asc, exists
@@ -253,6 +254,15 @@ class ActionDal(GeneralDal, Injectable):
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
 
+    def _wait_for_parallel_calculations(self, action_instance):
+        is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)
+        if is_calculating:
+            count = 0
+            while count < 5 and is_calculating:
+                time.sleep(.1)
+                is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)
+                count += 1
+
     def _save_status(self, action_instance, session, post_data, allow_save=False):
         if 'status' in post_data:
             status = self.get_status_by_name(post_data['status'], session)
@@ -260,10 +270,13 @@ class ActionDal(GeneralDal, Injectable):
             if action_instance.callback_required and status.type == StatusTypes.SUCCESS and not allow_save:
                 # Allow_save comes from callback_method.
                 return
+
+            self._wait_for_parallel_calculations(action_instance)
+
             pipeline_instance = session.query(PipelineInstance).options(
-                    joinedload(PipelineInstance.stage_instances)
-                    .joinedload(StageInstance.workflow_instances)
-                    .joinedload(WorkflowInstance.action_instances)
+                joinedload(PipelineInstance.stage_instances)
+                .joinedload(StageInstance.workflow_instances)
+                .joinedload(WorkflowInstance.action_instances)
             ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
             workflow_engine.complete_an_action(action_instance.id, status.id)

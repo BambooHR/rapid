@@ -16,6 +16,7 @@
 
 import datetime
 
+from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusTypes, status_type_severity_mapping, StatusConstants
 from rapid.workflow.data.dal.StatusDal import StatusDal
 from rapid.workflow.data.models import Pipeline, PipelineInstance, Stage, StageInstance, Action, \
@@ -114,20 +115,25 @@ class InstanceWorkflowEngine(WorkflowEngine):
         :param status_id:
         :param action_instance_id:
         """
-        action_instance = self._get_action(action_instance_id)
-        self._mark_action_instance_complete(action_instance, status_id)
+        StoreService.set_calculating_workflow(self.pipeline.id)
 
-        action_instances = self._get_actions_by_workflow_id(action_instance.workflow_instance_id)
-        if self._can_continue_workflow(action_instances):
-            if self._activate_next_action_all_complete(action_instances):
-                self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.SUCCESS)
-        else:
-            for instance in action_instances:
-                if instance.status_id == StatusConstants.NEW:
-                    self._mark_action_instance_complete(instance, StatusConstants.CANCELED)
-            status = StatusConstants.FAILED if status_id != StatusConstants.CANCELED else StatusConstants.CANCELED
+        try:
+            action_instance = self._get_action(action_instance_id)
+            self._mark_action_instance_complete(action_instance, status_id)
 
-            self.complete_a_workflow(action_instance.workflow_instance_id, status)
+            action_instances = self._get_actions_by_workflow_id(action_instance.workflow_instance_id)
+            if self._can_continue_workflow(action_instances):
+                if self._activate_next_action_all_complete(action_instances):
+                    self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.SUCCESS)
+            else:
+                for instance in action_instances:
+                    if instance.status_id == StatusConstants.NEW:
+                        self._mark_action_instance_complete(instance, StatusConstants.CANCELED)
+                status = StatusConstants.FAILED if status_id != StatusConstants.CANCELED else StatusConstants.CANCELED
+
+                self.complete_a_workflow(action_instance.workflow_instance_id, status)
+        finally:
+            StoreService.clear_calculating_workflow(self.pipeline.id)
 
     def complete_a_workflow(self, workflow_instance_id, status_id):
         workflow_instance = self._get_workflow(workflow_instance_id)

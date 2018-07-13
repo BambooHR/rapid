@@ -17,6 +17,8 @@
 import argparse
 import logging
 
+from ConfigurationGenerator import ConfigurationGenerator
+
 parser = argparse.ArgumentParser(description='Rapid Framework client main control')
 parser.add_argument('-f', '--config', dest='config_file', help="config file path")
 parser.add_argument('-p', '--port', dest='port', help='Port for the master to listen on')
@@ -28,6 +30,7 @@ parser.add_argument('-q', '--qa_dir', dest="qa_dir", help="QA Dir")
 parser.add_argument('--downgrade', dest='db_downgrade', help="Downgrade db for alembic")
 parser.add_argument('--create_db', action='store_true', dest='createdb', help="Create initial db")
 parser.add_argument('--create_migration', dest='migrate', help="Create Migration for alembic")
+parser.add_argument('--generate-config', dest='generate_config', help='Generate a default configuration', choices=['master', 'client'])
 args = parser.parse_args()
 
 if args.mode_client:
@@ -38,6 +41,10 @@ elif args.qa_dir:
     from .testmapper import process_directory
     process_directory('', args.qa_dir, True)
     import sys
+    sys.exit(0)
+elif args.generate_config:
+    import sys
+    ConfigurationGenerator().generate(args.generate_config)
     sys.exit(0)
 else:
     from .master import app, configure_application

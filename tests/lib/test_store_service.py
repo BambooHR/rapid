@@ -29,7 +29,7 @@ class TestStoreService(TestCase):
         config = Mock()
         StoreService.set_updating(config)
 
-        eq_(True, config.rapid_config._rapidci_updating)
+        eq_(True, StoreService.is_updating(config))
 
     @patch("rapid.lib.StoreService.uwsgi")
     def test_set_updating_with_uwsgi(self, uwsgi):
@@ -65,7 +65,7 @@ class TestStoreService(TestCase):
     def test_save_master_key_no_uwsgi(self):
         config = Mock(rapid_config=Mock(_rapidci_master_key=None))
         StoreService.save_master_key(config, "API_KEY")
-        eq_("API_KEY", config.rapid_config._rapidci_master_key)
+        eq_("API_KEY", StoreService.get_master_key(config))
 
     @patch("rapid.lib.StoreService.uwsgi")
     def test_save_master_key_with_uwsgi(self, uwsgi):
@@ -83,3 +83,15 @@ class TestStoreService(TestCase):
     def test_check_pidfile(self, os):
         os.listdir.return_value = ['rapid-11-1111']
         ok_(not StoreService.check_for_pidfile(111), "Pidfile should not be found")
+
+    def test_inmemory_store_for_service(self):
+        StoreService.set_calculating_workflow(12345)
+        StoreService.set_completing(12345)
+        StoreService.set_updating(12345)
+        self.assertTrue(StoreService.is_updating(12345))
+        self.assertTrue(StoreService.is_calculating_workflow(12345))
+        self.assertTrue(StoreService.is_completing(12345))
+        StoreService.clear_calculating_workflow(12345)
+        StoreService.clear_completing(12345)
+        self.assertFalse(StoreService.is_calculating_workflow(12345))
+        self.assertFalse(StoreService.is_completing(12345))
