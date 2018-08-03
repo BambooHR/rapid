@@ -83,7 +83,8 @@ class PipelineDal(GeneralDal, Injectable):
             if vcs is not None:
                 if vcs.pipeline_id is not None:
                     return self.create_pipeline_instance(vcs.pipeline_id, json_data, vcs_id=vcs.id)
-                raise VcsNotFoundException("The repo[{}] did not have a default pipeline defined.".format(repo))
+                if vcs.active:
+                    raise VcsNotFoundException("The repo[{}] did not have a default pipeline defined.".format(repo))
             else:
                 raise VcsNotFoundException("The repo [{}] is not found in the system".format(repo))
 
