@@ -255,7 +255,7 @@ class APIRouter(Injectable):
             limit = int(self._get_args()['limit'])
         except:
             pass
-        return query.limit(limit + 1)
+        return query.limit(limit)
 
     def bulk_create(self):
         result = {}
