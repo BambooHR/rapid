@@ -27,6 +27,7 @@ parser.add_argument('-c', '--client', dest='mode_client', help='Client mode', ac
 parser.add_argument('-l', '--logging', dest='mode_logging', help='Logging mode', action='store_true')
 parser.add_argument('-d', '--log_dir', dest='log_dir', help='Logging directory')
 parser.add_argument('-q', '--qa_dir', dest="qa_dir", help="QA Dir")
+parser.add_argument('-w', '--waitress', dest='waitress', action='store_true', help='Run under waitress')
 parser.add_argument('--downgrade', dest='db_downgrade', help="Downgrade db for alembic")
 parser.add_argument('--create_db', action='store_true', dest='createdb', help="Create initial db")
 parser.add_argument('--create_migration', dest='migrate', help="Create Migration for alembic")
@@ -56,6 +57,7 @@ def setup():
     logger.info("Setting up the application.")
     configure_application(app, args)
 
+
 setup()
 
 
@@ -68,6 +70,12 @@ def main():
         create_migration_script(app, args.migrate)
     elif args.db_downgrade:
         print("Downgraded.")
+    elif args.waitress:
+        try:
+            from waitress import serve
+            serve(app, port=(int(args.port or app.rapid_config.port)))
+        except:
+            print("Failed to start up the server.")
     else:
         app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))
 
