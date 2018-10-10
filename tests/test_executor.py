@@ -14,6 +14,8 @@
  limitations under the License.
 """
 import os
+import tempfile
+
 from mock.mock import Mock, patch
 from nose.tools import eq_
 from unittest import TestCase
@@ -159,7 +161,12 @@ class TestExecutor(TestCase):
         mock = Mock()
         executor = Executor(mock, "http", logger=Mock())
 
-        eq_({'analyze_tests': None, 'results_files': [], 'work_request': mock, 'parameter_files': [], 'master_uri': 'http', 'thread_id': None, 'read_pid': None, 'status_overrides': {}, 'workspace': '/tmp/rapidci/workspace', 'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
+        eq_({'analyze_tests': None, 'results_files': [],
+             'work_request': mock, 'parameter_files': [],
+             'master_uri': 'http', 'thread_id': None,
+             'read_pid': None, 'status_overrides': {},
+             'workspace': os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'),
+             'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
 
     def test_get_status_overrides(self):
         line = "#{}2:SUCCESS,3:FAILED".format(Constants.STATUS_OVERRIDE)

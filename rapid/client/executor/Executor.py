@@ -19,6 +19,7 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 import threading
 
 from rapid import testmapper
@@ -37,7 +38,7 @@ except:
 
 
 class Executor(object):
-    def __init__(self, work_request, master_uri, logger=None, workspace='/tmp/rapidci/workspace', quarantine=None, verify_certs=True, rapid_config=None):
+    def __init__(self, work_request, master_uri, logger=None, workspace=None, quarantine=None, verify_certs=True, rapid_config=None):
         """
 
         :param work_request:
@@ -55,7 +56,7 @@ class Executor(object):
         self.read_pid = None
         self.work_request = work_request
         self.child_process = None
-        self.workspace = workspace
+        self.workspace = workspace if workspace is not None else os.path.join(tempfile.gettempdir(), 'rapid', 'workspace')
         self.master_uri = master_uri
         self.reading_thread = None
         self.logger = logger
@@ -207,7 +208,7 @@ class Executor(object):
         if parameter_files:
             parameters = {}
             for glob_tmp in parameter_files:
-                for parameter_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
+                for parameter_file in glob.glob(os.path.join(workspace, glob_tmp)):
                     with open(parameter_file) as glob_file:
                         lines = glob_file.readlines()
                         parameters.update(Executor._convert_to_dict(lines))
@@ -220,7 +221,7 @@ class Executor(object):
         if stats_files:
             stats = {}
             for glob_tmp in stats_files:
-                for stats_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
+                for stats_file in glob.glob(os.path.join(workspace, glob_tmp)):
                     with open(stats_file) as glob_file:
                         lines = glob_file.readlines()
                         stats.update(Executor._convert_to_dict(lines))

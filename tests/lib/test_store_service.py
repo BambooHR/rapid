@@ -95,3 +95,36 @@ class TestStoreService(TestCase):
         StoreService.clear_completing(12345)
         self.assertFalse(StoreService.is_calculating_workflow(12345))
         self.assertFalse(StoreService.is_completing(12345))
+
+    @patch('rapid.lib.StoreService.os')
+    def test_check_for_pid_file(self, os):
+        os.listdir.return_value = ['rapid-12345.txt']
+        self.assertEqual('rapid-12345.txt', StoreService.check_for_pidfile('12345'))
+
+    @patch('rapid.lib.StoreService.tempfile')
+    @patch('rapid.lib.StoreService.os')
+    def test_get_executors_with_nothing_to_see_returns_empty(self, os, tempfile):
+        os.listdir.return_value = []
+        self.assertEqual([], StoreService.get_executors())
+
+    @patch('rapid.lib.StoreService.tempfile')
+    @patch('rapid.lib.StoreService.os')
+    def test_get_executors_returns_what_is_running(self, os, tempfile):
+        os.listdir.return_value = ['rapid-1-12']
+        tempfile.gettempdir.return_value = '/tmp/boo'
+
+        self.assertEqual([{'action_instance_id': '1', 'pid': '12'}], StoreService.get_executors())
+        os.kill.assert_called_with(12, 0)
+
+    @patch('rapid.lib.StoreService.tempfile')
+    @patch('rapid.lib.StoreService.os')
+    def test_get_executors_filters_invalid_running_pids(self, os, tempfile):
+        os.listdir.return_value = ['rapid-1-12']
+        os.path.join.return_value = 'flibertygibet'
+        tempfile.gettempdir.return_value = '/tmp/boo'
+
+        os.kill.side_effect = Exception('foobar')
+
+        self.assertEqual([], StoreService.get_executors())
+        os.kill.assert_called_with(12, 0)
+        os.remove.assert_called_with('flibertygibet')

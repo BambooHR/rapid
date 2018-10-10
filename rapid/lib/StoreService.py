@@ -16,6 +16,8 @@
 
 import os
 import logging
+import tempfile
+
 import jsonpickle
 
 from rapid.lib.InMemoryStore import InMemoryStore
@@ -34,7 +36,8 @@ class StoreService(object):
     def get_executors():
         executors = []
         try:
-            for filename in os.listdir("/tmp"):
+            tmp_dir = tempfile.gettempdir()
+            for filename in os.listdir(tmp_dir):
                 try:
                     sp = filename.split('-')
                     if sp[0] == 'rapid':
@@ -42,7 +45,7 @@ class StoreService(object):
                             os.kill(int(sp[2]), 0)
                             executors.append({'action_instance_id': sp[1], 'pid': sp[2]})
                         except:
-                            os.remove("/tmp/{}".format(filename))
+                            os.remove(os.path.join(tmp_dir, filename))
                 except:
                     pass
         except:
@@ -52,16 +55,20 @@ class StoreService(object):
         return executors
 
     @staticmethod
+    def _get_tempfile_name(executor):
+        return os.path.join(tempfile.gettempdir(), "rapid-{}-{}".format(executor.work_request.action_instance_id, executor.pid))
+
+    @staticmethod
     def clear_executor(executor):
         try:
-            os.remove("/tmp/rapid-{}-{}".format(executor.work_request.action_instance_id, executor.pid))
+            os.remove(StoreService._get_tempfile_name(executor))
         except:
             pass
 
     @staticmethod
     def save_executor(executor):
         try:
-            with open('/tmp/rapid-{}-{}'.format(executor.work_request.action_instance_id, executor.pid), 'w') as file_out:
+            with open(StoreService._get_tempfile_name(executor), 'w') as file_out:
                 file_out.write("{}".format(executor.pid))
         except:
             import traceback
@@ -120,7 +127,7 @@ class StoreService(object):
     def check_for_pidfile(action_instance_id):
         try:
             pid_name = 'rapid-{}'.format(action_instance_id)
-            for filename in os.listdir("/tmp"):
+            for filename in os.listdir(tempfile.gettempdir()):
                 if pid_name in filename:
                     return filename
         except:

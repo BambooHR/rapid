@@ -210,7 +210,6 @@ class ActionDal(GeneralDal, Injectable):
 
             instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
             instance_workflow_engine.reset_pipeline()
-            self._print_pipeline_instance(pipeline_instance)
             session.commit()
         return True
 
