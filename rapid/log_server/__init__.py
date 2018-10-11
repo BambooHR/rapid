@@ -30,11 +30,6 @@ handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 app.logger.setLevel(logging.INFO)
 
-logger = logging.getLogger("rapid")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-
 UWSGI = False
 try:
     import uwsgi
@@ -43,39 +38,7 @@ except ImportError:
     pass
 
 
-def _read_log(grep):
-    try:
-        lines = []
-        string_grep = "__RCI_{}__".format(grep)
-
-        found_output = False
-        process = subprocess.Popen("grep {} {}/*.log".format(string_grep, app.log_dir).split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        gz_files = glob.glob("{}/*.gz".format(app.log_dir))
-        log_files = glob.glob("{}/*.log".format(app.log_dir))
-
-        for check in [{'cmd': 'grep {} {}', 'files': ' '.join(log_files)}, {'cmd': 'zgrep {} {}', 'files': ' '.join(gz_files)}]:
-            cmd = check['cmd'].format(string_grep, check['files'])
-            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            for line in iter(process.stdout.readline, ''):
-                found_output = True
-                yield line
-
-            if found_output:
-                break
-    except Exception as exception:
-        import traceback
-        traceback.print_exc()
-        logger.error(exception)
-        pass
-
-
-def grep_log(grep):
-    return Response(_read_log(grep), content_type='text/plain')
-
-
 def configure_application(flask_app, args):
-    flask_app.add_url_rule("/log/<path:grep>", 'logging', grep_log, methods=['GET'])
-
-    if args.log_dir:
-        flask_app.log_dir = args.log_dir
-
+    from rapid.lib.LogServer import LogServer
+    log_server = LogServer(args.log_dir)
+    log_server.configure_application(flask_app)

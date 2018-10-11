@@ -60,12 +60,18 @@ def internal_error(exception):
     response.content_type = 'application/json'
     return response
 
+
 def configure_application(flask_app, args):
     setup_config_from_file(flask_app, args)
     register_controllers(flask_app)
     if (UWSGI and 1 == uwsgi.worker_id()) or UWSGI is None:
         setup_client_register_thread()
         clean_workspace()
+
+    if args.mode_logging:
+        from rapid.log_server import configure_application as configure_log
+        configure_log(flask_app, args)
+
 
 def clean_workspace():
     try:
