@@ -313,7 +313,11 @@ class Executor(object):
             env[key] = os.environ[key]
 
         if self.work_request.environment:
-            env.update(self.work_request.environment)
+            for key, value in self.work_request.environment.items():
+                try:
+                    env[key.encode('ascii', 'ignore')] = value.encode('ascii', 'ignore')
+                except AttributeError:
+                    pass
         env['PYTHONUNBUFFERED'] = "true"
         env['pipeline_instance_id'] = str(self.work_request.pipeline_instance_id)
         env['action_instance_id'] = str(self.work_request.action_instance_id)
