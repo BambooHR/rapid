@@ -116,7 +116,7 @@ class Executor(object):
                                           get_files_auth=self.rapid_config.get_files_basic_auth)
 
         # Cleanup first
-        self.workspace = "{}/{}".format(self.workspace, self.work_request.action_instance_id)
+        self.workspace = os.path.join(self.workspace, self.work_request.action_instance_id)
         self.clean_workspace()
 
         env = self.get_environment()
@@ -221,10 +221,13 @@ class Executor(object):
         if stats_files:
             stats = {}
             for glob_tmp in stats_files:
-                for stats_file in glob.glob(os.path.join(workspace, glob_tmp)):
-                    with open(stats_file) as glob_file:
-                        lines = glob_file.readlines()
-                        stats.update(Executor._convert_to_dict(lines))
+                try:
+                    for stats_file in glob.glob(os.path.join(workspace, glob_tmp)):
+                        with open(stats_file) as glob_file:
+                            lines = glob_file.readlines()
+                            stats.update(Executor._convert_to_dict(lines))
+                except: # No need to worry about failing stats files.
+                    pass
             return stats
         return None
 
