@@ -116,7 +116,7 @@ class Executor(object):
                                           get_files_auth=self.rapid_config.get_files_basic_auth)
 
         # Cleanup first
-        self.workspace = os.path.join(self.workspace, self.work_request.action_instance_id)
+        self.workspace = os.path.join(self.workspace, str(self.work_request.action_instance_id))
         self.clean_workspace()
 
         env = self.get_environment()
