@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import re
 import time
 
 try:
@@ -185,7 +186,7 @@ class ClientCommunicator(Communicator):
         return request
 
     def get_downloaded_file_name(self, directory, file_name, headers=None):
-        real_file_name = directory + os.path.sep + (file_name.split(os.path.sep)[-1])
+        real_file_name = os.path.join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
         try:
             os.makedirs(os.path.dirname(real_file_name))
         except:
