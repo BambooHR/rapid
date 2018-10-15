@@ -69,8 +69,10 @@ def configure_application(flask_app, args):
         clean_workspace()
 
     if args.mode_logging:
-        from rapid.log_server import configure_application as configure_log
-        configure_log(flask_app, args)
+        from rapid.lib.LogServer import LogServer
+        log_server = LogServer(args.log_dir)
+        log_server.configure_application(flask_app)
+
 
 
 def clean_workspace():

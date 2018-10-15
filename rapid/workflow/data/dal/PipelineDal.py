@@ -90,7 +90,7 @@ class PipelineDal(GeneralDal, Injectable):
 
     def start_pipeline_instances_via_pipeline_id(self, pipeline_id, json_data=None):
         for session in get_db_session():
-            return self.create_pipeline_instance(pipeline_id, json_data)
+            return self.create_pipeline_instance(pipeline_id, json_data, session=session)
 
     def start_pipeline_instance(self, pipeline_id):
         data = request.get_json()
@@ -208,9 +208,16 @@ class PipelineDal(GeneralDal, Injectable):
             .order_by(asc(Workflow.id)) \
             .order_by(asc(Action.order))
 
-    def create_pipeline_instance(self, pipeline_id, json_data=None, vcs_id=None):
-        create_pipeline_instance = None
-        for session in get_db_session():
+    def create_pipeline_instance(self, pipeline_id, json_data=None, vcs_id=None, session=None):
+        if session:
+            return self._process_pipeline(pipeline_id, vcs_id, json_data, session)
+        else:
+            for session in get_db_session():
+                return self._process_pipeline(pipeline_id, vcs_id, json_data, session)
+
+    def _process_pipeline(self, pipeline_id, vcs_id, json_data, session):
+        pipeline = session.query(Pipeline).get(pipeline_id)
+        if pipeline is not None and pipeline.active:
             pipeline_instance = PipelineInstance(pipeline_id=pipeline_id, status_id=StatusConstants.INPROGRESS,
                                                  created_date=datetime.datetime.utcnow(),
                                                  start_date=datetime.datetime.utcnow())
@@ -239,7 +246,13 @@ class PipelineDal(GeneralDal, Injectable):
 
             session.commit()
             create_pipeline_instance = pipeline_instance.serialize()
-        return create_pipeline_instance
+            return create_pipeline_instance
+        else:
+            try:
+                logger.info("Inactive pipeline: {}".format(pipeline.name))
+            except AttributeError:
+                pass
+            return {"message": "Invalid Pipeline, or inactive pipeline"}
 
     def cancel_pipeline_instance(self, pipeline_instance_id):
         for session in get_db_session():

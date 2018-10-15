@@ -305,7 +305,11 @@ class Executor(object):
 
     @staticmethod
     def _log(action_instance_id, message, logger):
-        logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+        try:
+            logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+        except AttributeError:
+            #  Thread race condition on windows os will occasionally be None
+            pass
 
     def get_environment(self):
         env = {}
