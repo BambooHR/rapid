@@ -24,11 +24,6 @@ import subprocess
 
 app = Flask("rapidci_logger")
 app.rapid_config = {'_is': 'logger'}
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
 
 UWSGI = False
 try:
@@ -38,7 +33,20 @@ except ImportError:
     pass
 
 
+def setup_logging(flask_app):
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    flask_app.logger.addHandler(handler)
+    flask_app.logger.setLevel(logging.INFO)
+
+    logger = logging.getLogger('rapid')
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+
 def configure_application(flask_app, args):
+    setup_logging(flask_app)
     from rapid.lib.LogServer import LogServer
     log_server = LogServer(args.log_dir)
     log_server.configure_application(flask_app)
