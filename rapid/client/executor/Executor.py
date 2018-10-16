@@ -17,6 +17,7 @@
 import glob
 import logging
 import os
+import platform
 import shutil
 import subprocess
 import tempfile
@@ -355,9 +356,10 @@ class Executor(object):
         if os.path.isdir(self.workspace):
             try:
                 Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
-                shutil.rmtree(self.workspace)
-            except WindowsError:
-                os.system('rmdir /S /Q {}'.format(self.workspace))
+                if platform.system() == 'Windows':
+                    os.system('rmdir /S /Q {}'.format(self.workspace))
+                else:
+                    shutil.rmtree(self.workspace, ignore_errors=True)
             except:
                 pass
         else:
