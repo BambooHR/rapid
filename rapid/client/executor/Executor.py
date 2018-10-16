@@ -355,7 +355,9 @@ class Executor(object):
         if os.path.isdir(self.workspace):
             try:
                 Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
-                shutil.rmtree(self.workspace, ignore_errors=True)
+                shutil.rmtree(self.workspace)
+            except WindowsError:
+                os.system('rmdir /S /Q {}'.format(self.workspace))
             except:
                 pass
         else:
