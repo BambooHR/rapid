@@ -331,10 +331,13 @@ class QaDal(GeneralDal):
                            .options(joinedload(QaTestMapping.feature, innerjoin=True))\
                            .options(joinedload(QaTestMapping.behavior_point, innerjoin=True))\
                            .options(joinedload(QaTestMapping.test, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.area, innerjoin=True))\
                            .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
                            .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
                            .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
                            .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
+            print(query)
+            exit(1)
             mapping = {}
             objects = []
             for (qaTestMapping) in query.all():
