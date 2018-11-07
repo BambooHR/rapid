@@ -14,7 +14,7 @@
  limitations under the License.
 """
 from sqlalchemy import and_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql.expression import select, union_all
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column
@@ -328,13 +328,13 @@ class QaDal(GeneralDal):
     def get_qa_testmap_coverage(self, pipeline_instance_id):
         for session in get_db_session():
             query = session.query(QaTestMapping)\
-                           .options(joinedload(QaTestMapping.feature))\
-                           .options(joinedload(QaTestMapping.behavior_point))\
+                           .options(joinedload(QaTestMapping.feature, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.behavior_point, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.test, innerjoin=True))\
                            .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
                            .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
                            .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
-                           .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))\
-                           .join(QaTest, QaTest.id == QaTestMapping.test_id)
+                           .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
             mapping = {}
             objects = []
             for (qaTestMapping) in query.all():
