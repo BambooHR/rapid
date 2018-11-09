@@ -13,6 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from multiprocessing.pool import ThreadPool
+
+import dill
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql.expression import select, union_all
@@ -20,6 +23,8 @@ from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column
 
 from rapid.ci.data.models import Vcs
+from rapid.lib.ResultsSerializer import ResultsSerializer
+from rapid.lib.WrappingThreadPool import WrappingThreadPool
 from rapid.qa.data.models import QaProduct
 from rapid.lib.Utils import ORMUtil
 from rapid.lib.Constants import Constants, StatusConstants
@@ -326,6 +331,7 @@ class QaDal(GeneralDal):
                 traceback.print_exc()
 
     def get_qa_testmap_coverage(self, pipeline_instance_id):
+        objects = []
         for session in get_db_session():
             query = session.query(QaTestMapping)\
                            .options(joinedload(QaTestMapping.feature, innerjoin=True))\
@@ -336,23 +342,9 @@ class QaDal(GeneralDal):
                            .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
                            .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
                            .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
-            mapping = {}
-            objects = []
-            for (qaTestMapping) in query.all():
-                objects.append(qaTestMapping.serialize({QaTestMapping.__tablename__: ['area', 'feature', 'behavior_point', 'test']}))
-                # if qaArea.id not in mapping:
-                #     mapping[qaArea.id] = qaArea.serialize()
-                #     mapping[qaArea.id]['features'] = {}
-                #
-                # area = mapping[qaArea.id]
-                #
-                # if qaFeature.id not in area['features']:
-                #     area['features'][qaFeature.id] = qaFeature.serialize()
-                #     area['features'][qaFeature.id]['behavior_points'] = {}
-                #
-                # feature = area['features'][qaFeature.id]
-                #
-                # if qaBehaviorPoint.id not in feature['behavior_points']:
-                #     feature['behavior_points'][qaBehaviorPoint.id] = qaBehaviorPoint.serialize()
-            return objects
-        return {}
+            objects = ResultsSerializer.serialize_results(query.all(), {QaTestMapping.__tablename__: ['area',
+                                                                                                      'feature',
+                                                                                                      'behavior_point',
+                                                                                                      'test']})
+        return objects
+

@@ -21,6 +21,7 @@ from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
 from rapid.client.controllers.work_controller import WorkController
+import rapid.lib
 from rapid.lib import Version
 
 
@@ -30,10 +31,10 @@ class TestWorkController(TestCase):
         controller = WorkController()
         url_rules = [['/work/request', 'work_request', {'type_is': 'decorated_view',
                                                         'name': 'work_request',
-                                                        'co_filename': '/Users/mbright/code/rapid/rapid/lib/__init__.py'}],
+                                                        'co_filename': '{}'.format(rapid.lib.__file__.replace('.pyc', '.py'))}],
                      ['/work/execute', 'work_execute', {'type_is': 'decorated_view',
                                                         'name': 'work_execute',
-                                                        'co_filename': '/Users/mbright/code/rapid/rapid/lib/__init__.py'}, {'methods': ['POST']}]]
+                                                        'co_filename': '{}'.format(rapid.lib.__file__.replace('.pyc', '.py'))}, {'methods': ['POST']}]]
         registered_rules = {}
 
         def set_url(*args, **kwargs):

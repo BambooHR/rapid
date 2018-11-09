@@ -13,18 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
-from rapid.testmapper import PythonFile
+from multiprocessing.pool import ThreadPool
 
 
-class TestQaDal(TestCase):
+class WrappingThreadPool(ThreadPool):
+    def __reduce__(self):
+        raise NotImplementedError("you can't pickle this")
 
-    def test_parse_action(self):
-        python_file = PythonFile(None, None)
+    def __enter__(self):
+        return self
 
-        eq_("unit", python_file.parse_action("@rapid-unit Test:Test:Testing"))
-        eq_("unit", python_file.parse_action("rapid-unit: Test:Test:Testing"))
-        eq_(None, python_file.parse_action("@@@@rapid-unit12: Test:Test:Testing"))
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()

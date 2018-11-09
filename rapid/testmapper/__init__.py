@@ -74,8 +74,8 @@ class QaTestFile(object):
             self._finalize_test(self._current_test)
 
     def parse_action(self, line):
-        tmp = line.lstrip("\s").rstrip("\n")
-        if 'rapid-' in tmp:
+        tmp = line.lstrip().rstrip("\n")
+        if tmp.startswith('rapid-') or tmp.startswith('@rapid-'):
             m = re.findall('rapid-([a-zA-Z]+)', tmp)
             if m and len(m) > 0:
                 return m[0]
