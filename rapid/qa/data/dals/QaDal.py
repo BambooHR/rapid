@@ -13,9 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from multiprocessing.pool import ThreadPool
-
-import dill
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql.expression import select, union_all
@@ -24,7 +21,6 @@ from sqlalchemy.sql.schema import Column
 
 from rapid.ci.data.models import Vcs
 from rapid.lib.ResultsSerializer import ResultsSerializer
-from rapid.lib.WrappingThreadPool import WrappingThreadPool
 from rapid.qa.data.models import QaProduct
 from rapid.lib.Utils import ORMUtil
 from rapid.lib.Constants import Constants, StatusConstants
