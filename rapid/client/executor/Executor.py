@@ -160,6 +160,8 @@ class Executor(object):
     def _finalize_run(self, communicator):
         # Send results to master
         # Parse and Send parameters
+        self.check_for_dynamic_config_file()
+
         status = self._get_status(self.child_process.returncode)
         results = None
         try:
@@ -351,6 +353,19 @@ class Executor(object):
         if self.work_request.args:
             arguments.extend(self.work_request.args.split(' '))
         return arguments
+
+    def check_for_dynamic_config_file(self, filename=None):
+        config_path = os.path.join(self.workspace, 'rapid_config') if filename is None else filename
+        if os.path.isfile(config_path):
+            try:
+                with(open(config_path, 'r')) as tmp_file:
+                    self.verify_file_lines(tmp_file.readlines(), self.logger)
+            except:
+                pass
+
+    def verify_file_lines(self, lines, logger):
+        for line in lines:
+            self.verify_lines(line, logger)
 
     def clean_workspace(self):
         if os.path.isdir(self.workspace):

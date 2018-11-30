@@ -318,3 +318,10 @@ class TestExecutor(TestCase):
 
         ok_('testGetDateDiffString with data set #0' in name_map)
         ok_('testSendOfferLetterMissingRequestDataException' in name_map)
+
+    @patch('rapid.client.executor.Executor.Executor.verify_lines')
+    def test_check_for_dynamic_config_file(self, verify_lines):
+        executor = Executor(None, None)
+
+        executor.verify_file_lines(['{}bogus2'.format(Constants.PARAMETERS)], None)
+        verify_lines.assert_called_with( '{}bogus2'.format(Constants.PARAMETERS), None)
