@@ -74,7 +74,7 @@ class QaTestFile(object):
             self._finalize_test(self._current_test)
 
     def parse_action(self, line):
-        tmp = line.lstrip().rstrip("\n")
+        tmp = self._strip_comment_characters(line).lstrip()
         if tmp.startswith('rapid-') or tmp.startswith('@rapid-'):
             m = re.findall('rapid-([a-zA-Z]+)', tmp)
             if m and len(m) > 0:
@@ -110,6 +110,14 @@ class QaTestFile(object):
         self._current_settings[self.AREA] = area
         self._current_settings[self.FEATURE] = feature
         self._current_settings[self.BP] = behavior_point
+
+    def _strip_comment_characters(self, line):
+        tmp = line.lstrip().rstrip("\n")
+        return tmp.lstrip(self._get_comment_characters())
+
+    @abstractmethod
+    def _get_comment_characters(self):
+        yield
 
     def _get_behavior_point_map(self, area, feature, behavior_point):
         area_map = self.__check_area(area)
@@ -172,6 +180,9 @@ class QaTestFile(object):
 
 
 class PythonFile(QaTestFile):
+    def _get_comment_characters(self):
+        return "#"
+
     _CUSTOM_RE = re.compile('\s{1,}def (test[\S]*)\(.*$')
 
     @property
@@ -183,6 +194,9 @@ class PythonFile(QaTestFile):
 
 
 class PHPFile(QaTestFile):
+    def _get_comment_characters(self):
+        return "/*"
+
     _CUSTOM_RE = re.compile('\s{1,}function (test[\S]*)\(.*$')
 
     @property
@@ -194,6 +208,9 @@ class PHPFile(QaTestFile):
 
 
 class JSFile(QaTestFile):
+    def _get_comment_characters(self):
+        return "/*"
+
     _CUSTOM_RE = re.compile('\s{1,}it\([\'"`]([^\'`"]*)')
 
     @property
