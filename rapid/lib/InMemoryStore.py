@@ -1,5 +1,5 @@
 """
-Copyright (c) 2015 Michael Bright and Bamboo HR LLC
+Copyright (c) 2018 Michael Bright and Bamboo HR LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import ok_
-
-from rapid.workflow.Queue import Queue
 
 
-class TestQueue(TestCase):
+class InMemoryStore(dict):
 
-    def testLoading(self):
-        queue = Queue(None, None, None)
+    def cache_update(self, key, value):
+        self[key] = value
 
-        ok_(True)  # Making sure that the Queue Class is loadable.
+    def cache_get(self, key):
+        return self[key]
+
+    def cache_del(self, key):
+        del self[key]

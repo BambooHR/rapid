@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.lib.Constants import Constants
 
 parsers = {}
 
@@ -41,10 +42,39 @@ def parse_file(lines, parser=None, workspace=None):
     return {}
 
 
-def get_parser(identifier, workspace=None, failures_only=False):
+def get_parser(identifier, workspace=None, failures_only=False, failures_count=False):
     if identifier in parsers:
-        return parsers[identifier](workspace=workspace, failures_only=failures_only)
+        return parsers[identifier](workspace=workspace, failures_only=failures_only, failures_count=failures_count)
     return None
+
+
+class FileWrapper(object):
+    def __init__(self, workspace, file_definition):
+        self.file_name = file_definition
+        self.parser = None
+
+        self._workspace = workspace
+
+        self.populate()
+
+    def populate(self):
+        try:
+            sp = self.file_name.split('#')
+            self.file_name = sp[1]
+
+            identifier = sp[0]
+            failures_only = False
+            failures_count = False
+            try:
+                failures_only = sp[0].split('-')[1] == Constants.FAILURES
+                failures_count = sp[0].split('-')[1] == Constants.FAILURES_COUNT
+                identifier = sp[0].split('-')[0]
+            except:
+                pass
+
+            self.parser = get_parser(identifier, self._workspace, failures_only, failures_count)
+        except:
+            pass
 
 
 from XUnitParser import XUnitParser

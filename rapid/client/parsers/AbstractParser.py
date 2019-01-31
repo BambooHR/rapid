@@ -16,13 +16,16 @@
 
 import abc
 
+from rapid.lib.Constants import Constants
+
 
 class AbstractParser(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, workspace='', failures_only=False):
+    def __init__(self, workspace='', failures_only=False, failures_count=False):
         self.workspace = workspace
         self.failures_only = failures_only
+        self.failures_count = failures_count
 
     @abc.abstractmethod
     def _parse_lines(self, lines):
@@ -32,6 +35,9 @@ class AbstractParser(object):
     @abc.abstractmethod
     def get_type():
         yield
+
+    def prepare_summary(self):
+        return {Constants.STATUS_FAILED: 0, Constants.STATUS_SUCCESS: 0, Constants.STATUS_SKIPPED: 0, Constants.FAILURES_COUNT: self.failures_count}
 
     def parse(self, lines, ignore_type_check=False):
         if self.get_type() != lines[0].strip() and not ignore_type_check:

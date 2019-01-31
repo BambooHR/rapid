@@ -13,6 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import time
+
+import math
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.Exceptions import HttpException, VcsNotFoundException
@@ -95,6 +98,8 @@ class UtilityRouter(object):
             if 'X-Rapidci-Register-Key' in in_request.headers and in_request.headers['X-Rapidci-Register-Key'] == self.flask_app.rapid_config.register_api_key:
                 remote_addr = in_request.remote_addr
                 remote_port = in_request.headers['X-Rapidci-port'] if 'X-Rapidci-port' in in_request.headers else None
+                time_elapse = max((time.time() * 1000) - float(in_request.headers['X-Rapidci-time']), 1) if 'X-Rapidci-time' in in_request.headers else None
+
                 grains = in_request.json['grains'] if 'grains' in in_request.json else ''
                 hostname = in_request.json['hostname'] if 'hostname' in in_request.json else 'unknown'
                 grain_restrict = in_request.json['grain_restrict'] if 'grain_restrict' in in_request.json else False
@@ -107,7 +112,7 @@ class UtilityRouter(object):
 
                 if not api_key:
                     raise Exception("NO API KEY!")
-                client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname)
+                client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
                 self.store_client(remote_addr, client)
 
                 return Response(jsonpickle.encode(client),

@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from rapid.lib.Constants import Constants
 from rapid.client.parsers.AbstractParser import AbstractParser
 from . import register
 
@@ -25,7 +26,7 @@ class TapParser(AbstractParser):
 
     def _parse_lines(self, lines):
         results = {}
-        summary = {'FAILED': 0, 'SUCCESS': 0, 'SKIPPED': 0}
+        summary = self.prepare_summary()
         check_stacktrace = False
         current_failure = None
         stacktrace = None
@@ -36,19 +37,19 @@ class TapParser(AbstractParser):
                 if self.failures_only:
                     continue
                 split = line.split(" ", 2)
-                results[split[2]] = {'status': "SUCCESS"}
-                summary['SUCCESS'] += 1
+                results[split[2]] = {'status': Constants.STATUS_SUCCESS}
+                summary[Constants.STATUS_SUCCESS] += 1
             elif line.startswith('not ok'):
                 check_stacktrace = True
                 split = line.split(' ', 4)
                 current_failure = split[4]
                 stacktrace = ""
             elif line.endswith('...'):
-                results[current_failure] = {'status': 'FAILED', 'stacktrace': stacktrace}
+                results[current_failure] = {'status': Constants.STATUS_FAILED, 'stacktrace': stacktrace}
                 stacktrace = None
                 current_failure = None
                 check_stacktrace = False
-                summary['FAILED'] += 1
+                summary[Constants.STATUS_FAILED] += 1
             elif check_stacktrace:
                 stacktrace += "{}\n".format(line)
 

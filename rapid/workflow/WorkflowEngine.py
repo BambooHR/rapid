@@ -16,6 +16,7 @@
 
 import datetime
 
+from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusTypes, status_type_severity_mapping, StatusConstants
 from rapid.workflow.data.dal.StatusDal import StatusDal
 from rapid.workflow.data.models import Pipeline, PipelineInstance, Stage, StageInstance, Action, \
@@ -114,18 +115,25 @@ class InstanceWorkflowEngine(WorkflowEngine):
         :param status_id:
         :param action_instance_id:
         """
-        action_instance = self._get_action(action_instance_id)
-        self._mark_action_instance_complete(action_instance, status_id)
+        StoreService.set_calculating_workflow(self.pipeline.id)
 
-        action_instances = self._get_actions_by_workflow_id(action_instance.workflow_instance_id)
-        if self._can_continue_workflow(action_instances):
-            if self._activate_next_action_all_complete(action_instances):
-                self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.SUCCESS)
-        else:
-            for instance in action_instances:
-                if instance.status_id == StatusConstants.NEW:
-                    self._mark_action_instance_complete(instance, StatusConstants.CANCELED)
-            self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.FAILED)
+        try:
+            action_instance = self._get_action(action_instance_id)
+            self._mark_action_instance_complete(action_instance, status_id)
+
+            action_instances = self._get_actions_by_workflow_id(action_instance.workflow_instance_id)
+            if self._can_continue_workflow(action_instances):
+                if self._activate_next_action_all_complete(action_instances):
+                    self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.SUCCESS)
+            else:
+                for instance in action_instances:
+                    if instance.status_id == StatusConstants.NEW:
+                        self._mark_action_instance_complete(instance, StatusConstants.CANCELED)
+                status = StatusConstants.FAILED if status_id != StatusConstants.CANCELED else StatusConstants.CANCELED
+
+                self.complete_a_workflow(action_instance.workflow_instance_id, status)
+        finally:
+            StoreService.clear_calculating_workflow(self.pipeline.id)
 
     def complete_a_workflow(self, workflow_instance_id, status_id):
         workflow_instance = self._get_workflow(workflow_instance_id)
@@ -142,7 +150,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
         stage_instance = self._get_stage(stage_instance_id)
         self._mark_stage_instance_complete(stage_instance, status_id)
 
-        if self._reconciled_stages(self.pipeline, stage_instance):
+        if self._reconciled_stages(self._load_pipeline(), stage_instance):
             all_complete, all_passed, failed_type = self._check_and_verify_statuses(self._get_stages(self.pipeline))
 
             if all_complete:
@@ -161,6 +169,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 elif next:
                     new_instance = stage.convert_to_instance()
                     new_instance.start_date = datetime.datetime.utcnow()
+                    new_instance.status_id = StatusConstants.INPROGRESS
                     new_instance.pipeline_instance_id = pipeline_instance.id
                     for workflow in stage.workflows:
                         w_instance = workflow.convert_to_instance()
@@ -171,6 +180,25 @@ class InstanceWorkflowEngine(WorkflowEngine):
                     self.instances_to_add.append(new_instance)
                     break
             return False
+        elif StatusConstants.SUCCESS == stage_instance.status_id:
+            found = False
+            for s_instance in self._get_stages(pipeline_instance):
+                if found:
+                    s_instance.start_date = datetime.datetime.utcnow()
+                    s_instance.status_id = StatusConstants.INPROGRESS
+
+                    for w_instance in self._get_workflows(s_instance):
+                        w_instance.start_date = datetime.datetime.utcnow()
+
+                        first_order = -1
+                        for action in self._get_actions(w_instance):
+                            if first_order < 0 or first_order == action.order:
+                                action.status_id = StatusConstants.READY
+                                first_order = action.order
+                    break
+                if s_instance.id == stage_instance.id:
+                    found = True
+            return found
         return True
 
     def _create_action_instances(self, pipeline_instance, w_instance, workflow):
@@ -279,6 +307,92 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 order_check = instance.order
                 # break
         return all_complete
+
+    def reset_pipeline(self):
+        now = datetime.datetime.utcnow()
+        self.pipeline.status_id = StatusConstants.INPROGRESS
+        self.pipeline.start_date = now
+        self.pipeline.end_date = None
+
+        first_stage = True
+        for stage in self._get_stages(self.pipeline):
+            self.reset_stage(stage, first_stage, now)
+            first_stage = False
+
+    def reset_stage(self, stage, first_stage=False, now=None):
+        now = datetime.datetime.utcnow() if now is None else now
+
+        stage.status_id = StatusConstants.READY if first_stage else StatusConstants.NEW
+        stage.created_date = now
+        stage.start_date = now if first_stage else None
+        stage.end_date = None
+
+        for workflow in self._get_workflows(stage):
+            self.reset_workflow(workflow, first_stage, now)
+
+    def reset_workflow(self, workflow, first_stage=False, now=None):
+        now = datetime.datetime.utcnow() if now is None else now
+
+        workflow.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
+        workflow.start_date = now if first_stage else None
+        workflow.end_date = None
+
+        actions = self._get_actions(workflow)
+        self.reset_action_instances(actions[0], actions, first_stage)
+
+    def get_action_instance_by_id(self, action_id):
+        for stage in self._get_stages(self.pipeline):
+            for workflow in self._get_workflows(stage):
+                for action in self._get_actions(workflow):
+                    if action.id == action_id:
+                        return action
+
+    def reset_action(self, action, first_stage=False):
+        action.workflow_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
+        action.workflow_instance.end_date = None
+        action.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
+        action.workflow_instance.stage_instance.end_date = None
+
+        self.reset_action_instances(action, action.workflow_instance.action_instances, first_stage, single_instance=True)
+
+    def reset_action_instances(self, action_instance, action_instances, first_stage=False, single_instance=False):
+        first = True
+        first_order = None
+        action_order = action_instance.order
+        for instance in action_instances:
+            current_order = instance.order
+            if first_order is None:
+                first_order = current_order
+
+            if first and first_order != current_order:
+                first = False
+
+            if single_instance:
+                if current_order < action_order or action_instance.id == instance.id:
+                    if action_instance.id == instance.id:
+                        if single_instance:
+                            instance.workflow_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
+                            instance.workflow_instance.end_date = None
+                            instance.workflow_instance.stage_instance.end_date = None
+                            instance.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
+                            self.pipeline.end_date = None
+                            self.pipeline.status_id = StatusConstants.INPROGRESS
+
+                    instance.status_id = StatusConstants.NEW if not first else StatusConstants.READY
+                    instance.start_date = None
+                    instance.assigned_to = None
+                    instance.end_date = None
+                elif instance.order == current_order:
+                    continue
+                else:
+                    break
+            else:
+                pass
+                instance.status_id = StatusConstants.NEW if not (first and first_stage) else StatusConstants.READY
+                instance.start_date = None
+                instance.assigned_to = None
+                instance.end_date = None
+
 
     @staticmethod
     def _mark_action_instance_complete(action_instance, status_id):

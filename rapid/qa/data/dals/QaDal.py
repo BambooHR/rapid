@@ -13,13 +13,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from sqlalchemy.orm import joinedload
+from sqlalchemy import and_
+from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql.expression import select, union_all
 from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column
 
 from rapid.ci.data.models import Vcs
+from rapid.lib.ResultsSerializer import ResultsSerializer
 from rapid.qa.data.models import QaProduct
 from rapid.lib.Utils import ORMUtil
 from rapid.lib.Constants import Constants, StatusConstants
@@ -237,6 +238,13 @@ class QaDal(GeneralDal):
 
         return {"message": "Success!"}
 
+    def _get_summary_results(self, results):
+        try:
+            return results[Constants.RESULTS_SUMMARY]
+        except:
+            pass
+        return None
+
     def _save_summary(self, action_instance, results, session):
         try:
             if Constants.RESULTS_SUMMARY in results:
@@ -260,6 +268,12 @@ class QaDal(GeneralDal):
     def _save_results(self, action_instance, session, post_data):
         if 'results' in post_data:
             try:
+                failures_count = False
+                try:
+                    failures_count = self._get_summary_results(post_data['results'])[Constants.FAILURES_COUNT]
+                except:
+                    pass
+
                 results = self._save_summary(action_instance, post_data['results'], session)
 
                 should_create = dict(results)
@@ -293,18 +307,19 @@ class QaDal(GeneralDal):
                         else:
                             status_id = status_cache[value['status']].id
 
-                    qaTestHistory = QaTestHistory(test_id=test_cache[test].id,
-                                                  pipeline_instance_id=action_instance.pipeline_instance_id,
-                                                  action_instance_id=action_instance.id,
-                                                  status_id=status_id,
-                                                  duration=value['time'] if 'time' in value and value['time'] else 0)
+                    if not failures_count or status_id == StatusConstants.FAILED:
+                        qaTestHistory = QaTestHistory(test_id=test_cache[test].id,
+                                                      pipeline_instance_id=action_instance.pipeline_instance_id,
+                                                      action_instance_id=action_instance.id,
+                                                      status_id=status_id,
+                                                      duration=value['time'] if 'time' in value and value['time'] else 0)
 
-                    session.add(qaTestHistory)
+                        session.add(qaTestHistory)
 
-                    session.flush()
+                        session.flush()
 
-                    if 'stacktrace' in value:
-                        session.add(Stacktrace(qa_test_history_id=qaTestHistory.id, stacktrace=value['stacktrace']))
+                        if 'stacktrace' in value:
+                            session.add(Stacktrace(qa_test_history_id=qaTestHistory.id, stacktrace=value['stacktrace']))
 
                 session.commit()
             except:
@@ -312,32 +327,20 @@ class QaDal(GeneralDal):
                 traceback.print_exc()
 
     def get_qa_testmap_coverage(self, pipeline_instance_id):
+        objects = []
         for session in get_db_session():
             query = session.query(QaTestMapping)\
-                           .options(joinedload(QaTestMapping.area))\
-                           .options(joinedload(QaTestMapping.feature))\
-                           .options(joinedload(QaTestMapping.behavior_point))\
-                           .options(joinedload(QaTestMapping.test))\
-                           .join(QaTestHistory, QaTestHistory.test_id == QaTestMapping.test_id)\
-                           .filter(QaTestHistory.pipeline_instance_id == pipeline_instance_id)
+                           .options(joinedload(QaTestMapping.feature, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.behavior_point, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.test, innerjoin=True))\
+                           .options(joinedload(QaTestMapping.area, innerjoin=True))\
+                           .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
+                           .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
+                           .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
+                           .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
+            objects = ResultsSerializer.serialize_results(query.all(), {QaTestMapping.__tablename__: ['area',
+                                                                                                      'feature',
+                                                                                                      'behavior_point',
+                                                                                                      'test']})
+        return objects
 
-            mapping = {}
-            objects = []
-            for (qaTestMapping) in query.all():
-                objects.append(qaTestMapping.serialize({QaTestMapping.__tablename__: ['area', 'feature', 'behavior_point', 'test']}))
-                # if qaArea.id not in mapping:
-                #     mapping[qaArea.id] = qaArea.serialize()
-                #     mapping[qaArea.id]['features'] = {}
-                #
-                # area = mapping[qaArea.id]
-                #
-                # if qaFeature.id not in area['features']:
-                #     area['features'][qaFeature.id] = qaFeature.serialize()
-                #     area['features'][qaFeature.id]['behavior_points'] = {}
-                #
-                # feature = area['features'][qaFeature.id]
-                #
-                # if qaBehaviorPoint.id not in feature['behavior_points']:
-                #     feature['behavior_points'][qaBehaviorPoint.id] = qaBehaviorPoint.serialize()
-            return objects
-        return {}

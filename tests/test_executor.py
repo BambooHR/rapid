@@ -14,6 +14,8 @@
  limitations under the License.
 """
 import os
+import tempfile
+
 from mock.mock import Mock, patch
 from nose.tools import eq_
 from unittest import TestCase
@@ -103,7 +105,7 @@ class TestExecutor(TestCase):
                 'status': 'SUCCESS',
                 'time': '0'
             },
-            '__summary__': {'FAILED': 1, 'SKIPPED': 1, 'SUCCESS': 1}}, executor._get_results('/', [file_name]))
+            '__summary__': {'FAILED': 1, 'SKIPPED': 1, 'SUCCESS': 1, Constants.FAILURES_COUNT: False}}, executor._get_results('/', [file_name]))
 
     def test_get_environment(self):
         executor = Executor(WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2, 'environment': {'Something': 'More'}}), None)
@@ -159,7 +161,12 @@ class TestExecutor(TestCase):
         mock = Mock()
         executor = Executor(mock, "http", logger=Mock())
 
-        eq_({'analyze_tests': None, 'results_files': [], 'work_request': mock, 'parameter_files': [], 'master_uri': 'http', 'thread_id': None, 'read_pid': None, 'status_overrides': {}, 'workspace': '/tmp/rapidci/workspace', 'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
+        eq_({'analyze_tests': None, 'results_files': [],
+             'work_request': mock, 'parameter_files': [],
+             'master_uri': 'http', 'thread_id': None,
+             'read_pid': None, 'status_overrides': {},
+             'workspace': os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'),
+             'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
 
     def test_get_status_overrides(self):
         line = "#{}2:SUCCESS,3:FAILED".format(Constants.STATUS_OVERRIDE)
@@ -311,3 +318,10 @@ class TestExecutor(TestCase):
 
         ok_('testGetDateDiffString with data set #0' in name_map)
         ok_('testSendOfferLetterMissingRequestDataException' in name_map)
+
+    @patch('rapid.client.executor.Executor.Executor.verify_lines')
+    def test_check_for_dynamic_config_file(self, verify_lines):
+        executor = Executor(None, None)
+
+        executor.verify_file_lines(['{}bogus2'.format(Constants.PARAMETERS)], None)
+        verify_lines.assert_called_with( '{}bogus2'.format(Constants.PARAMETERS), None)

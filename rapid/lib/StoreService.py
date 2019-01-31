@@ -16,14 +16,18 @@
 
 import os
 import logging
+import tempfile
+
 import jsonpickle
+
+from rapid.lib.InMemoryStore import InMemoryStore
 
 logger = logging.getLogger("rapid")
 
 try:
     import uwsgi
 except ImportError:
-    uwsgi = {}
+    uwsgi = InMemoryStore()
 
 
 class StoreService(object):
@@ -32,7 +36,8 @@ class StoreService(object):
     def get_executors():
         executors = []
         try:
-            for filename in os.listdir("/tmp"):
+            tmp_dir = tempfile.gettempdir()
+            for filename in os.listdir(tmp_dir):
                 try:
                     sp = filename.split('-')
                     if sp[0] == 'rapid':
@@ -40,7 +45,7 @@ class StoreService(object):
                             os.kill(int(sp[2]), 0)
                             executors.append({'action_instance_id': sp[1], 'pid': sp[2]})
                         except:
-                            os.remove("/tmp/{}".format(filename))
+                            os.remove(os.path.join(tmp_dir, filename))
                 except:
                     pass
         except:
@@ -50,16 +55,20 @@ class StoreService(object):
         return executors
 
     @staticmethod
+    def _get_tempfile_name(executor):
+        return os.path.join(tempfile.gettempdir(), "rapid-{}-{}".format(executor.work_request.action_instance_id, executor.pid))
+
+    @staticmethod
     def clear_executor(executor):
         try:
-            os.remove("/tmp/rapid-{}-{}".format(executor.work_request.action_instance_id, executor.pid))
+            os.remove(StoreService._get_tempfile_name(executor))
         except:
             pass
 
     @staticmethod
     def save_executor(executor):
         try:
-            with open('/tmp/rapid-{}-{}'.format(executor.work_request.action_instance_id, executor.pid), 'w') as file_out:
+            with open(StoreService._get_tempfile_name(executor), 'w') as file_out:
                 file_out.write("{}".format(executor.pid))
         except:
             import traceback
@@ -83,7 +92,7 @@ class StoreService(object):
         :rtype: dict
         """
         try:
-            return jsonpickle.loads(uwsgi.cache_get("_rapidci_clients"))
+            return jsonpickle.loads(StoreService.get_key('_rapidci_clients'))
         except:
             if not hasattr(app.rapid_config, 'clients'):
                 app.rapid_config.clients = {}
@@ -91,10 +100,7 @@ class StoreService(object):
 
     @staticmethod
     def save_master_key(app, api_key):
-        try:
-            uwsgi.cache_update("_rapidci_master_key", jsonpickle.dumps(api_key))
-        except:
-            app.rapid_config._rapidci_master_key = api_key
+        return StoreService.__set_key('_rapidci_master_key', jsonpickle.dumps(api_key))
 
     @staticmethod
     def get_master_key(app):
@@ -108,12 +114,12 @@ class StoreService(object):
         try:
             uwsgi.cache_update("_rapidci_updating", jsonpickle.dumps(updating))
         except:
-            app.rapid_config._rapidci_updating = True
+            app.rapid_config._rapidci_updating = updating
 
     @staticmethod
     def is_updating(app):
         try:
-            return jsonpickle.loads(uwsgi.cache_get("_rapidci_updating"))
+            return jsonpickle.loads(StoreService.get_key('_rapidci_updating'))
         except:
             return app.rapid_config._rapidci_updating if hasattr(app.rapid_config, "_rapidci_updating") else False
 
@@ -121,7 +127,7 @@ class StoreService(object):
     def check_for_pidfile(action_instance_id):
         try:
             pid_name = 'rapid-{}'.format(action_instance_id)
-            for filename in os.listdir("/tmp"):
+            for filename in os.listdir(tempfile.gettempdir()):
                 if pid_name in filename:
                     return filename
         except:
@@ -130,24 +136,57 @@ class StoreService(object):
 
     @staticmethod
     def is_completing(action_instance_id):
-        try:
-            return "true" == uwsgi.cache_get("_completing_{}".format(action_instance_id))
-        except:
-            pass
-        return False
+        return StoreService.__is_by_key("_completing_{}".format(action_instance_id), 'true')
 
     @staticmethod
     def set_completing(action_instance_id):
-        try:
-            uwsgi.cache_update('_completing_{}'.format(action_instance_id), "true")
-        except:
-            pass
+        return StoreService.__set_key('_completing_{}'.format(action_instance_id), 'true')
 
     @staticmethod
     def clear_completing(action_instance_id):
+        return StoreService.__clear_key("_completing_{}".format(action_instance_id))
+
+    @staticmethod
+    def set_calculating_workflow(pipeline_instance_id):
+        return StoreService.__set_key('_calculating_{}'.format(pipeline_instance_id), "true")
+        
+    @staticmethod
+    def is_calculating_workflow(pipeline_instance_id):
+        return StoreService.__is_by_key('_calculating_{}'.format(pipeline_instance_id), 'true')
+
+    @staticmethod
+    def clear_calculating_workflow(pipeline_instance_id):
+        return StoreService.__clear_key('_calculating_{}'.format(pipeline_instance_id))
+
+    @staticmethod
+    def __is_by_key(key, value):
         try:
-            uwsgi.cache_del("_completing_{}".format(action_instance_id))
+            return value == StoreService.get_key(key)
+        except:
+            pass
+        return False
+
+    @staticmethod
+    def __set_key(key, value):
+        try:
+            uwsgi.cache_update(key, value)
             return True
         except:
-            logger.info("FAILED TO clear_completing")
+            pass
         return False
+
+    @staticmethod
+    def __clear_key(key):
+        try:
+            uwsgi.cache_del(key)
+            return True
+        except:
+            logger.info("FAILED TO clear cache-key: {}".format(key))
+        return False
+
+    @staticmethod
+    def get_key(key):
+        try:
+            return uwsgi.cache_get(key)
+        except:
+            return None

@@ -21,6 +21,7 @@ from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
 from rapid.client.controllers.work_controller import WorkController
+import rapid.lib
 from rapid.lib import Version
 
 
@@ -30,10 +31,10 @@ class TestWorkController(TestCase):
         controller = WorkController()
         url_rules = [['/work/request', 'work_request', {'type_is': 'decorated_view',
                                                         'name': 'work_request',
-                                                        'co_filename': '/Users/mbright/code/rapid/rapid/lib/__init__.py'}],
+                                                        'co_filename': '{}'.format(rapid.lib.__file__.replace('.pyc', '.py'))}],
                      ['/work/execute', 'work_execute', {'type_is': 'decorated_view',
                                                         'name': 'work_execute',
-                                                        'co_filename': '/Users/mbright/code/rapid/rapid/lib/__init__.py'}, {'methods': ['POST']}]]
+                                                        'co_filename': '{}'.format(rapid.lib.__file__.replace('.pyc', '.py'))}, {'methods': ['POST']}]]
         registered_rules = {}
 
         def set_url(*args, **kwargs):
@@ -143,7 +144,7 @@ class TestWorkController(TestCase):
 
         store_service.get_executors = decrease
         work_time = datetime.datetime.now()
-        WorkController._sleep_for_executors(.3, 2)
+        WorkController._sleep_for_executors(.001, 2)
         now_time = datetime.datetime.now()
 
         ok_(400000 > (now_time - work_time).microseconds)

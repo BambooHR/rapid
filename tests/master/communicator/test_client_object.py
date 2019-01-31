@@ -88,7 +88,7 @@ class TestClientObject(TestCase):
         ok_(client.can_handle("one;two"))
 
     def test_get_state(self):
-        client = Client('127.0.0.1', 9000, 'one;to;three', False, 'ApiKey', hostname='bogus')
+        client = Client('127.0.0.1', 9000, 'one;to;three', False, 'ApiKey', hostname='bogus', time_elapse=1000)
 
         eq_({'grain_restrict': False,
              'is_ssl': False,
@@ -97,6 +97,7 @@ class TestClientObject(TestCase):
              'api_key': 'ApiKey',
              'ip_address': '127.0.0.1',
              'port': 9000,
+             'time_elapse': 1.5,
              'hostname': 'bogus'}, client.__getstate__())
 
     def test_get_headers(self):

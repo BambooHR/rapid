@@ -13,6 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import re
+import time
 
 try:
     import simplejson as json
@@ -150,6 +152,7 @@ class ClientCommunicator(Communicator):
         headers = {'Content-Type': 'application/json',
                    'X-RAPIDCI-PORT': client_config.port if hasattr(client_config, 'port') else None,
                    'X-RAPIDCI-REGISTER-KEY': client_config.register_api_key if hasattr(client_config, 'register_api_key') else None,
+                   'X-RAPIDCI-TIME': time.time() * 1000,
                    'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else None}
         if hasattr(client_config, 'use_ssl') and client_config.use_ssl:
             headers['X-Is-Ssl'] = 'true'
@@ -183,7 +186,7 @@ class ClientCommunicator(Communicator):
         return request
 
     def get_downloaded_file_name(self, directory, file_name, headers=None):
-        real_file_name = directory + os.path.sep + (file_name.split(os.path.sep)[-1])
+        real_file_name = os.path.join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
         try:
             os.makedirs(os.path.dirname(real_file_name))
         except:

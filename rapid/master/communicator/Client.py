@@ -28,7 +28,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class Client(object):
 
-    def __init__(self, ip_address, port, grains, grain_restrict, api_key=None, is_ssl=False, hostname=None):
+    def __init__(self, ip_address, port, grains, grain_restrict, api_key=None, is_ssl=False, hostname=None, time_elapse=0.5):
         self.ip_address = ip_address
         self.is_ssl = is_ssl
         self.port = port
@@ -37,6 +37,7 @@ class Client(object):
         self.sleep = False
         self.api_key = api_key
         self.hostname = hostname
+        self.time_elapse = ((time_elapse / 1000) + 0.5) if time_elapse > 1 else time_elapse
 
     def __getstate__(self):
         state = self.__dict__.copy()

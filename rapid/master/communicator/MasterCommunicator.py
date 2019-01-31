@@ -60,7 +60,7 @@ class MasterCommunicator(Communicator):
     def check_availability(to_check):
         client, verify_certs = to_check
         try:
-            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs, timeout=.50)
+            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs, timeout=client.time_elapse)
             if response.status_code == 200:
                 return client
             elif response.status_code == 423:
@@ -75,7 +75,7 @@ class MasterCommunicator(Communicator):
     def get_availability(to_check):
         client, verify_certs = to_check
         try:
-            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs, timeout=.50)
+            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs, timeout=client.time_elapse)
             version = response.headers[Version.HEADER] if Version.HEADER in response.headers else 'Unknown'
             results = {"version": version, "ip_address": client.ip_address, "grains": client.grains}
             results.update(response.json())

@@ -17,8 +17,10 @@
 import glob
 import logging
 import os
+import platform
 import shutil
 import subprocess
+import tempfile
 import threading
 
 from rapid import testmapper
@@ -37,7 +39,7 @@ except:
 
 
 class Executor(object):
-    def __init__(self, work_request, master_uri, logger=None, workspace='/tmp/rapidci/workspace', quarantine=None, verify_certs=True, rapid_config=None):
+    def __init__(self, work_request, master_uri, logger=None, workspace=None, quarantine=None, verify_certs=True, rapid_config=None):
         """
 
         :param work_request:
@@ -55,7 +57,7 @@ class Executor(object):
         self.read_pid = None
         self.work_request = work_request
         self.child_process = None
-        self.workspace = workspace
+        self.workspace = workspace if workspace is not None else os.path.join(tempfile.gettempdir(), 'rapid', 'workspace')
         self.master_uri = master_uri
         self.reading_thread = None
         self.logger = logger
@@ -115,7 +117,7 @@ class Executor(object):
                                           get_files_auth=self.rapid_config.get_files_basic_auth)
 
         # Cleanup first
-        self.workspace = "{}/{}".format(self.workspace, self.work_request.action_instance_id)
+        self.workspace = os.path.join(self.workspace, str(self.work_request.action_instance_id))
         self.clean_workspace()
 
         env = self.get_environment()
@@ -158,6 +160,8 @@ class Executor(object):
     def _finalize_run(self, communicator):
         # Send results to master
         # Parse and Send parameters
+        self.check_for_dynamic_config_file()
+
         status = self._get_status(self.child_process.returncode)
         results = None
         try:
@@ -207,7 +211,7 @@ class Executor(object):
         if parameter_files:
             parameters = {}
             for glob_tmp in parameter_files:
-                for parameter_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
+                for parameter_file in glob.glob(os.path.join(workspace, glob_tmp)):
                     with open(parameter_file) as glob_file:
                         lines = glob_file.readlines()
                         parameters.update(Executor._convert_to_dict(lines))
@@ -220,10 +224,13 @@ class Executor(object):
         if stats_files:
             stats = {}
             for glob_tmp in stats_files:
-                for stats_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
-                    with open(stats_file) as glob_file:
-                        lines = glob_file.readlines()
-                        stats.update(Executor._convert_to_dict(lines))
+                try:
+                    for stats_file in glob.glob(os.path.join(workspace, glob_tmp)):
+                        with open(stats_file) as glob_file:
+                            lines = glob_file.readlines()
+                            stats.update(Executor._convert_to_dict(lines))
+                except: # No need to worry about failing stats files.
+                    pass
             return stats
         return None
 
@@ -236,28 +243,15 @@ class Executor(object):
         if results_files:
             # Wire in the registered parsers.
             results = {}
-            from ..parsers import parse_file, get_parser
+            from ..parsers import parse_file, FileWrapper
 
             for file_glob in results_files:
-                glob_tmp = file_glob
-                selected_parser = None
+                wrapper = FileWrapper(self.workspace, file_glob)
 
-                if '#' in file_glob:
-                    sp = file_glob.split('#')
-                    glob_tmp = sp[1]
-
-                    identifier = sp[0]
-                    failures_only = False
-                    try:
-                        failures_only = sp[0].split('-')[1] == 'failures'
-                        identifier = sp[0].split('-')[0]
-                    except:
-                        pass
-
-                    selected_parser = get_parser(identifier, self.workspace, failures_only)
+                selected_parser = wrapper.parser
 
                 file_was_read = False
-                for results_file in glob.glob("{}/{}".format(workspace, glob_tmp)):
+                for results_file in glob.glob("{}/{}".format(workspace, wrapper.file_name)):
                     file_was_read = True
                     with open(results_file) as glob_file:
                         try:
@@ -314,7 +308,11 @@ class Executor(object):
 
     @staticmethod
     def _log(action_instance_id, message, logger):
-        logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+        try:
+            logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+        except AttributeError:
+            #  Thread race condition on windows os will occasionally be None
+            pass
 
     def get_environment(self):
         env = {}
@@ -322,7 +320,11 @@ class Executor(object):
             env[key] = os.environ[key]
 
         if self.work_request.environment:
-            env.update(self.work_request.environment)
+            for key, value in self.work_request.environment.items():
+                try:
+                    env[key.encode('ascii', 'ignore')] = value.encode('ascii', 'ignore')
+                except AttributeError:
+                    pass
         env['PYTHONUNBUFFERED'] = "true"
         env['pipeline_instance_id'] = str(self.work_request.pipeline_instance_id)
         env['action_instance_id'] = str(self.work_request.action_instance_id)
@@ -352,11 +354,27 @@ class Executor(object):
             arguments.extend(self.work_request.args.split(' '))
         return arguments
 
+    def check_for_dynamic_config_file(self, filename=None):
+        config_path = os.path.join(self.workspace, 'rapid_config') if filename is None else filename
+        if os.path.isfile(config_path):
+            try:
+                with(open(config_path, 'r')) as tmp_file:
+                    self.verify_file_lines(tmp_file.readlines(), self.logger)
+            except:
+                pass
+
+    def verify_file_lines(self, lines, logger):
+        for line in lines:
+            self.verify_lines(line, logger)
+
     def clean_workspace(self):
         if os.path.isdir(self.workspace):
             try:
                 Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
-                shutil.rmtree(self.workspace, ignore_errors=True)
+                if platform.system() == 'Windows':
+                    os.system('rmdir /S /Q {}'.format(self.workspace))
+                else:
+                    shutil.rmtree(self.workspace, ignore_errors=True)
             except:
                 pass
         else:

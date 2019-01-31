@@ -30,15 +30,7 @@ from .controllers import register_controllers
 
 app = Flask("rapidci_client")
 app.rapid_config = {'_is': 'client'}
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
-
 logger = logging.getLogger("rapid")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 UWSGI = None
@@ -60,12 +52,31 @@ def internal_error(exception):
     response.content_type = 'application/json'
     return response
 
+
+def setup_logger(flask_app):
+    global logger
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    flask_app.logger.addHandler(handler)
+    flask_app.logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+
 def configure_application(flask_app, args):
+    setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
     register_controllers(flask_app)
     if (UWSGI and 1 == uwsgi.worker_id()) or UWSGI is None:
         setup_client_register_thread()
         clean_workspace()
+
+    if args.mode_logging:
+        from rapid.lib.LogServer import LogServer
+        log_server = LogServer(args.log_dir)
+        log_server.configure_application(flask_app)
+
 
 def clean_workspace():
     try:
@@ -76,11 +87,13 @@ def clean_workspace():
     except:
         pass
 
+
 def _registration_thread():
     communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)
     while True:
         communicator.register(app.rapid_config)
         time.sleep(app.rapid_config.registration_rate)
+
 
 def setup_client_register_thread():
     logger.info("Setting up client register thread")

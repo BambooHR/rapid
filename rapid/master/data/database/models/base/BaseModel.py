@@ -61,12 +61,7 @@ class BaseModel(object):
         serialized = Odict()
         relationships = self.__relationships__()
         fields = [x for x in dir(self) if not x.startswith('_') and x != 'metadata']
-        if len(fields) > 1:
-            middle = int(len(fields)/2)
-            self._serialize_fields(serialized, fields[:middle], previous_relationship, allowed_children, relationships)
-            self._serialize_fields(serialized, fields[middle:], previous_relationship, allowed_children, relationships)
-        else:
-            self._serialize_fields(serialized, fields, previous_relationship, allowed_children, relationships)
+        self._serialize_fields(serialized, fields, previous_relationship, allowed_children, relationships)
         return serialized
 
     def _serialize_fields(self, serialized, fields, previous_relationship, allowed_children, relationships):
@@ -99,7 +94,6 @@ class BaseModel(object):
             serialized[field] = value
             setattr(serialized, field, value)
 
-
     def __allowed_iteration(self, allowed_children, key_filter, field):
         allowed_combine = {}
         if key_filter in allowed_children and field in allowed_children[key_filter]:
@@ -111,7 +105,7 @@ class BaseModel(object):
                 for field2 in allowed_children[field]:
                     allowed_combine.update(self.__allowed_iteration(allowed_children, field, field2))
         return allowed_combine
-    # {pipeline_instances:['stage_instances'], stage_instances: ['workflow_instances'], 'workflow_instances': ['action_instances']
+
 
 class Odict(dict):
     pass

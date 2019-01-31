@@ -16,9 +16,10 @@
 
 import datetime
 
+import time
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.expression import asc
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.sql.expression import asc, exists
 
 from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.StoreService import StoreService
@@ -37,51 +38,114 @@ from rapid.workflow.EventService import EventService
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None, 'status_dal': StatusDal}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
         :type  store_service: StoreService
         :type event_service: EventService
+        :type status_dal: StatusDal
         :return:
         """
         self.qa_module = qa_module
         self.store_service = store_service
         self.event_service = event_service
         self.flask_app = flask_app
+        self.status_dal = status_dal
+
+    def _get_ready_work_requests(self, session, work_requests, results):
+        """
+        :param session:
+        :type session: sqlalchemy.orm.scoping.scoped_session
+        :param work_requests:
+        :type work_requests: dict
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+                .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
+                .filter(ActionInstance.status_id == StatusConstants.READY) \
+                .filter(ActionInstance.manual == 0) \
+                .filter(ActionInstance.pipeline_instance_id == PipelineInstance.id) \
+                .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
+                .order_by(PipelineInstance.priority.desc(),
+                          PipelineInstance.created_date.asc(),
+                          PipelineInstance.id.asc(),
+                          ActionInstance.order.asc(),
+                          ActionInstance.slice.asc()).all():
+            self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
+
+    def _get_stalled_work_requests(self, session, work_requests, results):
+        """
+        :param session:
+        :type session:
+        :param work_requests:
+        :type work_requests: dict
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        action_alias = aliased(ActionInstance)
+        inner_query = ~exists()\
+            .where(action_alias.workflow_instance_id == WorkflowInstance.id) \
+            .where(action_alias.order < ActionInstance.order)\
+            .where(action_alias.end_date == None)\
+            .correlate(ActionInstance) \
+            .correlate(WorkflowInstance)
+        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+                .join(PipelineInstance, PipelineInstance.id == ActionInstance.pipeline_instance_id) \
+                .join(WorkflowInstance, WorkflowInstance.id == ActionInstance.workflow_instance_id) \
+                .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
+                .filter(ActionInstance.status_id == StatusConstants.NEW) \
+                .filter(ActionInstance.manual == 0) \
+                .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
+                .filter(inner_query) \
+                .order_by(PipelineInstance.priority.desc(),
+                          PipelineInstance.created_date.asc(),
+                          PipelineInstance.id.asc(),
+                          ActionInstance.order.asc(),
+                          ActionInstance.slice.asc()).all():
+            self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
+
+    def configure_work_request(self, action_instance, pipeline_parameters, work_requests, results):
+        """
+        :param action_instance:
+        :type action_instance: ActionInstance
+        :param pipeline_parameters:
+        :type pipeline_parameters: PipelineParameters
+        :param results:
+        :type results: list
+        :return:
+        :rtype:
+        """
+        work_request = None
+        if action_instance.id not in work_requests:
+            work_request = WorkRequest(action_instance.serialize())
+            work_request.action_instance_id = action_instance.id
+            work_request.pipeline_instance_id = action_instance.pipeline_instance_id
+            work_request.workflow_instance_id = action_instance.workflow_instance_id
+            work_request.slice = action_instance.slice
+            results.append(work_request)
+            work_requests[action_instance.id] = work_request
+        else:
+            work_request = work_requests[action_instance.id]
+
+        if pipeline_parameters:
+            work_request.environment[pipeline_parameters.parameter] = pipeline_parameters.value
 
     def get_workable_work_requests(self):
         results = []
         for session in get_db_session():
             work_requests = {}
-            for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
-                    .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
-                    .filter(ActionInstance.status_id == StatusConstants.READY) \
-                    .filter(ActionInstance.manual == 0) \
-                    .filter(ActionInstance.pipeline_instance_id == PipelineInstance.id) \
-                    .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
-                    .order_by(PipelineInstance.priority.desc(),
-                              PipelineInstance.created_date.asc(),
-                              PipelineInstance.id.asc(),
-                              ActionInstance.order.asc(),
-                              ActionInstance.slice.asc()).all():
-                work_request = None
-                if action_instance.id not in work_requests:
-                    work_request = WorkRequest(action_instance.serialize())
-                    work_request.action_instance_id = action_instance.id
-                    work_request.pipeline_instance_id = action_instance.pipeline_instance_id
-                    work_request.workflow_instance_id = action_instance.workflow_instance_id
-                    work_request.slice = action_instance.slice
-                    results.append(work_request)
-                    work_requests[action_instance.id] = work_request
-                else:
-                    work_request = work_requests[action_instance.id]
+            self._get_ready_work_requests(session, work_requests, results)
+            self._get_stalled_work_requests(session, work_requests, results)
 
-                if pipeline_parameters:
-                    work_request.environment[pipeline_parameters.parameter] = pipeline_parameters.value
         return results
 
     def get_verify_working(self, time_difference):
@@ -139,27 +203,25 @@ class ActionDal(GeneralDal, Injectable):
 
     def reset_pipeline_instance(self, pipeline_instance_id):
         for session in get_db_session():
-            now = datetime.datetime.utcnow()
-            pipeline_instance = session.query(PipelineInstance).get(pipeline_instance_id)
-            pipeline_instance.status_id = StatusConstants.INPROGRESS
-            pipeline_instance.start_date = now
-            pipeline_instance.end_date = None
+            pipeline_instance = session.query(PipelineInstance)\
+                                              .options(joinedload('stage_instances'))\
+                                              .options(joinedload('stage_instances.workflow_instances'))\
+                                              .options(joinedload('stage_instances.workflow_instances.action_instances')).filter(PipelineInstance.id == pipeline_instance_id).first()
 
-            first_stage = True
-            for stage_instance in session.query(StageInstance).filter(StageInstance.pipeline_instance_id == pipeline_instance_id).all():
-                stage_instance.status_id = StatusConstants.READY
-                stage_instance.created_date = now
-                stage_instance.start_date = now if first_stage else None
-                stage_instance.end_date = None
-                for workflow_instance in stage_instance.workflow_instances:
-                    workflow_instance.status_id = StatusConstants.READY
-                    workflow_instance.start_date = now if first_stage else None
-                    workflow_instance.end_date = None
-                first_stage = False
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
+            instance_workflow_engine.reset_pipeline()
+            session.commit()
+        return True
 
-            return self.reset_action_instance(session.query(ActionInstance)\
-                                       .filter(ActionInstance.pipeline_instance_id == pipeline_instance_id)\
-                                       .order_by(asc(ActionInstance.order)).first().id, True)
+    @staticmethod
+    def _print_pipeline_instance(pipeline_instance):
+        print("pipeline: {}, Status: {}, Start Date: {}, End Date:{}".format(pipeline_instance.id, pipeline_instance.status_id, pipeline_instance.start_date, pipeline_instance.end_date))
+        for stage_instance in pipeline_instance.stage_instances:
+            print("stage: {}, Status: {}, Start Date: {}, End Date: {}".format(stage_instance.id, stage_instance.status_id, stage_instance.start_date, stage_instance.end_date))
+            for workflow_instance in stage_instance.workflow_instances:
+                print("  workflow: {}, Status: {}, Start Date: {}, End Date: {}".format(workflow_instance.id, workflow_instance.status_id, workflow_instance.start_date, workflow_instance.end_date))
+                for action_instance in workflow_instance.action_instances:
+                    print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
 
     def reset_action_instance(self, id, complete_reset=False, check_status=False):
         for session in get_db_session():
@@ -168,37 +230,12 @@ class ActionDal(GeneralDal, Injectable):
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
 
-            action_instance.assigned_to = None
-            action_instance.status_id = StatusConstants.NEW if complete_reset else StatusConstants.READY
-            action_instance.created_date = now
-            action_instance.start_date = None
-            action_instance.end_date = None
-
-            action_instance.pipeline_instance.status_id = StatusConstants.INPROGRESS
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance)
+            instance_workflow_engine.reset_action(action_instance)
 
             if self.qa_module is not None:
                 self.qa_module.reset_results(action_instance.id, session)
-
-            if complete_reset:
-                current_order = action_instance.order
-                first = True
-                for instance in action_instance.workflow_instance.action_instances:
-                    if instance.order < current_order or instance.id == id or instance.order == current_order:
-                        instance.status_id = StatusConstants.NEW if not first else StatusConstants.READY
-                        instance.start_date = None
-                        instance.assigned_to = None
-                        instance.end_date = None
-
-                        if first:
-                            first = False
-                    elif instance.order == current_order:
-                        continue
-                    else:
-                        break
-
-                action_instance.workflow_instance.status_id = StatusConstants.INPROGRESS
-                action_instance.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS
-                action_instance.pipeline_instance.status_id = StatusConstants.INPROGRESS
+            
             session.commit()
         return True
 
@@ -216,6 +253,15 @@ class ActionDal(GeneralDal, Injectable):
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
 
+    def _wait_for_parallel_calculations(self, action_instance):
+        is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)
+        if is_calculating:
+            count = 0
+            while count < 5 and is_calculating:
+                time.sleep(.1)
+                is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)
+                count += 1
+
     def _save_status(self, action_instance, session, post_data, allow_save=False):
         if 'status' in post_data:
             status = self.get_status_by_name(post_data['status'], session)
@@ -223,10 +269,13 @@ class ActionDal(GeneralDal, Injectable):
             if action_instance.callback_required and status.type == StatusTypes.SUCCESS and not allow_save:
                 # Allow_save comes from callback_method.
                 return
+
+            self._wait_for_parallel_calculations(action_instance)
+
             pipeline_instance = session.query(PipelineInstance).options(
-                    joinedload(PipelineInstance.stage_instances)
-                        .joinedload(StageInstance.workflow_instances)
-                        .joinedload(WorkflowInstance.action_instances)
+                joinedload(PipelineInstance.stage_instances)
+                .joinedload(StageInstance.workflow_instances)
+                .joinedload(WorkflowInstance.action_instances)
             ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
             workflow_engine.complete_an_action(action_instance.id, status.id)

@@ -14,9 +14,8 @@
  limitations under the License.
 """
 
-from rapid.lib.BaseController import BaseController
-from Main import Main
-from work_controller import WorkController
+from rapid.client.controllers.Main import Main
+from rapid.client.controllers.work_controller import WorkController
 
 
 def register_controllers(app):

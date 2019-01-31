@@ -17,6 +17,8 @@
 import argparse
 import logging
 
+from ConfigurationGenerator import ConfigurationGenerator
+
 parser = argparse.ArgumentParser(description='Rapid Framework client main control')
 parser.add_argument('-f', '--config', dest='config_file', help="config file path")
 parser.add_argument('-p', '--port', dest='port', help='Port for the master to listen on')
@@ -25,9 +27,11 @@ parser.add_argument('-c', '--client', dest='mode_client', help='Client mode', ac
 parser.add_argument('-l', '--logging', dest='mode_logging', help='Logging mode', action='store_true')
 parser.add_argument('-d', '--log_dir', dest='log_dir', help='Logging directory')
 parser.add_argument('-q', '--qa_dir', dest="qa_dir", help="QA Dir")
+parser.add_argument('-w', '--waitress', dest='waitress', action='store_true', help='Run under waitress')
 parser.add_argument('--downgrade', dest='db_downgrade', help="Downgrade db for alembic")
 parser.add_argument('--create_db', action='store_true', dest='createdb', help="Create initial db")
 parser.add_argument('--create_migration', dest='migrate', help="Create Migration for alembic")
+parser.add_argument('--generate-config', dest='generate_config', help='Generate a default configuration', choices=['master', 'client'])
 args = parser.parse_args()
 
 if args.mode_client:
@@ -39,6 +43,10 @@ elif args.qa_dir:
     process_directory('', args.qa_dir, True)
     import sys
     sys.exit(0)
+elif args.generate_config:
+    import sys
+    ConfigurationGenerator().generate(args.generate_config)
+    sys.exit(0)
 else:
     from .master import app, configure_application
 
@@ -48,6 +56,7 @@ logger = logging.getLogger("rapid")
 def setup():
     logger.info("Setting up the application.")
     configure_application(app, args)
+
 
 setup()
 
@@ -61,6 +70,12 @@ def main():
         create_migration_script(app, args.migrate)
     elif args.db_downgrade:
         print("Downgraded.")
+    elif args.waitress:
+        try:
+            from waitress import serve
+            serve(app, port=(int(args.port or app.rapid_config.port)))
+        except:
+            print("Failed to start up the server.")
     else:
         app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))
 

@@ -16,6 +16,8 @@
 import pprint
 from unittest import TestCase
 from nose.tools import eq_
+
+from rapid.lib.Constants import Constants
 from rapid.client.parsers.XUnitParser import XUnitParser
 
 
@@ -75,10 +77,8 @@ class TestXunitParser(TestCase):
                 'time': '0.001',
                 'stacktrace': 'Traceback (most recent call last):  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/unittest/case.py", line 331, in run testMethod()  File "/private/tmp/rapidci/workspace/123145312403456/cihub/tests/api/routing/test_api_routing.py", line 29, in test_configure_routing_features_enabled     eq_(13, flask_app.add_url_rule.call_count)  File "/private/tmp/rapidci/workspace/123145312403456/cihub/env/lib/python2.7/site-packages/nose/tools/trivial.py", line 29, in eq_    raise AssertionError(msg or "%r != %r" % (a, b)) AssertionError: 13 != 14'
             },
-            '__summary__': {'FAILED': 2, 'SKIPPED': 1, 'SUCCESS': 1}
+            '__summary__': {'FAILED': 2, 'SKIPPED': 1, 'SUCCESS': 1, Constants.FAILURES_COUNT: False}
         }
-        pprint.pprint(testing.keys())
-        pprint.pprint(results.keys())
         eq_(testing, results)
 
     def test_bogus_lines(self):
@@ -91,9 +91,9 @@ class TestXunitParser(TestCase):
     def test_nothing_tested(self):
         parser = XUnitParser()
 
-        eq_({'__summary__': {'FAILED': 0, 'SKIPPED': 0, 'SUCCESS': 0}}, parser.parse(['XUnit', '<testsuites></testsuites>']))
+        eq_({'__summary__': {'FAILED': 0, 'SKIPPED': 0, 'SUCCESS': 0, Constants.FAILURES_COUNT: False}}, parser.parse(['XUnit', '<testsuites></testsuites>']))
 
     def test_workspace_replace(self):
         parser = XUnitParser('/home/trial')
 
-        eq_({'__summary__': {'FAILED': 1, 'SKIPPED': 0, 'SUCCESS': 0}, '/testing.php~should default path to an empty string': {'status': 'FAILED', 'stacktrace': 'Assertion failed', 'time': '0.006'}}, parser.parse(['<testsuite name="trial">', '<testcase classname="/home/trial/testing.php" name="/home/trialshould default path to an empty string" time="0.006">', '<failure message="test failure">Assertion failed</failure>', '</testcase>', "</testsuite>"], True))
+        eq_({'__summary__': {'FAILED': 1, 'SKIPPED': 0, 'SUCCESS': 0, Constants.FAILURES_COUNT: False}, '/testing.php~should default path to an empty string': {'status': 'FAILED', 'stacktrace': 'Assertion failed', 'time': '0.006'}}, parser.parse(['<testsuite name="trial">', '<testcase classname="/home/trial/testing.php" name="/home/trialshould default path to an empty string" time="0.006">', '<failure message="test failure">Assertion failed</failure>', '</testcase>', "</testsuite>"], True))

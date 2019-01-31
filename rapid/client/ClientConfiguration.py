@@ -13,6 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import os
+import tempfile
 
 from requests.auth import HTTPBasicAuth
 
@@ -44,13 +46,13 @@ class ClientConfiguration(Configuration):
 
     def _set_values(self, parser):
         self._set_parser_value(parser, 'client', 'port', 8081, int)
-        self._set_parser_value(parser, 'client', 'workspace', '/tmp/rapidci/workspace')
+        self._set_parser_value(parser, 'client', 'workspace', os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'))
         self._set_parser_value(parser, 'client', 'master_uri', 'http://rapidci.local')
         self._set_parser_value(parser, 'client', 'registration_rate', 180, int)
         self._set_parser_value(parser, 'client', 'executor_count', 2, int)
         self._set_parser_value(parser, 'client', 'grains', None)
         self._set_parser_value(parser, 'client', 'grain_restrict', False, bool)
-        self._set_parser_value(parser, 'client', 'quarantine_directory', '/tmp/rapidci/quarantine')
+        self._set_parser_value(parser, 'client', 'quarantine_directory', os.path.join(tempfile.gettempdir(), 'rapid', 'quarantine'))
         self._set_parser_value(parser, 'client', 'register_api_key', None)
         self._set_parser_value(parser, 'client', 'api_key', str(uuid.uuid3(uuid.NAMESPACE_OID, 'ClientApiKey!')).replace('-', ''))
         self._set_parser_value(parser, 'client', 'install_uri', 'https://pypi.python.org/pypi/')
