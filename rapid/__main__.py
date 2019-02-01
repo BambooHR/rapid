@@ -17,7 +17,7 @@
 import argparse
 import logging
 
-from ConfigurationGenerator import ConfigurationGenerator
+from .configuration_generator import ConfigurationGenerator
 
 parser = argparse.ArgumentParser(description='Rapid Framework client main control')
 parser.add_argument('-f', '--config', dest='config_file', help="config file path")
@@ -64,7 +64,7 @@ setup()
 def main():
     if args.createdb:
         with app.app_context():
-            app.db.create_all()
+            app.db.create_all()  # pylint: disable=no-member
     if args.migrate:
         from .master import create_migration_script
         create_migration_script(app, args.migrate)
@@ -73,14 +73,14 @@ def main():
     elif args.waitress:
         try:
             from waitress import serve
-            serve(app, port=(int(args.port or app.rapid_config.port)))
-        except:
+            serve(app, port=(int(args.port or app.rapid_config.port)))  # pylint: disable=no-member
+        except ImportError:
             print("Failed to start up the server.")
     else:
-        app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))
+        app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))  # pylint: disable=no-member
 
 
-if '__main__' == __name__:
+if __name__ == '__main__':
     main()
 
 
