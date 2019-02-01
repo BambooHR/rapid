@@ -13,10 +13,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import logging
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
 from functools import wraps
@@ -25,26 +26,21 @@ from flask.globals import request
 from flask.wrappers import Response
 
 from rapid.ci.data.github_dal import GithubHelper
-from rapid.ci.services.GithubService import GithubService
 from rapid.lib.Constants import ModuleConstants
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import WorkflowModule
-import logging
 
 logger = logging.getLogger("rapid")
 
 
 class GithubController(Injectable):
-    __injectables__ = {'github_service': GithubService,
-                       'github_helper': GithubHelper,
+    __injectables__ = {'github_helper': GithubHelper,
                        ModuleConstants.WORKFLOW_MODULE: WorkflowModule,
                        'rapid_config': 'rapid_config'}
 
-    def __init__(self, github_service, github_helper, rapid_config, workflow_module, flask_app):
+    def __init__(self, github_helper, rapid_config, workflow_module, flask_app):
         """
 
-        :param github_service:
-        :type github_service: GithubService
         :param github_helper:
         :type github_helper: GithubHelper
         :param rapid_config:
@@ -55,7 +51,6 @@ class GithubController(Injectable):
         :type flask_app: flask.app.Flask
         """
         self.flask_app = flask_app
-        self.github_service = github_service
         self.github_helper = github_helper
         self.rapid_config = rapid_config
         self.workflow_module = workflow_module
@@ -70,22 +65,11 @@ class GithubController(Injectable):
             if 'X-Hub-Signature' in request.headers \
                     and GithubHelper.is_valid_request(request.headers['X-Hub-Signature'], self.rapid_config.github_webhooks_key, request.data):
                 return func(*args, **kwargs)
-            else:
-                return Response("Not authorized", status=401)
+            return Response("Not authorized", status=401)
         return decorated_view
 
     def __process_request(self):
         request_json = request.get_json()
-        try:
-            pass
-            # self.github_helper.record_status({
-            #     "pull_request_repo": request_json['repository']['full_name'],
-            #     "status": "pending",
-            #     "description": "Queued",
-            #     "type": "build"
-            # }, request_json['head_commit']['id'])
-        except Exception as exception:
-            logger.error(exception)
         return request_json
 
     def process_webhooks_pipeline(self, pipeline_id):
@@ -94,8 +78,8 @@ class GithubController(Injectable):
 
         if pipeline_instance:
             return Response(json.dumps(pipeline_instance), content_type="application/json")
-        else:
-            return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
+        
+        return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
 
     def process_webhooks(self):
         # perform operation
@@ -106,8 +90,8 @@ class GithubController(Injectable):
 
         if pipeline_instance:
             return Response(json.dumps(pipeline_instance), content_type="application/json")
-        else:
-            return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
+        
+        return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
 
     def _build_request_parameters(self, request_json):
         parameters = {'branch': GithubHelper.get_branch_from_ref(request_json['ref']) if 'ref' in request_json else None}
@@ -126,7 +110,7 @@ class GithubController(Injectable):
                     value = self._get_json_value(request_json, key)
                     if parameter and value:
                         parameters[parameter] = self._get_json_value(request_json, key)
-                except:
+                except Exception:  # pylint: disable=broad-except
                     pass
         return parameters
 
@@ -135,10 +119,9 @@ class GithubController(Injectable):
             tmp = key.split('.', 1)
             if tmp[0] in request_json:
                 return self._get_json_value(request_json[tmp[0]], tmp[1])
-            else:
-                return None
-        else:
-            return request_json[key] if key in request_json else None
+            return None
 
-    def safe_get_value(self, json, key, value):
-        return json[key][value] if key in json and value in json[key] else None
+        return request_json[key] if key in request_json else None
+
+    def safe_get_value(self, in_json, key, value):
+        return in_json[key][value] if key in json and value in in_json[key] else None

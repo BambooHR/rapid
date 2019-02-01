@@ -18,7 +18,7 @@ from unittest.case import TestCase
 from mock.mock import MagicMock
 from nose.tools.trivial import eq_
 
-from rapid.ci.vcs.GithubController import GithubController
+from rapid.ci.vcs.github_controller import GithubController
 
 
 class TestGithubController(TestCase):

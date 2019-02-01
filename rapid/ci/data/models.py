@@ -22,6 +22,8 @@ from sqlalchemy.sql.expression import desc
 from rapid.master.data import db
 from rapid.master.data.database.models.base.BaseModel import BaseModel
 
+# pylint: disable=no-member, too-few-public-methods
+
 
 class Commit(BaseModel, db.Model):
     commit_identifier = db.Column(db.String(255), nullable=False, index=True)

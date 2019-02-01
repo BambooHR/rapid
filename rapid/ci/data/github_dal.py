@@ -15,17 +15,17 @@
 """
 
 import hmac
+import logging
+
 from hashlib import sha1
 
+from github import Github
 from github.GithubException import GithubException
 
 from rapid.lib.Features import Features
 from rapid.lib.framework.Injectable import Injectable
-from rapid.master import app
 
-from github import Github
-from rapid.lib.Exceptions import UnAuthorizedException, HttpException
-import logging
+from rapid.lib.Exceptions import HttpException
 logger = logging.getLogger("rapid")
 
 
@@ -109,36 +109,3 @@ class GithubHelper(Injectable):
     @staticmethod
     def get_branch_from_ref(ref):
         return ref[len('refs/heads/'):] if ref is not None else None
-
-
-class GithubDal(Injectable):
-    __injectables__ = {"github_helper": GithubHelper}
-
-    def __init__(self, github_helper):
-        self.github_helper = github_helper
-
-    def process_webhooks(self, request):
-        if 'X-Hub-Signature' in request.headers:
-            if GithubHelper.is_valid_request(request.headers['X-Hub-Signature'], 'cihub_super_secret_key', request.data):
-                # perform operation
-                request_json = request.get_json()
-                try:
-                    self.github_helper.record_status({
-                        "pull_request_repo": request_json['repository']['full_name'],
-                        "status": "pending",
-                        "description": "Queued",
-                        "type": "build"
-                    }, request_json['head_commit']['id'])
-                except:
-                    import traceback
-                    traceback.print_exc()
-
-                integration = GitHubIntegration(request_json)
-
-                if integration.commit is not None:
-                    integration.start_ci_run(app)
-                return Response("Success!")
-            else:
-                raise UnAuthorizedException("Unauthorized web request.")
-        raise UnAuthorizedException('You are not allowed to access this.')
-

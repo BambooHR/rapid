@@ -139,7 +139,8 @@ disable=print-statement,
         no-self-use,
         line-too-long,
         trailing-newlines,
-        trailing-whitespace
+        trailing-whitespace,
+        logging-format-interpolation
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -460,7 +461,7 @@ variable-naming-style=snake_case
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=10
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7

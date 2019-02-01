@@ -15,8 +15,8 @@
 """
 
 from rapid.ci.ci_controller import CIController
-from rapid.ci.services.VcsService import VcsService
-from rapid.ci.vcs.GithubController import GithubController
+from rapid.ci.services.vcs_service import VcsService
+from rapid.ci.vcs.github_controller import GithubController
 from rapid.lib.framework.IOC import IOC
 
 

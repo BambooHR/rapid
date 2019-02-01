@@ -13,12 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from rapid.lib.Constants import ModuleConstants
-from rapid.lib.framework.Injectable import Injectable
-
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
 from sqlalchemy.sql.expression import desc
@@ -34,7 +31,7 @@ class CommitDal(object):
             try:
                 commit = session.query(Commit).filter(Commit.commit_identifier == commit_identifier).first()
                 return commit.serialize
-            except:
+            except AttributeError:
                 pass
         return None
 
@@ -43,15 +40,14 @@ class CommitDal(object):
             commit = session.query(Commit).filter(Commit.commit_identifier == commit_identifier).first()
             if commit:
                 version = session.query(Version).filter(Version.name == data_version).first()
-                if not version:
-                    version = Version(commit_id=commit.id, name=data_version)
-                    session.add(version)
-                    session.commit()
-                    return json.dumps(version.serialize())
-                else:
+                if version:
                     raise DatabaseException("Version already exists", code=400)
-            else:
-                raise DatabaseException("Invalid commit", code=404)
+
+                version = Version(commit_id=commit.id, name=data_version)
+                session.add(version)
+                session.commit()
+                return json.dumps(version.serialize())
+        raise DatabaseException("Invalid commit", code=404)
 
     def get_versions(self, commit_identifier, latest_only=False):
         for session in get_db_session():
@@ -63,14 +59,14 @@ class CommitDal(object):
                     version = query.first()
                     if version is not None:
                         return version.serialize
-                    else:
-                        return None
-                else:
-                    for version in query.all():
-                        versions.append(version.serialize)
+
+                    return None
+
+                for version in query.all():
+                    versions.append(version.serialize)
                 return versions
-            else:
-                raise DatabaseException("Invalid commit identifier")
+
+        raise DatabaseException("Invalid commit identifier")
 
     def _get_or_create_commit(self, commit_identifier, session, vcs_id):
 
@@ -81,12 +77,12 @@ class CommitDal(object):
             session.add(commit)
         return commit
 
-    def create_git_commit(self, commit_identifier, vcs_id, additional_info=None, pipeline_instance_id=None, session=None):
-        if session is None:
+    def create_git_commit(self, commit_identifier, vcs_id, additional_info=None, pipeline_instance_id=None, in_session=None):
+        if in_session is None:
             for session in get_db_session():
                 self._create_git_commit(commit_identifier, additional_info, pipeline_instance_id, session, True, vcs_id)
         else:
-            self._create_git_commit(commit_identifier, additional_info, pipeline_instance_id, session, False, vcs_id)
+            self._create_git_commit(commit_identifier, additional_info, pipeline_instance_id, in_session, False, vcs_id)
 
     def _create_git_commit(self, commit_identifier, additional_info, pipeline_instance_id, session, should_commit, vcs_id):
         if commit_identifier:
@@ -110,11 +106,11 @@ class CommitDal(object):
             vcs = session.query(Vcs).filter(Vcs.name == repo_name).first()
             return vcs.serialize() if vcs is not None else None
 
-    def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
-        if session:
+    def get_vcs_by_pipeline_id(self, pipeline_id, in_session=None):
+        if in_session:
+            vcs = in_session.query(Vcs).filter(Vcs.pipeline_id == pipeline_id).first()
+            return vcs.serialize() if vcs is not None else None
+
+        for session in get_db_session():
             vcs = session.query(Vcs).filter(Vcs.pipeline_id == pipeline_id).first()
             return vcs.serialize() if vcs is not None else None
-        else:
-            for session in get_db_session():
-                vcs = session.query(Vcs).filter(Vcs.pipeline_id == pipeline_id).first()
-                return vcs.serialize() if vcs is not None else None
