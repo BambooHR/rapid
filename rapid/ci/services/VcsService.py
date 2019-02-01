@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.ci.data.CommitDal import CommitDal
+from rapid.ci.data.commit_dal import CommitDal
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import CiModule
 
@@ -24,7 +24,7 @@ class VcsService(Injectable, CiModule):
 
     def __init__(self, commit_dal):
         """
-        :type commit_dal: :class:`rapid.ci.data.CommitDal.CommitDal`
+        :type commit_dal: :class:`rapid.ci.data.commit_dal.CommitDal`
         :return:
         """
         self.commit_dal = commit_dal

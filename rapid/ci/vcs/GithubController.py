@@ -24,7 +24,7 @@ from functools import wraps
 from flask.globals import request
 from flask.wrappers import Response
 
-from rapid.ci.data.GithubDal import GithubHelper
+from rapid.ci.data.github_dal import GithubHelper
 from rapid.ci.services.GithubService import GithubService
 from rapid.lib.Constants import ModuleConstants
 from rapid.lib.framework.Injectable import Injectable

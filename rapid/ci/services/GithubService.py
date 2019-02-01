@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.ci.data.GithubDal import GithubDal
+from rapid.ci.data.github_dal import GithubDal
 from rapid.lib.framework.Injectable import Injectable
 
 
