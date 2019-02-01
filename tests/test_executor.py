@@ -22,8 +22,7 @@ from unittest import TestCase
 
 from nose.tools.trivial import ok_
 
-from rapid import testmapper
-from rapid.client.executor.Executor import Executor
+from rapid.client.executor import Executor
 from rapid.lib.Communication import Communication
 from rapid.lib.Constants import Constants
 from rapid.lib.WorkRequest import WorkRequest

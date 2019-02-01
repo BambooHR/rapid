@@ -24,7 +24,7 @@ import tempfile
 import threading
 
 from rapid import testmapper
-from rapid.client.communicator.ClientCommunicator import ClientCommunicator
+from rapid.client.communicator.client_communicator import ClientCommunicator
 from rapid.lib.Communication import Communication
 from rapid.lib.Constants import Constants
 from rapid.lib.Exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
@@ -32,10 +32,7 @@ from rapid.lib.Features import Features
 from rapid.lib.StoreService import StoreService
 from rapid.lib.Utils import deep_merge
 
-try:
-    import uwsgi
-except:
-    pass
+# pylint: disable=broad-except, too-many-instance-attributes
 
 
 class Executor(object):
@@ -70,6 +67,7 @@ class Executor(object):
         self.verify_certs = verify_certs
         self.rapid_config = rapid_config
         self.analyze_tests = None
+        self.pid = None
 
         if self.logger is None:
             self.logger = self._create_logger()
@@ -201,8 +199,8 @@ class Executor(object):
         name_map = {}
         if results:
             for name in results.keys():
-                sp = name.split('~')
-                last = sp[-1]
+                _sp = name.split('~')
+                last = _sp[-1]
                 name_map[last] = name
         return name_map
 
@@ -229,7 +227,7 @@ class Executor(object):
                         with open(stats_file) as glob_file:
                             lines = glob_file.readlines()
                             stats.update(Executor._convert_to_dict(lines))
-                except: # No need to worry about failing stats files.
+                except Exception:  # No need to worry about failing stats files.
                     pass
             return stats
         return None
@@ -239,11 +237,11 @@ class Executor(object):
         return dict((k.strip(), v.strip()) for k, v in
                     (item.split('=', 1) for item in lines))
 
-    def _get_results(self, workspace, results_files):
+    def _get_results(self, workspace, results_files):  # pylint: disable=too-many-locals
         if results_files:
             # Wire in the registered parsers.
             results = {}
-            from ..parsers import parse_file, FileWrapper
+            from .parsers import parse_file, FileWrapper
 
             for file_glob in results_files:
                 wrapper = FileWrapper(self.workspace, file_glob)
@@ -263,12 +261,12 @@ class Executor(object):
                                 if Constants.RESULTS_SUMMARY not in results:
                                     results[Constants.RESULTS_SUMMARY] = summary
                                 else:
-                                    for (key,value) in summary.items():
+                                    for (key, value) in summary.items():
                                         results[Constants.RESULTS_SUMMARY][key] += value
                                 del parsed_results[Constants.RESULTS_SUMMARY]
 
                             results.update(parsed_results)
-                        except:
+                        except Exception:
                             raise ResultsFileNotParsedException("Result file did not parse.")
 
                 if not file_was_read:
@@ -292,7 +290,7 @@ class Executor(object):
                 self._log(self.work_request.action_instance_id, line.strip(), logger)
             self._log(self.work_request.action_instance_id, "Cleaning up thread.", logger)
         except Exception as exception:
-            self._log(self.work_request.action_instance_id, exception.message, logger)
+            self._log(self.work_request.action_instance_id, str(exception), logger)
 
     @staticmethod
     def _get_test_analysis(workspace, test_analysis, name_map):
@@ -337,7 +335,7 @@ class Executor(object):
 
     def get_command(self, communicator):
         """
-        :type communicator: :class:`rapid.client.communicator.ClientCommunicator.ClientCommunicator`
+        :type communicator: :class:`rapid.client.communicator.client_communicator.ClientCommunicator`
         :return:
         """
         command = []
@@ -360,7 +358,7 @@ class Executor(object):
             try:
                 with(open(config_path, 'r')) as tmp_file:
                     self.verify_file_lines(tmp_file.readlines(), self.logger)
-            except:
+            except Exception:
                 pass
 
     def verify_file_lines(self, lines, logger):
@@ -375,7 +373,7 @@ class Executor(object):
                     os.system('rmdir /S /Q {}'.format(self.workspace))
                 else:
                     shutil.rmtree(self.workspace, ignore_errors=True)
-            except:
+            except Exception:
                 pass
         else:
             try:
@@ -390,7 +388,7 @@ class Executor(object):
             return file_name.split(Communication.REMOTE_FILE, 2)[1]
         return file_name
 
-    def _download_required_files(self, file_names, communicator, logger, is_from_file=False, files_downloaded=[]):
+    def _download_required_files(self, file_names, communicator, logger, is_from_file=False, files_downloaded=None):
         """
         Download the file, if a remote file, and then determine if there are any required files that need to be
         downloaded.
@@ -401,6 +399,7 @@ class Executor(object):
         if not isinstance(file_names, list):
             raise Exception("file_names is not a list")
 
+        files_downloaded = [] if files_downloaded is None else files_downloaded
         if file_names:
             for file_name in file_names:
                 if Communication.REMOTE_FILE in file_name or is_from_file:
@@ -451,13 +450,14 @@ class Executor(object):
         except Exception as exception:
             logger.debug(exception)
 
-    def _download_by_lines(self, lines, communicator, logger, files_downloaded=[]):
+    def _download_by_lines(self, lines, communicator, logger, files_downloaded=None):
         """
         Download files by recursing list of lines.
         :param list lines:
         :param ClientCommunicator communicator:
         :return:
         """
+        files_downloaded = [] if files_downloaded is None else files_downloaded
         for line in lines:
             try:
                 self._download_required_files(Executor._get_remote_files(line),
@@ -465,7 +465,7 @@ class Executor(object):
                                               logger,
                                               is_from_file=True,
                                               files_downloaded=files_downloaded)
-            except:
+            except Exception:
                 logger.debug("Line returned nothing for required files: {}".format(line))
 
             self.verify_lines(line, logger)
@@ -529,10 +529,10 @@ class Executor(object):
         overrides = {}
         try:
             for override in Executor._get_split_string(line, Constants.STATUS_OVERRIDE):
-                sp = override.split(':')
-                if len(sp) > 1:
-                    overrides[int(sp[0])] = sp[1]
-        except:
+                _sp = override.split(':')
+                if len(_sp) > 1:
+                    overrides[int(_sp[0])] = _sp[1]
+        except Exception:
             pass
         return overrides
 

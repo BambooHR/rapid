@@ -15,18 +15,15 @@
  limitations under the License.
 """
 import time
+import requests
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from rapid.lib import api_key_required
 from ...lib.BaseController import BaseController
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class Main(BaseController):
@@ -39,13 +36,13 @@ class Main(BaseController):
         self.flask_app = flask_app
 
     def fire_registration(self):
-        r = requests.post('http://rapidci.local/client/register',
-                          data=json.dumps({'grains': {'something': 'more'}}),
-                          headers={'content-type': 'application/json',
-                                   'X-RapidCI-Port': '8002',
-                                   'X-RapidCI-Time': time.time() * 1000},
-                          verify=self.flask_app.rapid_config.ignore_cert_verify)
-        if r.status_code == 200:
+        request = requests.post('http://rapidci.local/client/register',
+                                data=json.dumps({'grains': {'something': 'more'}}),
+                                headers={'content-type': 'application/json',
+                                         'X-RapidCI-Port': '8002',
+                                         'X-RapidCI-Time': time.time() * 1000},
+                                verify=self.flask_app.rapid_config.ignore_cert_verify)
+        if request.status_code == 200:
             return "Success!"
-        else:
-            raise BaseException("There was a problem registrating.")
+
+        raise BaseException("There was a problem registrating.")

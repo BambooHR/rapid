@@ -13,21 +13,22 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from rapid.client.parsers import load_parsers
+import logging
+import os
+import threading
+import time
 
 try:
     import simplejson as json
 except ImportError:
     import json
 
-import logging
-import os
-import threading
-import time
 
 from flask import Flask
+
+from .parsers import load_parsers
 from ..lib import setup_config_from_file
-from .communicator.ClientCommunicator import ClientCommunicator
+from .communicator.client_communicator import ClientCommunicator
 from .controllers import register_controllers
 
 app = Flask("rapidci_client")

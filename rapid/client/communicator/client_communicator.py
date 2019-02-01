@@ -13,29 +13,25 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-import re
+import os
 import time
+import pickle
+import socket
+import logging
+import requests
+from requests.exceptions import ConnectionError  # pylint: disable=redefined-builtin
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
-
-import os
-import pickle
-import logging
-import socket
-
-import requests
-from requests.exceptions import ConnectionError
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 from rapid.lib.Communicator import Communicator
 from rapid.lib.StoreService import StoreService
 
 logger = logging.getLogger("rapid")
+
+# pylint: disable=broad-except
 
 
 class ClientCommunicator(Communicator):
@@ -69,10 +65,10 @@ class ClientCommunicator(Communicator):
         try:
             local_file_name = self.get_downloaded_file_name(directory, file_name)
             return local_file_name
-        except:
+        except Exception:
             import traceback
             traceback.print_exc()
-            logger_in.error("unable to download file: ".format(self.get_uri(file_name)))
+            logger_in.error("unable to download file: {}".format(uri))
 
     def send_parameters(self, pipeline_instance_id, parameters, logger_in):
         if parameters:
@@ -98,7 +94,7 @@ class ClientCommunicator(Communicator):
     def send_test_analysis(self, pipeline_instance_id, analysis, logger_in):
         if analysis:
             try:
-                self._default_send(self.api_uri("qa_tests/analysis"), None, 'post', {'X-Pipeline-Instance-Id': pipeline_instance_id}, json=analysis)
+                self._default_send(self.api_uri("qa_tests/analysis"), None, 'post', {'X-Pipeline-Instance-Id': pipeline_instance_id}, in_json=analysis)
             except Exception as exception:
                 logger_in.error(exception)
 
@@ -131,7 +127,7 @@ class ClientCommunicator(Communicator):
                      'Status Code Failure:' in exception.message):
             try:
                 os.makedirs(self.quarantine_directory)
-            except:
+            except Exception:
                 pass
 
             message = "Master not available, storing for later: {}".format(action_instance_id)
@@ -170,26 +166,27 @@ class ClientCommunicator(Communicator):
         except Exception as exception:
             logger.error(exception)
 
-    def _default_send(self, uri, data, type='put', headers={}, json=None):
+    def _default_send(self, uri, data, in_type='put', headers=None, in_json=None):
         master_key = StoreService.get_master_key(self.flask_app)
+        headers = {} if headers is None else headers
         if master_key is not None:
             headers['X-Rapidci-Api-Key'] = master_key
 
         request = None
-        if 'put' == type:
-            request = requests.put(uri, data=data, json=json, headers=headers, verify=self.verify_certs)
-        elif 'post' == type:
-            request = requests.post(uri, data=data, json=json, headers=headers, verify=self.verify_certs)
+        if in_type == 'put':
+            request = requests.put(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs)
+        elif in_type == 'post':
+            request = requests.post(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs)
 
         if request.status_code != 200:
             raise Exception("Status Code Failure: {}".format(request.status_code))
         return request
 
-    def get_downloaded_file_name(self, directory, file_name, headers=None):
+    def get_downloaded_file_name(self, directory, file_name):
         real_file_name = os.path.join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
         try:
             os.makedirs(os.path.dirname(real_file_name))
-        except:
+        except Exception:
             pass
 
         with open(real_file_name, 'wb') as handle:
