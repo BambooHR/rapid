@@ -17,7 +17,7 @@ from unittest.case import TestCase
 
 from nose.tools.trivial import eq_
 
-from rapid.client.parsers.TapParser import TapParser
+from rapid.client.parsers.tap_parser import TapParser
 
 
 class TestTapParser(TestCase):

@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from rapid.lib.Constants import Constants
-from rapid.client.parsers.AbstractParser import AbstractParser
-from . import register
+from rapid.client.parsers.abstract_parser import AbstractParser
 
 
-@register
 class TapParser(AbstractParser):
     @staticmethod
     def get_type():

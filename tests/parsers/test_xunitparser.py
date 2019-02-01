@@ -18,7 +18,7 @@ from unittest import TestCase
 from nose.tools import eq_
 
 from rapid.lib.Constants import Constants
-from rapid.client.parsers.XUnitParser import XUnitParser
+from rapid.client.parsers.xunit_parser import XUnitParser
 
 
 class TestXunitParser(TestCase):

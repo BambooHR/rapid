@@ -15,18 +15,17 @@
 """
 
 from xml.dom.minidom import parseString
-from AbstractParser import AbstractParser
 from rapid.lib.Constants import Constants
-from . import register
+
+from .abstract_parser import AbstractParser
 
 
-@register
 class XUnitParser(AbstractParser):
     @staticmethod
     def get_type():
         return "XUnit"
 
-    def _parse_lines(self, lines):
+    def _parse_lines(self, lines):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """
         Removes the first line, being the identifier, then parses the rest of the lines
         :param lines: array of the lines of the file.
@@ -38,7 +37,7 @@ class XUnitParser(AbstractParser):
 
         for testsuite in dom.getElementsByTagName('testsuite'):
             for node in testsuite.childNodes:
-                if 'testcase' != node.nodeName:
+                if node.nodeName != 'testcase':
                     continue
                 testcase = node
                 name = ''
@@ -50,7 +49,7 @@ class XUnitParser(AbstractParser):
                             break
 
                     name = "{}~{}".format(class_name, testcase.getAttribute('name'))
-                except:
+                except AttributeError:
                     import traceback
                     traceback.print_exc()
 
@@ -93,7 +92,7 @@ class XUnitParser(AbstractParser):
                     for failure in error_tags:
                         test_result['stacktrace'] += "\n".join(
                             ["Error - " + (failure.firstChild.nodeValue if failure.firstChild is not None and hasattr(failure.firstChild, 'nodeValue')
-                             else failure.attributes['message'].value)])
+                                           else failure.attributes['message'].value)])
                         count += 1
                         if length > count:
                             test_result['stacktrace'] += "\n"

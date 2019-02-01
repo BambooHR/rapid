@@ -13,17 +13,19 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.client.parsers import load_parsers
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
 import logging
 import os
 import threading
-from flask import Flask
 import time
+
+from flask import Flask
 from ..lib import setup_config_from_file
 from .communicator.ClientCommunicator import ClientCommunicator
 from .controllers import register_controllers
@@ -54,7 +56,7 @@ def internal_error(exception):
 
 
 def setup_logger(flask_app):
-    global logger
+    global logger  # pylint: disable=global-statement
     handler = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
@@ -67,8 +69,9 @@ def setup_logger(flask_app):
 def configure_application(flask_app, args):
     setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
+    load_parsers()
     register_controllers(flask_app)
-    if (UWSGI and 1 == uwsgi.worker_id()) or UWSGI is None:
+    if (UWSGI and uwsgi.worker_id() == 1) or UWSGI is None:
         setup_client_register_thread()
         clean_workspace()
 
@@ -81,18 +84,18 @@ def configure_application(flask_app, args):
 def clean_workspace():
     try:
         import shutil
-        if os.path.isdir(app.rapid_config.workspace):
-            shutil.rmtree(app.rapid_config.workspace)
-        os.mkdir(app.rapid_config.workspace)
-    except:
+        if os.path.isdir(app.rapid_config.workspace):  # pylint: disable=no-member
+            shutil.rmtree(app.rapid_config.workspace)  # pylint: disable=no-member
+        os.mkdir(app.rapid_config.workspace)  # pylint: disable=no-member
+    except Exception:  # pylint: disable=broad-except
         pass
 
 
 def _registration_thread():
-    communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)
+    communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)  # pylint: disable=no-member
     while True:
         communicator.register(app.rapid_config)
-        time.sleep(app.rapid_config.registration_rate)
+        time.sleep(app.rapid_config.registration_rate)  # pylint: disable=no-member
 
 
 def setup_client_register_thread():

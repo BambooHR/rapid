@@ -30,8 +30,8 @@ from rapid.lib.framework.IOC import IOC
 
 def setup_config_from_file(app, args):
     if app.rapid_config['_is'] == 'client':
-        from ..client import ClientConfiguration
-        app.rapid_config = ClientConfiguration.ClientConfiguration(args.config_file)
+        from ..client import client_configuration
+        app.rapid_config = client_configuration.ClientConfiguration(args.config_file)
     elif app.rapid_config['_is'] == 'master':
         from ..master import MasterConfiguration
         app.rapid_config = MasterConfiguration.MasterConfiguration(args.config_file)

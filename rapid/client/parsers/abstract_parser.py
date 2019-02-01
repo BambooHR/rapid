@@ -45,5 +45,5 @@ class AbstractParser(object):
 
         if ignore_type_check:
             return self._parse_lines(lines)
-        else:
-            return self._parse_lines(lines[1:])
+        
+        return self._parse_lines(lines[1:])

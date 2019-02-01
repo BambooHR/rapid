@@ -26,7 +26,7 @@ class ConfigurationGenerator(object):
             config = MasterConfiguration()
 
         elif config_type == 'client':
-            from rapid.client.ClientConfiguration import ClientConfiguration
+            from rapid.client.client_configuration import ClientConfiguration
             config = ClientConfiguration()
         self.gather_output(config)
 

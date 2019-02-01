@@ -14,12 +14,14 @@
  limitations under the License.
 """
 import os
+import uuid
 import tempfile
 
 from requests.auth import HTTPBasicAuth
 
 from ..lib.Configuration import Configuration
-import uuid
+
+# pylint: disable=too-many-instance-attributes, too-few-public-methods
 
 
 class ClientConfiguration(Configuration):
@@ -64,6 +66,6 @@ class ClientConfiguration(Configuration):
         if self.get_files_basic_auth:
             try:
                 self.get_files_basic_auth = HTTPBasicAuth(self.get_files_basic_auth[0], self.get_files_basic_auth[1])
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
