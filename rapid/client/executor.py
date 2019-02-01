@@ -407,8 +407,8 @@ class Executor(object):
                                   logger)
                     true_file_name = Executor._get_executable_name(file_name)
                     files_downloaded.append(file_name)
-                    with open(communicator.get_file(self.workspace, true_file_name, logger), 'r') as file:
-                        lines = file.readlines()
+                    with open(communicator.get_file(self.workspace, true_file_name, logger), 'r') as tmp_file:
+                        lines = tmp_file.readlines()
                         self._download_by_lines(lines,
                                                 communicator,
                                                 logger,

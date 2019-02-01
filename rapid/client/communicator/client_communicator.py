@@ -133,9 +133,9 @@ class ClientCommunicator(Communicator):
             message = "Master not available, storing for later: {}".format(action_instance_id)
             logger_in.error(message)
 
-            with open('{}/{}'.format(self.quarantine_directory, action_instance_id), 'w') as file:
-                file.writelines(pickle.dumps(data))
-                file.flush()
+            with open('{}/{}'.format(self.quarantine_directory, action_instance_id), 'w') as tmp_file:
+                tmp_file.writelines(pickle.dumps(data))
+                tmp_file.flush()
 
     @staticmethod
     def _get_register_post_data(client_config):

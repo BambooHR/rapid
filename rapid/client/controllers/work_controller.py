@@ -88,8 +88,8 @@ class WorkController(BaseController):
                                                           get_files_auth=self.app.rapid_config.get_files_basic_auth)
                     try:
                         delete_file = False
-                        with open("{}/{}".format(quarantine_directory, item), 'r') as file:
-                            data = pickle.loads(file.read())
+                        with open("{}/{}".format(quarantine_directory, item), 'r') as tmp_file:
+                            data = pickle.loads(tmp_file.read())
                             try:
                                 status = data['status']
                                 parameters = data['parameters'] if 'parameters' in data else None
