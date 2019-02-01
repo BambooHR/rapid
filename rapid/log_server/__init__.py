@@ -14,12 +14,8 @@
  limitations under the License.
 """
 
-import glob
 import logging
-
 from flask import Flask
-from flask.wrappers import Response
-import subprocess
 
 
 app = Flask("rapidci_logger")
