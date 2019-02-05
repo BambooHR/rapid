@@ -20,6 +20,7 @@ from sqlalchemy.sql.schema import UniqueConstraint
 from rapid.master.data.database.models.base.active_model import ActiveModel
 from rapid.master.data import db
 from rapid.master.data.database.models.base.base_model import BaseModel
+# pylint: disable=no-member,too-few-public-methods
 
 
 class QaTest(BaseModel, db.Model):

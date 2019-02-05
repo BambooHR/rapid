@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+# pylint: disable=bare-except,too-many-locals,unused-import,unused-variable,too-many-branches,too-many-statements,too-many-nested-blocks
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql.expression import select, union_all
@@ -50,14 +51,14 @@ class QaDal(GeneralDal):
     def save_results(self, action_instance, session, post_data):
         return self._save_results(action_instance, session, post_data)
 
-    def get_test_results(self, action_instance_id, filters=None, session=None):
+    def get_test_results(self, action_instance_id, filters=None, in_session=None):
         results = {}
-        if session is None:
+        if in_session is None:
             for session in get_db_session():
                 query = session.query(QaTestHistory).options(
                     joinedload(QaTestHistory.test)).options(
-                    joinedload(QaTestHistory.status)).options(
-                    joinedload(QaTestHistory.stacktrace)) \
+                        joinedload(QaTestHistory.status)).options(
+                            joinedload(QaTestHistory.stacktrace)) \
                     .filter(QaTestHistory.action_instance_id == action_instance_id)
                 query = ORMUtil.get_filtered_query(query, filters, QaTestHistory)
 
@@ -71,10 +72,10 @@ class QaDal(GeneralDal):
                     results_array.append(test_history.serialize({QaTestHistory.__tablename__: ['test', 'status', 'stacktrace']}))
                 return results
         else:
-            query = session.query(QaTestHistory).options(
+            query = in_session.query(QaTestHistory).options(
                 joinedload(QaTestHistory.test)).options(
-                joinedload(QaTestHistory.status)).options(
-                joinedload(QaTestHistory.stacktrace)) \
+                    joinedload(QaTestHistory.status)).options(
+                        joinedload(QaTestHistory.stacktrace)) \
                 .filter(QaTestHistory.action_instance_id == action_instance_id)
             query = ORMUtil.get_filtered_query(query, filters, QaTestHistory)
 
@@ -104,9 +105,9 @@ class QaDal(GeneralDal):
             # Deal with Features
             # Deal with Behavior Points
             for session in get_db_session():
-                product = session.query(QaProduct)\
-                    .join(Vcs)\
-                    .join(PipelineInstance, PipelineInstance.pipeline_id == Vcs.pipeline_id)\
+                product = session.query(QaProduct) \
+                    .join(Vcs) \
+                    .join(PipelineInstance, PipelineInstance.pipeline_id == Vcs.pipeline_id) \
                     .filter(PipelineInstance.id == pipeline_instance_id).first()
 
                 if product:
@@ -115,7 +116,7 @@ class QaDal(GeneralDal):
 
         return {}
 
-    def _get_feature_mapper(self, session, joiners, area_mapper, json):
+    def _get_feature_mapper(self, session, json):
         feature_mapper = {}
         feature_keys = list()
 
@@ -151,12 +152,12 @@ class QaDal(GeneralDal):
             for feature, feature_map in area_map.items():
                 feature_keys.append(feature)
                 feature_mapper[feature] = {'result': feature_map, 'model': None}
-                for bp, tests in feature_map.items():
-                    bp_keys.append(bp)
-                    bp_mapper[bp] = {'result': tests, 'model': None}
+                for _bp, tests in feature_map.items():
+                    bp_keys.append(_bp)
+                    bp_mapper[_bp] = {'result': tests, 'model': None}
                     for test in tests:
                         test_keys.append(test['name'])
-                        test['__key__'] = "{}:{}:{}".format(area, feature, bp)
+                        test['__key__'] = "{}:{}:{}".format(area, feature, _bp)
                         test['model'] = None
                         test_mapper[test['name']] = test
 
@@ -194,21 +195,21 @@ class QaDal(GeneralDal):
 
         session.flush()
 
-        for bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)):
+        for _bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)):
             try:
-                bp_keys.remove(bp.name)
+                bp_keys.remove(_bp.name)
             except:
                 pass
             try:
-                bp_mapper[bp.name]['model'] = bp
+                bp_mapper[_bp.name]['model'] = _bp
             except:
                 pass
 
-        for bp in bp_keys:
-            bp_model = QaBehaviorPoint(name=bp, product_id=product_id)
+        for _bp in bp_keys:
+            bp_model = QaBehaviorPoint(name=_bp, product_id=product_id)
             session.add(bp_model)
             try:
-                bp_mapper[bp]['model'] = bp_model
+                bp_mapper[_bp]['model'] = bp_model
             except:
                 pass
 
@@ -218,20 +219,20 @@ class QaDal(GeneralDal):
                 .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
                 .filter(QaTest.name.in_(test_keys)).all():
             if test.name in test_mapper:
-                (area, feature, bp) = test_mapper[test.name]['__key__'].split(':', 2)
+                (area, feature, _bp) = test_mapper[test.name]['__key__'].split(':', 2)
                 if qa_test_mapping is None:
                     qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
                                                     test_id=test.id,
                                                     feature_id=feature_mapper[feature]['model'].id,
-                                                    behavior_id=bp_mapper[bp]['model'].id)
+                                                    behavior_id=bp_mapper[_bp]['model'].id)
                     session.add(qa_test_mapping)
                 else:
                     if qa_test_mapping.area_id != area_mapper[area]['model'].id:
                         qa_test_mapping.area_id = area_mapper[area]['model'].id
                     if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
                         qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
-                    if qa_test_mapping.behavior_id != bp_mapper[bp]['model'].id:
-                        qa_test_mapping.behavior_id = bp_mapper[bp]['model'].id
+                    if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
+                        qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
 
         session.flush()
         session.commit()
@@ -278,15 +279,15 @@ class QaDal(GeneralDal):
 
                 should_create = dict(results)
                 test_cache = {}
-                for qaTest in session.query(QaTest).filter(QaTest.name.in_(results.keys())):
-                    if qaTest.name in should_create:
-                        del should_create[qaTest.name]
-                        test_cache[qaTest.name] = qaTest
+                for qa_test in session.query(QaTest).filter(QaTest.name.in_(results.keys())):
+                    if qa_test.name in should_create:
+                        del should_create[qa_test.name]
+                        test_cache[qa_test.name] = qa_test
 
                 for name in should_create.keys():
-                    qaTest = QaTest(name=name)
-                    session.add(qaTest)
-                    test_cache[qaTest.name] = qaTest
+                    qa_test = QaTest(name=name)
+                    session.add(qa_test)
+                    test_cache[qa_test.name] = qa_test
 
                 session.flush()
 
@@ -308,18 +309,18 @@ class QaDal(GeneralDal):
                             status_id = status_cache[value['status']].id
 
                     if not failures_count or status_id == StatusConstants.FAILED:
-                        qaTestHistory = QaTestHistory(test_id=test_cache[test].id,
-                                                      pipeline_instance_id=action_instance.pipeline_instance_id,
-                                                      action_instance_id=action_instance.id,
-                                                      status_id=status_id,
-                                                      duration=value['time'] if 'time' in value and value['time'] else 0)
+                        qa_test_history = QaTestHistory(test_id=test_cache[test].id,
+                                                        pipeline_instance_id=action_instance.pipeline_instance_id,
+                                                        action_instance_id=action_instance.id,
+                                                        status_id=status_id,
+                                                        duration=value['time'] if 'time' in value and value['time'] else 0)
 
-                        session.add(qaTestHistory)
+                        session.add(qa_test_history)
 
                         session.flush()
 
                         if 'stacktrace' in value:
-                            session.add(Stacktrace(qa_test_history_id=qaTestHistory.id, stacktrace=value['stacktrace']))
+                            session.add(Stacktrace(qa_test_history_id=qa_test_history.id, stacktrace=value['stacktrace']))
 
                 session.commit()
             except:
@@ -329,18 +330,17 @@ class QaDal(GeneralDal):
     def get_qa_testmap_coverage(self, pipeline_instance_id):
         objects = []
         for session in get_db_session():
-            query = session.query(QaTestMapping)\
-                           .options(joinedload(QaTestMapping.feature, innerjoin=True))\
-                           .options(joinedload(QaTestMapping.behavior_point, innerjoin=True))\
-                           .options(joinedload(QaTestMapping.test, innerjoin=True))\
-                           .options(joinedload(QaTestMapping.area, innerjoin=True))\
-                           .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
-                           .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
-                           .join(QaProduct, QaProduct.vcs_id == Vcs.id)\
-                           .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
+            query = session.query(QaTestMapping) \
+                .options(joinedload(QaTestMapping.feature, innerjoin=True)) \
+                .options(joinedload(QaTestMapping.behavior_point, innerjoin=True)) \
+                .options(joinedload(QaTestMapping.test, innerjoin=True)) \
+                .options(joinedload(QaTestMapping.area, innerjoin=True)) \
+                .join(PipelineInstance, PipelineInstance.id == pipeline_instance_id) \
+                .join(Vcs, Vcs.pipeline_id == PipelineInstance.pipeline_id) \
+                .join(QaProduct, QaProduct.vcs_id == Vcs.id) \
+                .join(QaArea, and_(QaArea.product_id == QaProduct.id, QaArea.id == QaTestMapping.area_id))
             objects = ResultsSerializer.serialize_results(query.all(), {QaTestMapping.__tablename__: ['area',
                                                                                                       'feature',
                                                                                                       'behavior_point',
                                                                                                       'test']})
         return objects
-

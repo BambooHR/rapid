@@ -16,7 +16,7 @@
 
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import QaModule
-from rapid.qa.data.dals.QaDal import QaDal
+from rapid.qa.data.dals.qa_dal import QaDal
 
 
 class QaService(Injectable, QaModule):

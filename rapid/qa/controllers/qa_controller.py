@@ -18,7 +18,7 @@ import logging
 from flask.globals import request
 from werkzeug.exceptions import HTTPException
 
-from rapid.qa.QaService import QaService
+from rapid.qa.qa_service import QaService
 from rapid.lib import api_key_required, json_response
 from rapid.lib.framework.Injectable import Injectable
 
@@ -48,7 +48,7 @@ class QAController(Injectable):
         if 'X-Pipeline-Instance-Id' in request.headers:
             try:
                 return self.qa_service.analyze_tests(int(request.headers['X-Pipeline-Instance-Id']), request.json)
-            except Exception as exception:
+            except Exception as exception:  # pylint: disable=broad-except
                 logger.exception(exception)
                 
         raise HTTPException("Missing Pipeline Instance Id")
