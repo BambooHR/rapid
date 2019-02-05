@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+# pylint: disable=no-member,too-few-public-methods
 
 import datetime
 
@@ -89,4 +90,4 @@ class VcsReleaseStep(BaseModel, db.Model):
     vcs_release_id = db.Column(db.Integer, db.ForeignKey('vcs_releases.id'), nullable=False, index=True)
 
 
-__all__ = [Release, StepIntegration, Step, StepUser, StepUserComment, StepIntegration, User, VcsRelease, VcsReleaseStep]
+__all__ = ['Release', 'StepIntegration', 'Step', 'StepUser', 'StepUserComment', 'StepIntegration', 'User', 'VcsRelease', 'VcsReleaseStep']

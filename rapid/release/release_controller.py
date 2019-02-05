@@ -15,9 +15,9 @@
 """
 
 from rapid.lib import api_key_required, json_response
-from rapid.lib.Constants import Constants, ModuleConstants
+from rapid.lib.Constants import Constants
 from rapid.lib.framework.Injectable import Injectable
-from rapid.release.data.ReleaseDal import ReleaseDal
+from rapid.release.data.release_dal import ReleaseDal
 
 
 class ReleaseController(Injectable):
@@ -25,7 +25,7 @@ class ReleaseController(Injectable):
 
     def __init__(self, release_dal):
         """
-        :type release_dal: :class:`rapid.release.data.ReleaseDal.ReleaseDal`
+        :type release_dal: :class:`rapid.release.data.release_dal.ReleaseDal`
         :return:
         """
         self.release_dal = release_dal

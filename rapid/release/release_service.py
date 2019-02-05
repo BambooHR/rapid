@@ -15,7 +15,7 @@
 """
 
 from rapid.lib.framework.Injectable import Injectable
-from rapid.release.data.ReleaseDal import ReleaseDal
+from rapid.release.data.release_dal import ReleaseDal
 
 
 class ReleaseService(Injectable):

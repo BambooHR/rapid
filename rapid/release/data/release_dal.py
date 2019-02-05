@@ -13,16 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from sqlalchemy.orm import joinedload_all
-
+import logging
 from rapid.ci.data.models import Commit
 from rapid.lib.Constants import ModuleConstants, StatusConstants, status_type_severity_mapping
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.data.database import get_db_session
 from rapid.release.data.models import Step, Release
 
-import logging
 logger = logging.getLogger("rapid")
 
 
@@ -39,12 +36,12 @@ class ReleaseDal(Injectable):
         self.workflow_module = workflow_module
         self.ci_module = ci_module
 
-    def get_release_by_id(self, release_id, session=None):
-        if session is None:
+    def get_release_by_id(self, release_id, in_session=None):
+        if in_session is None:
             for session in get_db_session():
-                query = session.query(Release).fitler(Release.id == release_id).first().serialize()
+                return session.query(Release).fitler(Release.id == release_id).first().serialize()
         else:
-            return session.query(Release).filter(Release.id == release_id).first()
+            return in_session.query(Release).filter(Release.id == release_id).first()
 
     def set_release_step(self, release_id, step_id, status, session=None):
         assert release_id is not None
@@ -103,22 +100,22 @@ class ReleaseDal(Injectable):
                 return step
         raise Exception("Something didn't work!")
 
-    def get_step_by_release_and_step_id(self, release_id, step_id, session=None):
-        if session is not None:
-            return session.query(Step).filter(Step.release_id == release_id)\
+    def get_step_by_release_and_step_id(self, release_id, step_id, in_session=None):
+        if in_session is not None:
+            return in_session.query(Step).filter(Step.release_id == release_id)\
                 .filter(Step.custom_id == step_id).first()
-        else:
+        for session in get_db_session():
             return session.query(Step).filter(Step.release_id == release_id) \
                 .filter(Step.custom_id == step_id).first().serialize()
 
-    def get_release_by_commit_identifier(self, commit_identifier, session=None):
-        if session is None:
+    def get_release_by_commit_identifier(self, commit_identifier, in_session=None):
+        if in_session is None:
             for session in get_db_session():
                 release = session.query(Release).filter(Release.commit_id == Commit.id)\
                     .filter(Commit.commit_identifier == commit_identifier).first()
                 return release.serialize() if release is not None else None
         else:
-            return session.query(Release).filter(Release.commit_id == commit_identifier).first()
+            return in_session.query(Release).filter(Release.commit_id == commit_identifier).first()
 
     def mark_step_for_commit(self, commit_identifier, step_custom_id, status_name):
         commit = self.ci_module.get_by_identifier(commit_identifier)
@@ -129,5 +126,6 @@ class ReleaseDal(Injectable):
                     step = self.set_release_step(release.id, step_custom_id, status_name, session)
                     session.commit()
                     return step
-                else:
-                    logger.debug("Step is not the head of the release.")
+
+        logger.debug("Step is not the head of the release.")
+        return None
