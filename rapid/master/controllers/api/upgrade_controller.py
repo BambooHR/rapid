@@ -16,9 +16,9 @@
 
 from flask import Response
 
-from ....lib.Utils import UpgradeUtil
 from rapid.lib.Version import Version
 from rapid.lib import api_key_required
+from rapid.lib.Utils import UpgradeUtil
 
 
 class UpgradeController(object):
@@ -29,6 +29,6 @@ class UpgradeController(object):
     def configure_routing(self):
         self.flask_app.add_url_rule('/api/upgrade/<path:version>', 'upgrade_master', api_key_required(self.upgrade_master), methods=['POST'])
 
-    def upgrade_master(self, version, attempted_reinstall=False):
+    def upgrade_master(self, version):
         worked = UpgradeUtil.upgrade_version(version, self.flask_app.rapid_config)
         return Response("It worked!" if worked else "It didn't work, version {} restored!".format(Version.get_version()), status=200 if worked else 505)

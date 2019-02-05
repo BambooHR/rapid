@@ -33,8 +33,8 @@ def setup_config_from_file(app, args):
         from ..client import client_configuration
         app.rapid_config = client_configuration.ClientConfiguration(args.config_file)
     elif app.rapid_config['_is'] == 'master':
-        from ..master import MasterConfiguration
-        app.rapid_config = MasterConfiguration.MasterConfiguration(args.config_file)
+        from ..master import master_configuration
+        app.rapid_config = master_configuration.MasterConfiguration(args.config_file)
     IOC.register_global('rapid_config', app.rapid_config)
 
 

@@ -15,7 +15,7 @@ limitations under the License.
 """
 from rapid.lib.Constants import EventTypes
 from rapid.lib.framework.Injectable import Injectable
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.dal.PipelineDal import PipelineDal
 from rapid.workflow.events.event_handler import EventHandlerFactory
 

@@ -22,7 +22,7 @@ from requests.exceptions import ConnectionError, Timeout, ConnectTimeout, ReadTi
 from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusConstants
 from rapid.lib.framework.Injectable import Injectable
-from rapid.master.communicator.MasterCommunicator import MasterCommunicator
+from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.ActionInstanceService import ActionInstanceService
 from rapid.workflow.QueueService import QueueService
 

@@ -16,7 +16,7 @@
 from ConfigParser import SafeConfigParser
 from nose.tools import eq_
 from unittest import TestCase
-from rapid.master.MasterConfiguration import MasterConfiguration
+from rapid.master.master_configuration import MasterConfiguration
 
 
 class TestMasterConfiguration(TestCase):

@@ -17,9 +17,9 @@ import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import UniqueConstraint
 
-from rapid.master.data.database.models.base.ActiveModel import ActiveModel
+from rapid.master.data.database.models.base.active_model import ActiveModel
 from rapid.master.data import db
-from rapid.master.data.database.models.base.BaseModel import BaseModel
+from rapid.master.data.database.models.base.base_model import BaseModel
 
 
 class QaTest(BaseModel, db.Model):

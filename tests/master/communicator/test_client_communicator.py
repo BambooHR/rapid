@@ -25,7 +25,7 @@ from mock.mock import Mock, patch
 from nose.tools.trivial import eq_
 
 from rapid.client.communicator.client_communicator import ClientCommunicator
-from rapid.master.MasterConfiguration import MasterConfiguration
+from rapid.master.master_configuration import MasterConfiguration
 
 
 class TestClientCommunicator(TestCase):

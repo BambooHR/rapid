@@ -15,6 +15,7 @@
 """
 
 from rapid.master.data import db
+# pylint: disable=no-member
 
 
 def get_db_session():

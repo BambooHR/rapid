@@ -22,7 +22,7 @@ class ConfigurationGenerator(object):
     def generate(self, config_type):
         config = None
         if config_type == 'master':
-            from rapid.master.MasterConfiguration import MasterConfiguration
+            from rapid.master.master_configuration import MasterConfiguration
             config = MasterConfiguration()
 
         elif config_type == 'client':

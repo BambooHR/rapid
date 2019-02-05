@@ -37,7 +37,7 @@ from rapid.lib.Exceptions import VcsNotFoundException
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import CiModule
 from rapid.master.data.database import get_db_session
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.models import Action, Pipeline, Stage, Workflow, PipelineInstance, \
     PipelineParameters
 import logging

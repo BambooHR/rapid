@@ -17,40 +17,39 @@
 
 class GeneralDal(object):
 
-    def is_serviceable(self, model):
+    def is_serviceable(self, model):  # pylint: disable=unused-argument
         return True
 
-    def register_url_rules(self, flask_app):
+    def register_url_rules(self, flask_app): # pylint: disable=unused-argument
         pass
 
-    def edit_object(self, session, clazz, id, json):
-        instance = session.query(clazz).filter(clazz.id == id).one()
-        self._set_attributes(instance, json)
+    def edit_object(self, session, clazz, _id, in_json):
+        instance = session.query(clazz).filter(clazz.id == _id).one()
+        self._set_attributes(instance, in_json)
         session.add(instance)
         session.commit()
 
         return instance
 
-    def delete_object(self, session, clazz, id):
-        instance = session.query(clazz).filter(clazz.id == id).one()
+    def delete_object(self, session, clazz, _id):
+        instance = session.query(clazz).filter(clazz.id == _id).one()
         session.delete(instance)
         session.commit()
 
         return instance
 
-    def _set_attributes(self, instance, json):
-        for key in json.keys():
+    def _set_attributes(self, instance, in_json):
+        for key in in_json.keys():
             if hasattr(instance, key):
-                setattr(instance, key, json[key])
+                setattr(instance, key, in_json[key])
 
-    def get_instance(self, clazz, json):
-        if json:
-            return clazz(**json)
-        else:
-            return clazz()
+    def get_instance(self, clazz, in_json):
+        if in_json:
+            return clazz(**in_json)
+        return clazz()
 
-    def create_object(self, session, clazz, json):
-        instance = self.get_instance(clazz, json)
+    def create_object(self, session, clazz, in_json):
+        instance = self.get_instance(clazz, in_json)
         session.add(instance)
         session.commit()
         return instance.serialize()

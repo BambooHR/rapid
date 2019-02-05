@@ -22,7 +22,7 @@ db = SQLAlchemy()
 
 
 def configure_data_layer(flask_app):
-    global db
+    global db  # pylint: disable=global-statement
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = flask_app.rapid_config.db_connect_string
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     flask_app.db = db

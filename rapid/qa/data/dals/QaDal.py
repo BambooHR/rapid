@@ -25,7 +25,7 @@ from rapid.qa.data.models import QaProduct
 from rapid.lib.Utils import ORMUtil
 from rapid.lib.Constants import Constants, StatusConstants
 from rapid.master.data.database import get_db_session
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.qa.data.models import QaTestHistory, QaStatusSummary, Stacktrace, QaTest, QaArea, QaFeature, QaBehaviorPoint, QaTestMapping
 from rapid.workflow.data.models import Status
 from rapid.workflow.data.models import PipelineInstance

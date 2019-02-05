@@ -33,7 +33,7 @@ from rapid.workflow.data.dal.StatusDal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
     PipelineStatistics, Statistics, StageInstance, WorkflowInstance
 
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.EventService import EventService
 
 

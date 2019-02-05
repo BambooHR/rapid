@@ -17,7 +17,7 @@ from unittest import TestCase
 
 from nose.tools import eq_, ok_
 
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.models import Status
 
 

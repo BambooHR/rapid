@@ -13,9 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from .... import db
 import datetime
+from .... import db
+# pylint: disable=no-member,too-few-public-methods
 
 
 class DateModel(object):

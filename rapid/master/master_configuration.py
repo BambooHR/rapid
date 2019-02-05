@@ -13,9 +13,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from ..lib.Configuration import Configuration
 import uuid
+from ..lib.Configuration import Configuration
+
+# pylint: disable=too-many-instance-attributes,too-few-public-methods
 
 
 class MasterConfiguration(Configuration):

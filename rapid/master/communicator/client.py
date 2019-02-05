@@ -16,14 +16,12 @@
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
 from rapid.lib.Version import Version
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# pylint: disable=too-many-instance-attributes
 
 
 class Client(object):
@@ -49,11 +47,12 @@ class Client(object):
     def can_handle(self, grain):
         if self.sleep:
             return False
-        elif grain is not None and self.grains is not None:
+
+        if grain is not None and self.grains is not None:
             tmp_grains = grain.split(';')
             number_matched = 0
-            for gr in tmp_grains:
-                if gr not in self.grains:
+            for _grain in tmp_grains:
+                if _grain not in self.grains:
                     return False
                 number_matched += 1
 
@@ -61,8 +60,10 @@ class Client(object):
                 return False
 
             return True
-        elif self.grain_restrict:
+
+        if self.grain_restrict:
             return False
+        
         return True
 
     def get_availability_uri(self):

@@ -14,29 +14,22 @@
  limitations under the License.
 """
 import time
-
-import math
+import jsonpickle
+from flask import request, Response
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.Exceptions import HttpException, VcsNotFoundException
 from rapid.lib.StoreService import StoreService
-from rapid.master.communicator.Client import Client
-from rapid.master.communicator.MasterCommunicator import MasterCommunicator
+from rapid.master.communicator.client import Client
+from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.ActionDal import ActionDal
-from ... import app
-import jsonpickle
+
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
-from flask import request, Response
-
-
-try:
-    import uwsgi
-except:
-    pass
+# pylint: disable=broad-except
 
 
 class UtilityRouter(object):
@@ -65,13 +58,13 @@ class UtilityRouter(object):
         clients = []
         try:
             clients = StoreService.get_clients(self.flask_app)
-        except:
+        except Exception:
             pass
 
         if client_ip in clients:
             return {'status': MasterCommunicator.is_still_working_on(action_instance_id, clients[client_ip], self.flask_app.rapid_config.verify_certs)}
-        else:
-            return {"status": "No client found"}
+
+        return {"status": "No client found"}
 
     @json_response()
     def client_verify_working(self):
@@ -107,7 +100,7 @@ class UtilityRouter(object):
                 api_key = in_request.headers['X-Rapidci-Client-Key'] if 'X-Rapidci-Client-Key' in in_request.headers else False
                 is_ssl = in_request.headers['X-Is-Ssl'].lower() == 'true' if 'X-is_ssl' in in_request.headers else False
 
-                if 443 == remote_port:
+                if remote_port == 443:
                     is_ssl = True
 
                 if not api_key:
@@ -125,7 +118,7 @@ class UtilityRouter(object):
         self._save_clients(clients)
 
     def _save_clients(self, clients):
-        StoreService.save_clients(clients, app)
+        StoreService.save_clients(clients, self.flask_app)
 
     def _get_clients(self):
-        return StoreService.get_clients(app)
+        return StoreService.get_clients(self.flask_app)

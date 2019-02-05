@@ -20,9 +20,9 @@ from rapid.lib.Constants import StatusConstants
 from rapid.lib.Converters import ObjectConverter
 from rapid.master.data import db
 from sqlalchemy.orm import relationship
-from rapid.master.data.database.models.base.BaseModel import BaseModel
-from rapid.master.data.database.models.base.DateModel import DateModel
-from rapid.master.data.database.models.base.ActiveModel import ActiveModel
+from rapid.master.data.database.models.base.base_model import BaseModel
+from rapid.master.data.database.models.base.date_model import DateModel
+from rapid.master.data.database.models.base.active_model import ActiveModel
 
 
 class Action(BaseModel, db.Model):

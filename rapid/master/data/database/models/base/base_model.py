@@ -14,22 +14,23 @@
  limitations under the License.
 """
 
+import logging
 import calendar
 import re
 from datetime import datetime
 
+from sqlalchemy.ext.declarative import declared_attr
 from .... import db
-from sqlalchemy.ext.declarative import declared_attr, declarative_base
 
-import logging
 logger = logging.getLogger("rapid")
+# pylint: disable=no-member
 
 
 class BaseModel(object):
 
     @declared_attr
-    def __tablename__(cls):
-        name = "_".join(re.findall('[A-Z]{1}[a-z]*', cls.__name__))
+    def __tablename__(self):
+        name = "_".join(re.findall('[A-Z]{1}[a-z]*', self.__name__))
         name = name.lower()
         if name.endswith('s') and re.search("[aeiou]s$", name):
             name = "{}es".format(name)
@@ -46,7 +47,7 @@ class BaseModel(object):
     def __repr__(self):
         return "<Model {}>".format(self.__class__)
 
-    def __relationships__(self, reverse=False):
+    def __relationships__(self):
         """
         Return a list of relationships name which are not as a backref
         name in model

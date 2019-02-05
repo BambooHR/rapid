@@ -15,7 +15,8 @@
 """
 
 from .... import db
-from .BaseModel import BaseModel
+from .base_model import BaseModel
+# pylint: disable=no-member,too-few-public-methods
 
 
 class ActiveModel(BaseModel):

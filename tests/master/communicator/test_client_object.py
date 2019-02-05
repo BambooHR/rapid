@@ -26,7 +26,7 @@ from nose.tools.trivial import eq_, ok_
 
 from rapid.lib import Version
 from rapid.lib.WorkRequest import WorkRequest
-from rapid.master.communicator.Client import Client
+from rapid.master.communicator.client import Client
 
 
 class TestClientObject(TestCase):
