@@ -24,11 +24,11 @@ class ResultsSerializer(object):
             return pool.map(ResultsSerializer._convert, ResultsSerializer._get_results_generator(results, allowed_children, previous_children))
 
     @staticmethod
-    def _convert(x):
-        (result, allowed_children, previous_children) = x
+    def _convert(_x):
+        (result, allowed_children, previous_children) = _x
         return result.serialize(allowed_children, previous_children)
 
     @staticmethod
     def _get_results_generator(results, allowed_children, previous_children):
-        for qaTestMapping in results:
-            yield (qaTestMapping, allowed_children, previous_children)
+        for qa_test_mapping in results:
+            yield (qa_test_mapping, allowed_children, previous_children)

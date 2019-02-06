@@ -13,41 +13,40 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-import hmac
+# pylint: disable=broad-except
 import os
 import re
-
-import datetime
-from hashlib import sha1
-
 import sys
-
-from rapid.lib.version import Version
+import hmac
 import logging
+import datetime
+
+from hashlib import sha1
+from rapid.lib.version import Version
 
 logger = logging.getLogger("rapid")
 
 
-def deep_merge(a, b, path=None):
+def deep_merge(_a, _b, path=None):
     "merges b into a"
-    if path is None: path = []
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                deep_merge(a[key], b[key], path + [str(key)])
-            elif isinstance(a.get(key, None), list) and isinstance(b.get(key, None), list):
-                a[key].extend(b[key])
-            elif a[key] == b[key]:
+    if path is None:
+        path = []
+    for key in _b:
+        if key in _a:
+            if isinstance(_a[key], dict) and isinstance(_b[key], dict):
+                deep_merge(_a[key], _b[key], path + [str(key)])
+            elif isinstance(_a.get(key, None), list) and isinstance(_b.get(key, None), list):
+                _a[key].extend(_b[key])
+            elif _a[key] == _b[key]:
                 pass  # same leaf value
             else:
                 raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
         else:
-            if isinstance(a.get(key, None), list) and isinstance(b.get(key, None), list):
-                a[key].extend(b[key])
+            if isinstance(_a.get(key, None), list) and isinstance(_b.get(key, None), list):
+                _a[key].extend(_b[key])
             else:
-                a[key] = b[key]
-    return a
+                _a[key] = _b[key]
+    return _a
 
 
 class RoutingUtil(object):
@@ -63,17 +62,17 @@ class RoutingUtil(object):
 
 class ORMUtil(object):
     @staticmethod
-    def get_filtered_query(query, filter, clazz):
-        if filter is not None:
+    def get_filtered_query(query, _filter, clazz):  # pylint: disable=too-many-locals
+        if _filter is not None:
             joined_classes = []
-            for token in filter.split(':=:'):
-                m = re.match('(.*)(_eq_|_ne_|_gt_|_lt_|_in_|_ge_|_le_|_like_)(.*)', token)
-                if not m:
+            for token in _filter.split(':=:'):
+                _m = re.match('(.*)(_eq_|_ne_|_gt_|_lt_|_in_|_ge_|_le_|_like_)(.*)', token)
+                if not _m:
                     return query
 
-                group1 = m.group(1).split('.')
-                op = m.group(2).replace('_', '')
-                value = m.group(3)
+                group1 = _m.group(1).split('.')
+                _op = _m.group(2).replace('_', '')
+                value = _m.group(3)
 
                 if len(group1) > 1:
                     final_class = None
@@ -96,35 +95,35 @@ class ORMUtil(object):
                         current_class = final_column.parent.mapper.class_
 
                     if final_class is not None and final_column is not None:
-                        query = ORMUtil.get_embedded_filter(final_class, final_column.name, op, value, query)
+                        query = ORMUtil.get_embedded_filter(final_class, final_column.name, _op, value, query)
                 else:
                     column_name = group1[0]
                     if hasattr(clazz, column_name):
-                        query = ORMUtil.get_column_filter(clazz, column_name, op, value, query)
+                        query = ORMUtil.get_column_filter(clazz, column_name, _op, value, query)
                     else:
-                        logger.info("Not found: {}".format(m.group(1)))
+                        logger.info("Not found: {}".format(_m.group(1)))
         return query
 
     @staticmethod
-    def get_column_filter(clazz, column_name, op, value, query):
+    def get_column_filter(clazz, column_name, _op, value, query):
         if hasattr(clazz, column_name):
-            query = ORMUtil.get_embedded_filter(clazz, column_name, op, value, query)
+            query = ORMUtil.get_embedded_filter(clazz, column_name, _op, value, query)
             return query
         raise Exception("Missing attribute")
 
     @staticmethod
-    def get_embedded_filter(clazz, column_name, op, value, query):
+    def get_embedded_filter(clazz, column_name, _op, value, query):
         if hasattr(clazz, column_name):
             column = getattr(clazz, column_name, None)
             filt = None
-            if op == 'in':
+            if _op == 'in':
                 filt = column.in_(value.split(','))
             else:
                 attr = None
                 try:
-                    for e in ['%s', '%s_', '__%s__']:
-                        if hasattr(column, e % op):
-                            attr = e % op
+                    for _e in ['%s', '%s_', '__%s__']:
+                        if hasattr(column, _e % _op):
+                            attr = _e % _op
                 except Exception as exception:
                     logger.info("\n\n")
                     logger.error(exception)
@@ -137,7 +136,7 @@ class ORMUtil(object):
                 elif column.type.python_type == datetime.datetime:
                     try:
                         value = datetime.datetime.utcfromtimestamp(float(value))  # Python timestamp
-                    except:
+                    except ValueError:
                         value = datetime.datetime.utcfromtimestamp(float(value / 1e3))  # Traditional linux timestamp
                 filt = getattr(column, attr)(value)
             query = query.filter(filt)
@@ -152,12 +151,12 @@ class UpgradeUtil(object):
             try:
                 import uwsgi
                 uwsgi.reload()
-            except:
+            except ImportError:
                 import traceback
                 traceback.print_exc()
                 return False
             return True
-        elif not attempted_reinstall:
+        if not attempted_reinstall:
             if UpgradeUtil.upgrade_version(Version.get_version(), configuration, True):
                 return False
 
@@ -166,7 +165,7 @@ class UpgradeUtil(object):
     @staticmethod
     def _install(version, configuration):
         version = version.split(';')[0]
-        assert re.search('[^a-zA-Z\-0-9.]', version) is None, "Invalid Version string."
+        assert re.search(r'[^a-zA-Z\-0-9.]', version) is None, "Invalid Version string."
         
         try:
             logger.info("installing version: {}".format(version))

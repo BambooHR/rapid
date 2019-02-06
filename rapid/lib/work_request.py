@@ -13,13 +13,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import re
 
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
-
-import re
 
 
 class WorkRequest(object):
@@ -50,7 +49,7 @@ class WorkRequest(object):
                     tmp = '_grain'
                 getattr(self, tmp)
                 setattr(self, tmp, value)
-            except:
+            except (TypeError, AttributeError):
                 pass
 
     def prepare_to_send(self, data_in):
@@ -61,7 +60,7 @@ class WorkRequest(object):
                     if tmp == '_grain':
                         tmp = 'grain'
                     setattr(self, attr, data_in[tmp])
-                except:
+                except (TypeError, AttributeError):
                     pass
         else:
             for attr in vars(self).keys():
@@ -70,7 +69,7 @@ class WorkRequest(object):
                     if tmp == '_grain':
                         tmp = 'grain'
                     setattr(self, attr, getattr(data_in, tmp))
-                except:
+                except (TypeError, AttributeError):
                     pass
 
         self.set_headers()
@@ -80,8 +79,8 @@ class WorkRequest(object):
 
     @property
     def grain(self):
-        if '{' in self._grain:
-            match = re.findall("\{([\w\d]*)\}", self._grain)
+        if '{' in self._grain:  # pylint: disable=unsupported-membership-test
+            match = re.findall(r"\{([\w\d]*)\}", self._grain)
             if match:
                 tmp = self._grain
                 for param in match:
@@ -92,7 +91,7 @@ class WorkRequest(object):
 
 
 class WorkRequestEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o):  # pylint: disable=method-hidden
         state = o.__dict__.copy()
         state['grain'] = state.pop('_grain', None)
         return state

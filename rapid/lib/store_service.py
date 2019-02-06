@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=broad-except,protected-access
 import os
 import logging
 import tempfile
@@ -39,19 +39,17 @@ class StoreService(object):
             tmp_dir = tempfile.gettempdir()
             for filename in os.listdir(tmp_dir):
                 try:
-                    sp = filename.split('-')
-                    if sp[0] == 'rapid':
+                    _sp = filename.split('-')
+                    if _sp[0] == 'rapid':
                         try:
-                            os.kill(int(sp[2]), 0)
-                            executors.append({'action_instance_id': sp[1], 'pid': sp[2]})
-                        except:
+                            os.kill(int(_sp[2]), 0)
+                            executors.append({'action_instance_id': _sp[1], 'pid': _sp[2]})
+                        except OSError:
                             os.remove(os.path.join(tmp_dir, filename))
-                except:
+                except Exception:
                     pass
-        except:
-            import traceback
-            traceback.print_exc()
-            pass
+        except Exception as exception:
+            logger.exception(exception)
         return executors
 
     @staticmethod
@@ -62,7 +60,7 @@ class StoreService(object):
     def clear_executor(executor):
         try:
             os.remove(StoreService._get_tempfile_name(executor))
-        except:
+        except OSError:
             pass
 
     @staticmethod
@@ -70,17 +68,15 @@ class StoreService(object):
         try:
             with open(StoreService._get_tempfile_name(executor), 'w') as file_out:
                 file_out.write("{}".format(executor.pid))
-        except:
-            import traceback
-            traceback.print_exc()
+        except IOError as exception:
+            logger.exception(exception)
 
     @staticmethod
     def save_clients(clients, app):
         try:
             uwsgi.cache_update("_rapidci_clients", jsonpickle.dumps(clients))
-        except:
-            import traceback
-            traceback.print_exc()
+        except (AttributeError, NameError) as exception:
+            logger.exception(exception)
             app.rapid_config.clients = clients
 
     @staticmethod
@@ -93,34 +89,34 @@ class StoreService(object):
         """
         try:
             return jsonpickle.loads(StoreService.get_key('_rapidci_clients'))
-        except:
+        except Exception:
             if not hasattr(app.rapid_config, 'clients'):
                 app.rapid_config.clients = {}
             return app.rapid_config.clients
 
     @staticmethod
-    def save_master_key(app, api_key):
+    def save_master_key(app, api_key):  # pylint: disable=unused-argument
         return StoreService.__set_key('_rapidci_master_key', jsonpickle.dumps(api_key))
 
     @staticmethod
     def get_master_key(app):
         try:
             return jsonpickle.loads(uwsgi.cache_get("_rapidci_master_key"))
-        except:
+        except Exception:
             return app.rapid_config._rapidci_master_key if hasattr(app.rapid_config, "_rapidci_master_key") else None
 
     @staticmethod
     def set_updating(app, updating=True):
         try:
             uwsgi.cache_update("_rapidci_updating", jsonpickle.dumps(updating))
-        except:
+        except Exception:
             app.rapid_config._rapidci_updating = updating
 
     @staticmethod
     def is_updating(app):
         try:
             return jsonpickle.loads(StoreService.get_key('_rapidci_updating'))
-        except:
+        except Exception:
             return app.rapid_config._rapidci_updating if hasattr(app.rapid_config, "_rapidci_updating") else False
 
     @staticmethod
@@ -130,7 +126,7 @@ class StoreService(object):
             for filename in os.listdir(tempfile.gettempdir()):
                 if pid_name in filename:
                     return filename
-        except:
+        except OSError:
             pass
         return None
 
@@ -162,7 +158,7 @@ class StoreService(object):
     def __is_by_key(key, value):
         try:
             return value == StoreService.get_key(key)
-        except:
+        except Exception:
             pass
         return False
 
@@ -171,7 +167,7 @@ class StoreService(object):
         try:
             uwsgi.cache_update(key, value)
             return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -180,7 +176,7 @@ class StoreService(object):
         try:
             uwsgi.cache_del(key)
             return True
-        except:
+        except Exception:
             logger.info("FAILED TO clear cache-key: {}".format(key))
         return False
 
@@ -188,5 +184,5 @@ class StoreService(object):
     def get_key(key):
         try:
             return uwsgi.cache_get(key)
-        except:
+        except Exception:
             return None

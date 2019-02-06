@@ -49,7 +49,7 @@ class LogServer(object):
                         break
             else:
                 yield ""
-        except Exception as exception:  # pylint: broad-except
+        except Exception as exception:  # pylint: disable=broad-except
             logger.exception(exception)
         yield ""
 
