@@ -17,7 +17,7 @@
 from rapid.ci.ci_controller import CIController
 from rapid.ci.services.vcs_service import VcsService
 from rapid.ci.vcs.github_controller import GithubController
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument

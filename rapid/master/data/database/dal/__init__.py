@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 registered_dals = []
 

@@ -25,7 +25,7 @@ from functools import wraps
 
 from rapid.lib.Exceptions import HttpException
 from rapid.lib.Utils import RoutingUtil
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 
 def setup_config_from_file(app, args):

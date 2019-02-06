@@ -15,7 +15,7 @@
 """
 # pylint: disable=unused-argument,bare-except,unused-import
 
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 from rapid.release.release_controller import ReleaseRouter
 
 

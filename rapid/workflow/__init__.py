@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument

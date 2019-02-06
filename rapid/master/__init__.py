@@ -22,7 +22,7 @@ from flask import Flask, Response
 
 from rapid.master.data import run_db_downgrade
 from rapid.lib import setup_config_from_file
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
 
