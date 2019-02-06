@@ -15,7 +15,7 @@
 """
 
 from rapid.ci.data.commit_dal import CommitDal
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules.modules import CiModule
 
 

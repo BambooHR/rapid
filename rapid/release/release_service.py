@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.release.data.release_dal import ReleaseDal
 
 

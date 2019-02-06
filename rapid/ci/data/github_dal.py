@@ -23,7 +23,7 @@ from github import Github
 from github.GithubException import GithubException
 
 from rapid.lib.Features import Features
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 
 from rapid.lib.Exceptions import HttpException
 logger = logging.getLogger("rapid")

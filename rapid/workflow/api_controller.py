@@ -29,7 +29,7 @@ from rapid.lib.Constants import ModuleConstants
 from rapid.lib.Utils import ORMUtil
 from rapid.lib.StoreService import StoreService
 from rapid.lib.WorkRequest import WorkRequestEncoder
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database.dal import get_dal
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_service import QueueService

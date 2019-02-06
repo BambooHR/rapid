@@ -16,7 +16,7 @@
 import logging
 from rapid.ci.data.models import Commit
 from rapid.lib.Constants import ModuleConstants, StatusConstants, status_type_severity_mapping
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database import get_db_session
 from rapid.release.data.models import Step, Release
 

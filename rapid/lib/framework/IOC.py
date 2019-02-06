@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from .Injectable import Injectable
+from .injectable import Injectable
 
 
 class IOC(object):

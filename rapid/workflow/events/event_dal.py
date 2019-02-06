@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from rapid.lib.Constants import EventTypes
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.events.event_handler import EventHandlerFactory

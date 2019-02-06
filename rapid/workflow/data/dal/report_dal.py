@@ -19,7 +19,7 @@ import json
 import logging
 
 from rapid.lib.Exceptions import InvalidReportException
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database import execute_db_query
 
 logger = logging.getLogger('rapid')

@@ -18,7 +18,7 @@ from unittest.case import TestCase
 from nose.tools.trivial import eq_
 
 from rapid.lib.framework.IOC import IOC
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 
 
 class TrialClass(object):

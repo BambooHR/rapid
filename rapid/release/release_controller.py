@@ -16,7 +16,7 @@
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.Constants import Constants
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.release.data.release_dal import ReleaseDal
 
 

@@ -20,7 +20,7 @@ from werkzeug.exceptions import HTTPException
 
 from rapid.qa.qa_service import QaService
 from rapid.lib import api_key_required, json_response
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 
 logger = logging.getLogger("rapid")
 

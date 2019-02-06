@@ -25,7 +25,7 @@ from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusConstants, StatusTypes, ModuleConstants
 from rapid.lib.WorkRequest import WorkRequest
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules.modules import QaModule
 from rapid.master.data.database import get_db_session
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine

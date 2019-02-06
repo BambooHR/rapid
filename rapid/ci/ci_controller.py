@@ -18,7 +18,7 @@ from flask.globals import request
 
 from rapid.ci.services.vcs_service import VcsService
 from rapid.lib import api_key_required, json_response
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 
 
 class CIController(Injectable):

@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.data.dal.report_dal import ReportDal

@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.Injectable import Injectable
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules.modules import QaModule
 from rapid.qa.data.dals.qa_dal import QaDal
 
