@@ -20,7 +20,7 @@ import os
 
 import re
 
-from rapid.lib.Utils import deep_merge
+from rapid.lib.utils import deep_merge
 
 logger = logging.getLogger("rapid")
 

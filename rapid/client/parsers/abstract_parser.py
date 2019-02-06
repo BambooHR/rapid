@@ -16,7 +16,7 @@
 
 import abc
 
-from rapid.lib.Constants import Constants
+from rapid.lib.constants import Constants
 
 
 class AbstractParser(object):

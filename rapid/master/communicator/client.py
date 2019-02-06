@@ -20,7 +20,7 @@ except ImportError:
     import json
 
 import requests
-from rapid.lib.Version import Version
+from rapid.lib.version import Version
 # pylint: disable=too-many-instance-attributes
 
 

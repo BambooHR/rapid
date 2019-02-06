@@ -23,8 +23,6 @@ logger = logging.getLogger('rapid')
 
 
 class LogServer(object):
-    pass
-
     def __init__(self, log_dir=None):
         self.log_dir = log_dir
 
@@ -33,11 +31,9 @@ class LogServer(object):
             yield "The logging directory is not configured."
 
         try:
-            lines = []
             string_grep = "__RCI_{}__".format(grep)
 
             found_output = False
-            process = subprocess.Popen("grep {} {}".format(string_grep, os.path.join(self.log_dir, '*.log')).split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             gz_files = glob.glob(os.path.join(self.log_dir, "*.gz"))
             log_files = glob.glob(os.path.join(self.log_dir, "*.log"))
 
@@ -53,11 +49,8 @@ class LogServer(object):
                         break
             else:
                 yield ""
-        except Exception as exception:
-            import traceback
-            traceback.print_exc()
-            logger.error(exception)
-            pass
+        except Exception as exception:  # pylint: broad-except
+            logger.exception(exception)
         yield ""
 
     def configure_application(self, flask_app):

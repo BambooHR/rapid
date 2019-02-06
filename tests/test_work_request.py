@@ -24,7 +24,7 @@ from nose.tools import ok_, eq_
 
 from unittest import TestCase
 import pickle
-from rapid.lib.WorkRequest import WorkRequest, WorkRequestEncoder
+from rapid.lib.work_request import WorkRequest, WorkRequestEncoder
 
 
 class TestWorkRequest(TestCase):

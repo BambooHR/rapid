@@ -38,8 +38,6 @@ class Features(object):
         if hasattr(Features, key):
             if key in Features.enabled_features:
                 return True
-            else:
-                if key in os.environ:
-                    return os.environ[key].lower().strip() == "true"
-
+            if key in os.environ:
+                return os.environ[key].lower().strip() == "true"
         return False

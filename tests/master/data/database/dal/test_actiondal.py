@@ -21,8 +21,8 @@ from mock.mock import patch, Mock
 from nose.tools.trivial import eq_, ok_
 from sqlalchemy.sql.sqltypes import NullType
 
-from rapid.lib.Exceptions import InvalidObjectException
-from rapid.lib.Constants import StatusConstants
+from rapid.lib.exceptions import InvalidObjectException
+from rapid.lib.constants import StatusConstants
 from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance
 

@@ -18,7 +18,7 @@ import os
 import json
 import logging
 
-from rapid.lib.Exceptions import InvalidReportException
+from rapid.lib.exceptions import InvalidReportException
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database import execute_db_query
 

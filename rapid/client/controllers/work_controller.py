@@ -31,12 +31,12 @@ from flask.wrappers import Response
 
 from rapid.client.communicator.client_communicator import ClientCommunicator
 from rapid.lib import api_key_required
-from rapid.lib.StoreService import StoreService
-from rapid.lib.Utils import UpgradeUtil
-from rapid.lib.WorkRequest import WorkRequest
+from rapid.lib.store_service import StoreService
+from rapid.lib.utils import UpgradeUtil
+from rapid.lib.work_request import WorkRequest
 from rapid.client.executor import Executor
-from ...lib.BaseController import BaseController
-from ...lib.Version import Version
+from ...lib.base_controller import BaseController
+from ...lib.version import Version
 
 logger = logging.getLogger("rapid")
 # pylint: disable=broad-except

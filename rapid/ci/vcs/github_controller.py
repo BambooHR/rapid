@@ -26,7 +26,7 @@ from flask.globals import request
 from flask.wrappers import Response
 
 from rapid.ci.data.github_dal import GithubHelper
-from rapid.lib.Constants import ModuleConstants
+from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules.modules import WorkflowModule
 

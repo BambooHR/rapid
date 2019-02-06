@@ -13,8 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from rapid.lib.Constants import StatusConstants
-from rapid.lib.Exceptions import InvalidObjectException
+from rapid.lib.constants import StatusConstants
+from rapid.lib.exceptions import InvalidObjectException
 
 try:
     import simplejson as json

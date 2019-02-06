@@ -26,8 +26,8 @@ try:
 except ImportError:
     import json
 
-from rapid.lib.Communicator import Communicator
-from rapid.lib.StoreService import StoreService
+from rapid.lib.communicator import Communicator
+from rapid.lib.store_service import StoreService
 
 logger = logging.getLogger("rapid")
 

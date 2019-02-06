@@ -19,7 +19,7 @@ import tempfile
 
 from requests.auth import HTTPBasicAuth
 
-from ..lib.Configuration import Configuration
+from ..lib.configuration import Configuration
 
 # pylint: disable=too-many-instance-attributes, too-few-public-methods
 

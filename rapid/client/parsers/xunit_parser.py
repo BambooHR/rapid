@@ -15,7 +15,7 @@
 """
 
 from xml.dom.minidom import parseString
-from rapid.lib.Constants import Constants
+from rapid.lib.constants import Constants
 
 from .abstract_parser import AbstractParser
 

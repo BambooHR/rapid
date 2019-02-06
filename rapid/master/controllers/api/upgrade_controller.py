@@ -16,9 +16,9 @@
 
 from flask import Response
 
-from rapid.lib.Version import Version
+from rapid.lib.version import Version
 from rapid.lib import api_key_required
-from rapid.lib.Utils import UpgradeUtil
+from rapid.lib.utils import UpgradeUtil
 
 
 class UpgradeController(object):

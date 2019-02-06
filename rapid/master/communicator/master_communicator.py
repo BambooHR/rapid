@@ -20,8 +20,8 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from requests.exceptions import ConnectTimeout, ConnectionError  # pylint: disable=redefined-builtin
 
-from rapid.lib.Version import Version
-from rapid.lib.Communicator import Communicator
+from rapid.lib.version import Version
+from rapid.lib.communicator import Communicator
 
 
 logger = logging.getLogger("rapid")

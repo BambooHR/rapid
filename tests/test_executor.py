@@ -23,9 +23,9 @@ from unittest import TestCase
 from nose.tools.trivial import ok_
 
 from rapid.client.executor import Executor
-from rapid.lib.Communication import Communication
-from rapid.lib.Constants import Constants
-from rapid.lib.WorkRequest import WorkRequest
+from rapid.lib.communication import Communication
+from rapid.lib.constants import Constants
+from rapid.lib.work_request import WorkRequest
 
 
 class TestExecutor(TestCase):

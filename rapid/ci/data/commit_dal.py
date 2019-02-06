@@ -20,7 +20,7 @@ except ImportError:
 
 from sqlalchemy.sql.expression import desc
 
-from rapid.lib.Exceptions import DatabaseException, InvalidObjectException
+from rapid.lib.exceptions import DatabaseException, InvalidObjectException
 from rapid.master.data.database import get_db_session
 from rapid.ci.data.models import Commit, Version, CommitParameters, Vcs, PipelineInstanceCommit
 

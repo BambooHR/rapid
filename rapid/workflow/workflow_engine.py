@@ -17,8 +17,8 @@
 import datetime
 import logging
 
-from rapid.lib.StoreService import StoreService
-from rapid.lib.Constants import StatusTypes, status_type_severity_mapping, StatusConstants
+from rapid.lib.store_service import StoreService
+from rapid.lib.constants import StatusTypes, status_type_severity_mapping, StatusConstants
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import Pipeline, PipelineInstance, Stage, StageInstance, Action, \
     ActionInstance, Workflow, WorkflowInstance

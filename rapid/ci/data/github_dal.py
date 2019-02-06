@@ -22,10 +22,10 @@ from hashlib import sha1
 from github import Github
 from github.GithubException import GithubException
 
-from rapid.lib.Features import Features
+from rapid.lib.features import Features
 from rapid.lib.framework.injectable import Injectable
 
-from rapid.lib.Exceptions import HttpException
+from rapid.lib.exceptions import HttpException
 logger = logging.getLogger("rapid")
 
 

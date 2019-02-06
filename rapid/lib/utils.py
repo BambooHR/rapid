@@ -23,7 +23,7 @@ from hashlib import sha1
 
 import sys
 
-from rapid.lib.Version import Version
+from rapid.lib.version import Version
 import logging
 
 logger = logging.getLogger("rapid")

@@ -40,7 +40,7 @@ class Configuration(object):
             if file_name:
                 if os.path.exists(file_name):
                     parser.read(file_name)
-        except:
+        except Exception:  # pylint: disable=broad-except
             logger.info("Using defaults")
 
         self._set_values(parser)
@@ -58,5 +58,5 @@ class Configuration(object):
                 setattr(self, key, parser.get(section, key).split(delim))
             else:
                 setattr(self, key, type_cast(parser.get(section, key)))
-        except:
+        except Exception:  # pylint: disable=broad-except
             setattr(self, key, default)

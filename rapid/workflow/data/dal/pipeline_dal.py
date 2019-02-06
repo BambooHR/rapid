@@ -27,12 +27,12 @@ from flask.wrappers import Response
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.sql.expression import asc
 
-from rapid.lib.Exceptions import InvalidObjectException
-from rapid.lib.StoreService import StoreService
+from rapid.lib.exceptions import InvalidObjectException
+from rapid.lib.store_service import StoreService
 from rapid.workflow.data.models import PipelineEvent
 from rapid.lib import api_key_required
-from rapid.lib.Constants import StatusConstants, ModuleConstants
-from rapid.lib.Exceptions import VcsNotFoundException
+from rapid.lib.constants import StatusConstants, ModuleConstants
+from rapid.lib.exceptions import VcsNotFoundException
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules.modules import CiModule
 from rapid.master.data.database import get_db_session

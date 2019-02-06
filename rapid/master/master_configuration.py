@@ -14,7 +14,7 @@
  limitations under the License.
 """
 import uuid
-from ..lib.Configuration import Configuration
+from ..lib.configuration import Configuration
 
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
 

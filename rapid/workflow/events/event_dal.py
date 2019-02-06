@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from rapid.lib.Constants import EventTypes
+from rapid.lib.constants import EventTypes
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal

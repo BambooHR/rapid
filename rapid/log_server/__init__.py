@@ -43,6 +43,6 @@ def setup_logging(flask_app):
 
 def configure_application(flask_app, args):
     setup_logging(flask_app)
-    from rapid.lib.LogServer import LogServer
+    from rapid.lib.log_server import LogServer
     log_server = LogServer(args.log_dir)
     log_server.configure_application(flask_app)

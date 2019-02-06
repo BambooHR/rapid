@@ -20,7 +20,7 @@ import jsonpickle
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
-from rapid.lib.StoreService import StoreService
+from rapid.lib.store_service import StoreService
 
 
 class TestStoreService(TestCase):

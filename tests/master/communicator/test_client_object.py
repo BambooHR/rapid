@@ -24,8 +24,8 @@ from unittest.case import TestCase
 from mock.mock import patch, Mock
 from nose.tools.trivial import eq_, ok_
 
-from rapid.lib import Version
-from rapid.lib.WorkRequest import WorkRequest
+from rapid.lib import version
+from rapid.lib.work_request import WorkRequest
 from rapid.master.communicator.client import Client
 
 
@@ -102,7 +102,7 @@ class TestClientObject(TestCase):
 
     def test_get_headers(self):
         client = Client(None, None, None, None, 'trial', False)
-        eq_({'X-Rapidci-Version': Version.__version__, 'Content-Type': 'application/json', 'X-Rapidci-Api-Key': "trial"}, client.get_headers())
+        eq_({'X-Rapidci-Version': version.__version__, 'Content-Type': 'application/json', 'X-Rapidci-Api-Key': "trial"}, client.get_headers())
 
     def test_grain_restrict(self):
         client = Client(None, None, None, True)

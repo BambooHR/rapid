@@ -28,6 +28,7 @@ def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
 def configure_module(flask_app):
     from rapid.workflow.api_controller import APIRouter
     router = IOC.get_class_instance(APIRouter)
+    print("Registering api controller...")
     router.register_url_rules(flask_app)
 
 

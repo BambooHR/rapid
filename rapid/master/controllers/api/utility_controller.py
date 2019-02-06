@@ -18,8 +18,8 @@ import jsonpickle
 from flask import request, Response
 
 from rapid.lib import api_key_required, json_response
-from rapid.lib.Exceptions import HttpException, VcsNotFoundException
-from rapid.lib.StoreService import StoreService
+from rapid.lib.exceptions import HttpException, VcsNotFoundException
+from rapid.lib.store_service import StoreService
 from rapid.master.communicator.client import Client
 from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.action_dal import ActionDal

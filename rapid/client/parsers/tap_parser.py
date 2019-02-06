@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from rapid.lib.Constants import Constants
+from rapid.lib.constants import Constants
 from rapid.client.parsers.abstract_parser import AbstractParser
 
 

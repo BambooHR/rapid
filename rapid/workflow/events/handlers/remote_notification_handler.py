@@ -17,7 +17,7 @@ import json
 import logging
 import requests
 
-from rapid.lib.Constants import EventTypes
+from rapid.lib.constants import EventTypes
 from rapid.workflow.events.event_handler import EventHandler
 # pylint: disable=broad-except
 

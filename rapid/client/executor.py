@@ -25,12 +25,12 @@ import threading
 
 from rapid import testmapper
 from rapid.client.communicator.client_communicator import ClientCommunicator
-from rapid.lib.Communication import Communication
-from rapid.lib.Constants import Constants
-from rapid.lib.Exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
-from rapid.lib.Features import Features
-from rapid.lib.StoreService import StoreService
-from rapid.lib.Utils import deep_merge
+from rapid.lib.communication import Communication
+from rapid.lib.constants import Constants
+from rapid.lib.exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
+from rapid.lib.features import Features
+from rapid.lib.store_service import StoreService
+from rapid.lib.utils import deep_merge
 
 # pylint: disable=broad-except, too-many-instance-attributes
 

@@ -18,7 +18,7 @@ from unittest.case import TestCase
 from mock.mock import MagicMock, patch
 from nose.tools.trivial import ok_, eq_
 
-from rapid.lib.Constants import EventTypes
+from rapid.lib.constants import EventTypes
 from rapid.workflow.events.event_handler import EventHandlerFactory
 from rapid.workflow.events.handlers.remote_notification_handler import RemoteNotificationHandler
 

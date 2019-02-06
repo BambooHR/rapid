@@ -20,7 +20,7 @@ import tempfile
 
 import jsonpickle
 
-from rapid.lib.InMemoryStore import InMemoryStore
+from rapid.lib.in_memory_store import InMemoryStore
 
 logger = logging.getLogger("rapid")
 

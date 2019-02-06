@@ -19,7 +19,7 @@ from mock import Mock
 from mock.mock import patch
 from nose.tools.trivial import eq_
 
-from rapid.lib.Constants import ModuleConstants
+from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.ioc import IOC
 from rapid.master.data.database import get_db_session
 from rapid.master.data.database.dal import get_dal, setup_dals

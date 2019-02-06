@@ -28,7 +28,10 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-execfile('./rapid/lib/Version.py')
+try:
+    execfile('./rapid/lib/version.py')
+except NameError:
+    exec(open('./rapid/lib/version.py').read())
 
 requirements = [
     'flask',

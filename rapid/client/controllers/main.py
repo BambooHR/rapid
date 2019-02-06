@@ -23,7 +23,7 @@ except ImportError:
     import json
 
 from rapid.lib import api_key_required
-from ...lib.BaseController import BaseController
+from ...lib.base_controller import BaseController
 
 
 class Main(BaseController):

@@ -14,6 +14,8 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
+from werkzeug.exceptions import BadRequestKeyError
+
 try:
     import simplejson as json
 except ImportError:
@@ -25,10 +27,10 @@ from sqlalchemy import desc, asc
 from flask import Response, request
 
 from rapid.lib import json_response, api_key_required
-from rapid.lib.Constants import ModuleConstants
-from rapid.lib.Utils import ORMUtil
-from rapid.lib.StoreService import StoreService
-from rapid.lib.WorkRequest import WorkRequestEncoder
+from rapid.lib.constants import ModuleConstants
+from rapid.lib.utils import ORMUtil
+from rapid.lib.store_service import StoreService
+from rapid.lib.work_request import WorkRequestEncoder
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database.dal import get_dal
 from rapid.workflow.action_instances_service import ActionInstanceService
@@ -152,6 +154,9 @@ class APIRouter(Injectable):
                 for result in query.all():
                     results.append(result.serialize(fields))
                 return Response(json.dumps(results), content_type='application/json')
+            except Exception as exception:
+                logger.exception(exception)
+                raise
             finally:
                 if session:
                     session.close()
@@ -245,7 +250,7 @@ class APIRouter(Injectable):
 
         try:
             limit = int(self._get_args()['limit'])
-        except (AttributeError, TypeError, ValueError):
+        except (AttributeError, TypeError, ValueError, BadRequestKeyError):
             pass
         return query.limit(limit)
 

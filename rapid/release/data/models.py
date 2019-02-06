@@ -21,7 +21,7 @@ from sqlalchemy.orm import relationship, backref
 
 from rapid.master.data import db
 from rapid.master.data.database.models.base.base_model import BaseModel
-from rapid.lib.Constants import VcsReleaseStepType
+from rapid.lib.constants import VcsReleaseStepType
 
 
 class Release(BaseModel, db.Model):
