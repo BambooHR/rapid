@@ -26,8 +26,8 @@ from rapid.lib.store_service import StoreService
 from rapid.lib.constants import StatusConstants, StatusTypes, ModuleConstants
 from rapid.lib.work_request import WorkRequest
 from rapid.lib.framework.injectable import Injectable
-from rapid.lib.modules.modules import QaModule
-from rapid.master.data.database import get_db_session
+from rapid.lib.modules import QaModule
+from rapid.lib import get_db_session
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \

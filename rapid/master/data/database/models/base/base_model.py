@@ -20,7 +20,7 @@ import re
 from datetime import datetime
 
 from sqlalchemy.ext.declarative import declared_attr
-from .... import db
+from rapid.lib import db
 
 logger = logging.getLogger("rapid")
 # pylint: disable=no-member

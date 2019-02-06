@@ -15,7 +15,7 @@
 """
 
 from rapid.lib.framework.injectable import Injectable
-from rapid.lib.modules.modules import WorkflowModule
+from rapid.lib.modules import WorkflowModule
 from rapid.workflow.action_service import ActionService
 
 

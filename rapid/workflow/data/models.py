@@ -19,7 +19,7 @@ import datetime
 from sqlalchemy.orm import relationship
 from rapid.lib.constants import StatusConstants
 from rapid.lib.converters import ObjectConverter
-from rapid.master.data import db
+from rapid.lib import db
 from rapid.master.data.database.models.base.base_model import BaseModel
 from rapid.master.data.database.models.base.date_model import DateModel
 from rapid.master.data.database.models.base.active_model import ActiveModel

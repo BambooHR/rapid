@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from .... import db
+from rapid.lib import db
 from .base_model import BaseModel
 # pylint: disable=no-member,too-few-public-methods
 

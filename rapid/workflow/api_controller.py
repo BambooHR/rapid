@@ -14,7 +14,6 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
-from werkzeug.exceptions import BadRequestKeyError
 
 try:
     import simplejson as json
@@ -22,6 +21,7 @@ except ImportError:
     import json
 
 import logging
+from werkzeug.exceptions import BadRequestKeyError
 from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
 from flask import Response, request

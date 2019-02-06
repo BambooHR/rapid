@@ -14,20 +14,7 @@
  limitations under the License.
 """
 
-from rapid.master.data import db
-# pylint: disable=no-member
-
-
-def get_db_session():
-    session = db.session
-    try:
-        yield session
-    finally:
-        if session is not None:
-            session.rollback()
-            session.remove()
-            session = None
-
 
 def execute_db_query(query):
+    from rapid.lib import db
     return db.engine.execute(query)

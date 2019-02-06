@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.master.data.database import get_db_session
+from rapid.lib import get_db_session
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.models import Status
 

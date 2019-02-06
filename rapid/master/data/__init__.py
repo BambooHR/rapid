@@ -13,20 +13,25 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=no-member
 import os
 
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+from rapid.lib import set_db
+
+
+def configure_db():
+    _db = SQLAlchemy()
+    set_db(_db)
 
 
 def configure_data_layer(flask_app):
-    global db  # pylint: disable=global-statement
+    from rapid.lib import db as _db
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = flask_app.rapid_config.db_connect_string
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    flask_app.db = db
-    db.init_app(flask_app)
+    flask_app.db = _db
+    _db.init_app(flask_app)
 
     from rapid.master.data.database.dal import setup_dals
     setup_dals(flask_app)
@@ -61,4 +66,7 @@ def _get_alembic_config(flask_app):
     return Config(config_args={'script_location': "{}/migrations".format(os.path.dirname(__file__)),
                                'sqlalchemy.url': flask_app.rapid_config.db_connect_string})
 
-__all__ = ['configure_data_layer', 'db', 'create_revision']
+
+__all__ = ['configure_data_layer', 'create_revision']
+
+

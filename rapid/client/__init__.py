@@ -23,9 +23,9 @@ try:
 except ImportError:
     import json
 
-
 from flask import Flask
 
+from rapid.lib import is_primary_worker, setup_logging, setup_status_route
 from .parsers import load_parsers
 from ..lib import setup_config_from_file
 from .communicator.client_communicator import ClientCommunicator
@@ -36,18 +36,6 @@ app.rapid_config = {'_is': 'client'}
 logger = logging.getLogger("rapid")
 
 
-UWSGI = None
-try:
-    import uwsgi
-    UWSGI = True
-except ImportError:
-    pass
-
-
-@app.route('/status')
-def status():
-    return "Running"
-
 @app.errorhandler(500)
 def internal_error(exception):
     response = json.dumps(exception.to_dict())
@@ -57,22 +45,16 @@ def internal_error(exception):
 
 
 def setup_logger(flask_app):
-    global logger  # pylint: disable=global-statement
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    flask_app.logger.addHandler(handler)
-    flask_app.logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    setup_logging(flask_app)
 
 
 def configure_application(flask_app, args):
+    setup_status_route(flask_app)
     setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
     load_parsers()
     register_controllers(flask_app)
-    if (UWSGI and uwsgi.worker_id() == 1) or UWSGI is None:
+    if is_primary_worker():
         setup_client_register_thread()
         clean_workspace()
 
@@ -104,3 +86,5 @@ def setup_client_register_thread():
     thread = threading.Thread(target=_registration_thread)
     thread.daemon = True
     thread.start()
+
+

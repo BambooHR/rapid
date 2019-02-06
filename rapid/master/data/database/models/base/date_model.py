@@ -14,7 +14,7 @@
  limitations under the License.
 """
 import datetime
-from .... import db
+from rapid.lib import db
 # pylint: disable=no-member,too-few-public-methods
 
 

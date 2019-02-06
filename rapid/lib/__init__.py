@@ -14,6 +14,8 @@
  limitations under the License.
 """
 
+import logging
+
 try:
     import simplejson as json
 except ImportError:
@@ -25,6 +27,35 @@ from flask import request, current_app, Response
 from rapid.lib.exceptions import HttpException
 from rapid.lib.utils import RoutingUtil
 from rapid.lib.framework.ioc import IOC
+
+db = None
+
+UWSGI = False
+try:
+    import uwsgi
+    UWSGI = True
+except ImportError:
+    pass
+
+
+def set_db(_db):
+    global db  # pylint: disable=global-statement
+    db = _db
+
+
+def is_primary_worker():
+    return uwsgi.worker_id() == 1 if UWSGI else not UWSGI
+
+
+def get_db_session():
+    session = db.session
+    try:
+        yield session
+    finally:
+        if session is not None:
+            session.rollback()
+            session.remove()
+            session = None
 
 
 def setup_config_from_file(app, args):
@@ -69,3 +100,21 @@ def json_response(exception_class=None, message=None):
                 return response
         return wrapped_func
     return wrap
+
+
+def setup_logging(flask_app):
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    flask_app.logger.addHandler(handler)
+    flask_app.logger.setLevel(logging.INFO)
+
+    logger = logging.getLogger('rapid')
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+
+def setup_status_route(flask_app):
+    @flask_app.route('/status')
+    def status():  # pylint: disable=unused-variable
+        return 'Running'

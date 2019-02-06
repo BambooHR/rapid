@@ -25,7 +25,7 @@ from rapid.lib.results_serializer import ResultsSerializer
 from rapid.qa.data.models import QaProduct
 from rapid.lib.utils import ORMUtil
 from rapid.lib.constants import Constants, StatusConstants
-from rapid.master.data.database import get_db_session
+from rapid.lib import get_db_session
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.qa.data.models import QaTestHistory, QaStatusSummary, Stacktrace, QaTest, QaArea, QaFeature, QaBehaviorPoint, QaTestMapping
 from rapid.workflow.data.models import Status

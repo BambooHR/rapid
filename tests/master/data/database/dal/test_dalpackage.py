@@ -21,7 +21,7 @@ from nose.tools.trivial import eq_
 
 from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.ioc import IOC
-from rapid.master.data.database import get_db_session
+from rapid.lib import get_db_session
 from rapid.master.data.database.dal import get_dal, setup_dals
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal

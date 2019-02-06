@@ -19,7 +19,7 @@ import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import desc
 
-from rapid.master.data import db
+from rapid.lib import db
 from rapid.master.data.database.models.base.base_model import BaseModel
 
 # pylint: disable=no-member, too-few-public-methods

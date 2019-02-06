@@ -15,7 +15,7 @@
 """
 
 from rapid.lib.framework.injectable import Injectable
-from rapid.lib.modules.modules import QaModule
+from rapid.lib.modules import QaModule
 from rapid.qa.data.dals.qa_dal import QaDal
 
 

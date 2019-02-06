@@ -20,8 +20,8 @@ import time
 
 from flask import Flask, Response
 
-from rapid.master.data import run_db_downgrade
-from rapid.lib import setup_config_from_file
+from rapid.master.data import run_db_downgrade, configure_db
+from rapid.lib import setup_config_from_file, is_primary_worker, setup_status_route
 from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
@@ -40,13 +40,6 @@ logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 # pylint: disable=broad-except
 
-UWSGI = False
-try:
-    import uwsgi
-    UWSGI = True
-except ImportError:
-    pass
-
 # Debug Code for sniffing out nplus one code!
 # try:
 #     # app.config['NPLUSONE_LOGGER'] = logging.getLogger('app.nplusone')
@@ -56,11 +49,6 @@ except ImportError:
 #     NPlusOne(app)
 # except Exception:
 #     pass
-
-
-@app.route('/status')
-def status():
-    return "Running"
 
 
 @app.errorhandler(500)
@@ -80,10 +68,12 @@ def _to_dict(exception):
 def configure_application(flask_app, args):
     IOC.register_global('flask_app', flask_app)
     setup_config_from_file(flask_app, args)
+    configure_db()
     configure_sub_modules(flask_app, args)
     configure_data_layer(flask_app)
     register_controllers(flask_app)
-    if (UWSGI and uwsgi.worker_id() == 1) or not UWSGI:
+    setup_status_route(flask_app)
+    if is_primary_worker():
         if args.db_downgrade:
             run_db_downgrade(flask_app, args.db_downgrade)
         else:

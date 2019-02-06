@@ -15,20 +15,16 @@
 """
 import logging
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from functools import wraps
 
 from flask.globals import request
 from flask.wrappers import Response
 
 from rapid.ci.data.github_dal import GithubHelper
+from rapid.lib import json_response, HttpException
 from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.injectable import Injectable
-from rapid.lib.modules.modules import WorkflowModule
+from rapid.lib.modules import WorkflowModule
 
 logger = logging.getLogger("rapid")
 
@@ -72,15 +68,17 @@ class GithubController(Injectable):
         request_json = request.get_json()
         return request_json
 
+    @json_response
     def process_webhooks_pipeline(self, pipeline_id):
         request_json = self.__process_request()
         pipeline_instance = self.workflow_module.start_pipeline_by_id(pipeline_id, self._build_request_parameters(request_json))
 
         if pipeline_instance:
-            return Response(json.dumps(pipeline_instance), content_type="application/json")
-        
-        return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
+            return pipeline_instance
 
+        raise HttpException({'message': 'Something went wrong'}, code=500)
+
+    @json_response
     def process_webhooks(self):
         # perform operation
         request_json = self.__process_request()
@@ -89,9 +87,8 @@ class GithubController(Injectable):
                                                                          self._build_request_parameters(request_json))
 
         if pipeline_instance:
-            return Response(json.dumps(pipeline_instance), content_type="application/json")
-        
-        return Response(json.dumps({"message": "Something went wrong."}), content_type="application/json", status=500)
+            return pipeline_instance
+        raise HttpException({'message': 'Something went wrong'}, code=500)
 
     def _build_request_parameters(self, request_json):
         parameters = {'branch': GithubHelper.get_branch_from_ref(request_json['ref']) if 'ref' in request_json else None}
@@ -122,6 +119,3 @@ class GithubController(Injectable):
             return None
 
         return request_json[key] if key in request_json else None
-
-    def safe_get_value(self, in_json, key, value):
-        return in_json[key][value] if key in json and value in in_json[key] else None
