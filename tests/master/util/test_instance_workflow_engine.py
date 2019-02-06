@@ -20,7 +20,7 @@ from mock.mock import Mock
 from nose.tools.trivial import eq_, ok_
 
 from rapid.lib.Constants import StatusConstants, StatusTypes
-from rapid.workflow.WorkflowEngine import InstanceWorkflowEngine
+from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.models import PipelineInstance, StageInstance, WorkflowInstance, ActionInstance, \
     Status, Pipeline, Stage, Workflow, Action
 

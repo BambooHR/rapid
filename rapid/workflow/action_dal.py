@@ -13,13 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=singleton-comparison,broad-except
 import datetime
 
 import time
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, aliased
-from sqlalchemy.sql.expression import asc, exists
+from sqlalchemy.sql.expression import exists
 
 from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.StoreService import StoreService
@@ -28,13 +28,13 @@ from rapid.lib.WorkRequest import WorkRequest
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import QaModule
 from rapid.master.data.database import get_db_session
-from rapid.workflow.WorkflowEngine import InstanceWorkflowEngine
-from rapid.workflow.data.dal.StatusDal import StatusDal
+from rapid.workflow.workflow_engine import InstanceWorkflowEngine
+from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
     PipelineStatistics, Statistics, StageInstance, WorkflowInstance
 
 from rapid.master.data.database.dal.general_dal import GeneralDal
-from rapid.workflow.EventService import EventService
+from rapid.workflow.event_service import EventService
 
 
 class ActionDal(GeneralDal, Injectable):
@@ -160,45 +160,44 @@ class ActionDal(GeneralDal, Injectable):
                 results.append(action_instance.serialize())
         return results
 
-    def get_action_instance_by_id(self, id, session=None):
+    def get_action_instance_by_id(self, _id, session=None):
         """
         Get ActionInstance by ID
-        :param id: long ID
+        :param _id: long ID
         :param session: Possible db session to use
         :return: Action Instance
         :rtype ActionInstance
         """
         if session is None:
-            for session in get_db_session():
-                return session.query(ActionInstance).get(id).serialize()
-        else:
-            return session.query(ActionInstance).get(id)
+            for new_session in get_db_session():
+                return new_session.query(ActionInstance).get(_id).serialize()
+        return session.query(ActionInstance).get(_id)
 
-    def complete_action_instance(self, id, post_data):
+    def complete_action_instance(self, _id, post_data):
         for session in get_db_session():
-            action_instance = self.get_action_instance_by_id(id, session)
+            action_instance = self.get_action_instance_by_id(_id, session)
             action_instance.end_date = datetime.datetime.utcnow()
 
-            self.store_service.set_completing(id)
+            self.store_service.set_completing(_id)
             try:
                 self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
                 self._save_status(action_instance, session, post_data)
                 self._save_stats(action_instance.pipeline_instance_id, session, post_data)
                 if self.qa_module is not None:
                     self.qa_module.save_results(action_instance, session, post_data)
-            except:
+            except Exception:
                 import traceback
                 traceback.print_exc()
             finally:
-                self.store_service.clear_completing(id)
+                self.store_service.clear_completing(_id)
 
             session.commit()
 
         return True
 
-    def callback_action_instance(self, id, post_data):
+    def callback_action_instance(self, _id, post_data):
         for session in get_db_session():
-            self._save_status(self.get_action_instance_by_id(id, session), session, post_data, True)
+            self._save_status(self.get_action_instance_by_id(_id, session), session, post_data, True)
         return True
 
     def reset_pipeline_instance(self, pipeline_instance_id):
@@ -223,10 +222,9 @@ class ActionDal(GeneralDal, Injectable):
                 for action_instance in workflow_instance.action_instances:
                     print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
 
-    def reset_action_instance(self, id, complete_reset=False, check_status=False):
+    def reset_action_instance(self, _id, complete_reset=False, check_status=False):  # pylint: disable=unused-argument
         for session in get_db_session():
-            now = datetime.datetime.utcnow()
-            action_instance = session.query(ActionInstance).get(id)
+            action_instance = session.query(ActionInstance).get(_id)
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
 
@@ -302,7 +300,7 @@ class ActionDal(GeneralDal, Injectable):
                 pipeline_parameter.value = str(value)
             session.commit()
 
-    def _save_stats(self, pipeline_instance_id, session, post_data):
+    def _save_stats(self, pipeline_instance_id, session, post_data):  # pylint: disable=too-many-locals
         if 'stats' in post_data:
             statistics_cache = {}
             stats_needed = post_data['stats'].keys()
@@ -317,10 +315,9 @@ class ActionDal(GeneralDal, Injectable):
                                 break
                         stats_needed = clone_stats
                     statistics_cache[stat.name] = stat
-                except:
+                except Exception:
                     import traceback
                     traceback.print_exc()
-                    pass
 
             for stat_to_create in stats_needed:
                 stat = Statistics(name=stat_to_create)
@@ -337,14 +334,14 @@ class ActionDal(GeneralDal, Injectable):
 
             session.commit()
 
-    def partial_edit(self, id, changes):
+    def partial_edit(self, _id, changes):
         for session in get_db_session():
-            return self.edit_object(session, ActionInstance, id, changes).serialize()
+            return self.edit_object(session, ActionInstance, _id, changes).serialize()
 
     def get_status_by_name(self, name, session=None):
         if session is not None:
             return session.query(Status).filter(func.lower(Status.name) == name.lower()).first()
-        else:
-            for session in get_db_session():
-                status = session.query(Status).filter(func.lower(Status.name) == name.lower()).first()
-                return status.serialize() if status else None
+
+        for new_session in get_db_session():
+            status = new_session.query(Status).filter(func.lower(Status.name) == name.lower()).first()
+            return status.serialize() if status else None

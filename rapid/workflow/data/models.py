@@ -13,13 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=no-member,too-few-public-methods,broad-except
 import datetime
 
+from sqlalchemy.orm import relationship
 from rapid.lib.Constants import StatusConstants
 from rapid.lib.Converters import ObjectConverter
 from rapid.master.data import db
-from sqlalchemy.orm import relationship
 from rapid.master.data.database.models.base.base_model import BaseModel
 from rapid.master.data.database.models.base.date_model import DateModel
 from rapid.master.data.database.models.base.active_model import ActiveModel
@@ -114,14 +114,14 @@ class PipelineInstance(BaseModel, DateModel, db.Model):
     pipeline = relationship('Pipeline')
     status = relationship('Status')
 
-    def _get_parameters_dict(self):
+    def get_parameters_dict(self):
         results = {}
         try:
             for parameter in self.parameters:
                 results[parameter.parameter] = parameter.value
 
             results['pipeline_instance_id'] = self.id
-        except:
+        except Exception:
             pass
         return results
 

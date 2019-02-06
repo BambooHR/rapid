@@ -29,7 +29,7 @@ def get_dal(model):
 
 def setup_dals(flask_app):
     from rapid.master.data.database.dal.general_dal import GeneralDal
-    from rapid.workflow.data.dal.PipelineDal import PipelineDal
+    from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 
     for dal in [PipelineDal, GeneralDal]:
         tmp = IOC.get_class_instance(dal)

@@ -22,7 +22,7 @@ from rapid.lib.Exceptions import HttpException, VcsNotFoundException
 from rapid.lib.StoreService import StoreService
 from rapid.master.communicator.client import Client
 from rapid.master.communicator.master_communicator import MasterCommunicator
-from rapid.workflow.ActionDal import ActionDal
+from rapid.workflow.action_dal import ActionDal
 
 try:
     import simplejson as json

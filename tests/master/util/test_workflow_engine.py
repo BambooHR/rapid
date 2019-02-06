@@ -19,7 +19,7 @@ import mock
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_
 
-from rapid.workflow.WorkflowEngine import WorkflowEngine
+from rapid.workflow.workflow_engine import WorkflowEngine
 from rapid.workflow.data.models import Pipeline, Stage, Action, Workflow
 
 

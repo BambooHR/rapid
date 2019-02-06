@@ -15,7 +15,7 @@
 """
 
 from rapid.lib.framework.Injectable import Injectable
-from rapid.workflow.ActionDal import ActionDal
+from rapid.workflow.action_dal import ActionDal
 
 
 class ActionInstanceService(Injectable):
@@ -28,20 +28,20 @@ class ActionInstanceService(Injectable):
         """
         self.action_dal = action_dal
 
-    def finish_action_instance(self, id, post_data):
-        self.action_dal.complete_action_instance(id, post_data)
+    def finish_action_instance(self, _id, post_data):
+        self.action_dal.complete_action_instance(_id, post_data)
 
-    def get_action_instance_by_id(self, id):
-        return self.action_dal.get_action_instance_by_id(id)
+    def get_action_instance_by_id(self, _id):
+        return self.action_dal.get_action_instance_by_id(_id)
 
-    def edit_action_instance(self, id, changes):
-        return self.action_dal.partial_edit(id, changes)
+    def edit_action_instance(self, _id, changes):
+        return self.action_dal.partial_edit(_id, changes)
 
-    def reset_action_instance(self, id, complete_reset=False, check_status=False):
-        return self.action_dal.reset_action_instance(id, complete_reset, check_status)
+    def reset_action_instance(self, _id, complete_reset=False, check_status=False):
+        return self.action_dal.reset_action_instance(_id, complete_reset, check_status)
 
     def reset_pipeline_instance(self, pipeline_instance_id):
         return self.action_dal.reset_pipeline_instance(pipeline_instance_id)
 
-    def callback(self, id, post_data):
-        return self.action_dal.callback_action_instance(id, post_data)
+    def callback(self, _id, post_data):
+        return self.action_dal.callback_action_instance(_id, post_data)

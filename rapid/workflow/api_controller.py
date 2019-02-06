@@ -13,34 +13,27 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from rapid.lib.StoreService import StoreService
-from rapid.workflow.WorkflowService import WorkflowService
-
+# pylint: disable=broad-except,too-many-public-methods
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
-import re
 import logging
-import datetime
-from flask import Response, request
-from sqlalchemy.orm import subqueryload, joinedload
+from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
-from sqlalchemy.orm.util import join
-from sqlalchemy.sql.sqltypes import DATETIME
+from flask import Response, request
 
-from rapid.lib import json_response
-from rapid.lib.Utils import ORMUtil
-from rapid.lib.modules.modules import QaModule
-
-from rapid.lib import api_key_required
+from rapid.lib import json_response, api_key_required
 from rapid.lib.Constants import ModuleConstants
+from rapid.lib.Utils import ORMUtil
+from rapid.lib.StoreService import StoreService
 from rapid.lib.WorkRequest import WorkRequestEncoder
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.data.database.dal import get_dal
-from rapid.workflow.ActionInstanceService import ActionInstanceService
-from rapid.workflow.QueueService import QueueService
+from rapid.workflow.action_instances_service import ActionInstanceService
+from rapid.workflow.queue_service import QueueService
+from rapid.workflow.workflow_service import WorkflowService
 
 logger = logging.getLogger("rapid")
 
@@ -61,7 +54,7 @@ class APIRouter(Injectable):
         :param queue_service:
         :type queue_service:
         :param qa_module:
-        :type qa_module: QaModule
+        :type qa_module: rapid.lib.modules.modules.QaModule
         :param workflow_service:
         :type workflow_service: WorkflowService
         """
@@ -77,20 +70,20 @@ class APIRouter(Injectable):
         flask_app.add_url_rule('/api/metadata', 'all_api_meta', api_key_required(self.metadata), methods=['GET'])
         flask_app.add_url_rule('/api/bulk_create', 'bulk_create', api_key_required(self.bulk_create), methods=['PUT'])
         flask_app.add_url_rule('/api/<path:endpoint>', 'create_object', api_key_required(self.create), methods=['PUT'])
-        flask_app.add_url_rule('/api/<path:endpoint>/<int:id>', 'edit_object', api_key_required(self.edit_object), methods=['POST'])
-        flask_app.add_url_rule('/api/<path:endpoint>/<int:id>', 'delete_object', api_key_required(self.delete_object), methods=['DELETE'])
-        flask_app.add_url_rule('/api/<path:endpoint>/<int:id>', 'list_object', api_key_required(self.list_single_object), methods=['GET'])
-        flask_app.add_url_rule('/api/action_instances/<int:id>/done', 'finish_action_instance', api_key_required(self.finish_action_instance), methods=['POST'])
-        flask_app.add_url_rule('/api/action_instances/<int:id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
-        flask_app.add_url_rule('/api/action_instances/<int:id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
-        flask_app.add_url_rule('/api/action_instances/<int:id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
+        flask_app.add_url_rule('/api/<path:endpoint>/<int:_id>', 'edit_object', api_key_required(self.edit_object), methods=['POST'])
+        flask_app.add_url_rule('/api/<path:endpoint>/<int:_id>', 'delete_object', api_key_required(self.delete_object), methods=['DELETE'])
+        flask_app.add_url_rule('/api/<path:endpoint>/<int:_id>', 'list_object', api_key_required(self.list_single_object), methods=['GET'])
+        flask_app.add_url_rule('/api/action_instances/<int:_id>/done', 'finish_action_instance', api_key_required(self.finish_action_instance), methods=['POST'])
+        flask_app.add_url_rule('/api/action_instances/<int:_id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
+        flask_app.add_url_rule('/api/action_instances/<int:_id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
+        flask_app.add_url_rule('/api/action_instances/<int:_id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
 
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/is_completing', 'action_instance_is_completing', api_key_required(self.action_instance_is_completing), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/clear_completing', 'action_instance_clear_completing', api_key_required(self.action_instance_clear_completing), methods=['GET'])
 
-        flask_app.add_url_rule('/api/pipeline_instances/<int:id>/failure_count', 'failure_count_instance', api_key_required(self.failure_count_instance))
+        flask_app.add_url_rule('/api/pipeline_instances/<int:_id>/failure_count', 'failure_count_instance', api_key_required(self.failure_count_instance))
         flask_app.add_url_rule('/api/queue', 'get_queue', api_key_required(self.get_queue), methods=['GET'])
-        flask_app.add_url_rule('/api/pipeline_instances/<int:id>/reset', 'reset_pipeline_instance', api_key_required(self.reset_pipeline_instance), methods=['POST', 'GET'])
+        flask_app.add_url_rule('/api/pipeline_instances/<int:_id>/reset', 'reset_pipeline_instance', api_key_required(self.reset_pipeline_instance), methods=['POST', 'GET'])
 
         flask_app.add_url_rule("/api/reports/canned/<path:report_name>", 'canned_report', api_key_required(self.canned_report), methods=['GET'])
         flask_app.add_url_rule("/api/reports/canned/list", 'list_canned_report', api_key_required(self.list_canned_reports), methods=['GET'])
@@ -105,36 +98,35 @@ class APIRouter(Injectable):
         try:
             if request.content_type == 'application/json':
                 return request.get_json()
-            else:
-                return request.args
-        except:
-            return request.args
+        except Exception:
+            pass
+        return request.args
 
-    def reset_pipeline_instance(self, id):
-        response = self.action_instance_service.reset_pipeline_instance(id)
+    def reset_pipeline_instance(self, _id):
+        response = self.action_instance_service.reset_pipeline_instance(_id)
         return Response(json.dumps({'message': ('Success!' if response else 'Failure!')}), content_type='application/json', status=(200 if response else 500))
 
     def get_queue(self):
         return Response(json.dumps(self.queue_service.get_current_work(), cls=WorkRequestEncoder), content_type='application/json')
 
-    def failure_count_instance(self, id):
+    def failure_count_instance(self, _id):
         pass
 
-    def action_instance_results(self, id):
-        filter = None
+    def action_instance_results(self, _id):
+        _filter = None
         try:
-            filter = self._get_args()['filter']
-        except:
+            _filter = self._get_args()['filter']
+        except (KeyError, TypeError):
             pass
 
-        return Response(json.dumps(self.qa_module.get_test_results(id, filter)), content_type='application/json')
+        return Response(json.dumps(self.qa_module.get_test_results(_id, _filter)), content_type='application/json')
 
-    def list_single_object(self, endpoint, id):
+    def list_single_object(self, endpoint, _id):
         if self._is_valid(endpoint):
             session = self.app.db.session()
             try:
                 clazz = self.class_map[endpoint]
-                query = session.query(clazz).filter(clazz.id == id)
+                query = session.query(clazz).filter(clazz.id == _id)
                 allowed_fields = self._get_additional_fields(clazz)
                 instance = query.one()
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
@@ -142,6 +134,7 @@ class APIRouter(Injectable):
                 if session:
                     session.close()
                     session = None
+        return Response("Not Valid", status=404)
 
     def list(self, endpoint):
         if self._is_valid(endpoint):
@@ -182,8 +175,8 @@ class APIRouter(Injectable):
         return session.query(clazz)
 
     def _set_filter(self, clazz, query):
-        filter = self._get_args()['filter'] if 'filter' in self._get_args() else None
-        return ORMUtil.get_filtered_query(query, filter, clazz)
+        _filter = self._get_args()['filter'] if 'filter' in self._get_args() else None
+        return ORMUtil.get_filtered_query(query, _filter, clazz)
 
     def _set_joins(self, query):
         if 'joins' in self._get_args():
@@ -214,18 +207,17 @@ class APIRouter(Injectable):
 
     def _set_orderby_direction(self, query, clazz):
         if 'orderby' in self._get_args():
-            map = {'desc': desc, 'asc': asc}
+            _map = {'desc': desc, 'asc': asc}
             for orderby in self._get_args()['orderby'].split(','):
                 try:
                     column, order = orderby.split(':')
                     if hasattr(clazz, column):
                         column = getattr(clazz, column)
                         __import__(clazz.__module__, fromlist=[clazz.__class__])
-                    query = query.order_by(map[order](column))
-                except:
+                    query = query.order_by(_map[order](column))
+                except Exception:
                     import traceback
                     traceback.print_exc()
-                    pass
         return query
 
     def _get_additional_fields(self, clazz, fields=None):
@@ -241,10 +233,10 @@ class APIRouter(Injectable):
                     for field in relation_split[1].split(','):
                         try:
                             fields[table_name].append(field)
-                        except:
+                        except (AttributeError, TypeError):
                             fields[table_name] = []
                             fields[table_name].append(field)
-        except:
+        except Exception:
             pass
         return fields
 
@@ -253,7 +245,7 @@ class APIRouter(Injectable):
 
         try:
             limit = int(self._get_args()['limit'])
-        except:
+        except (AttributeError, TypeError, ValueError):
             pass
         return query.limit(limit)
 
@@ -263,8 +255,8 @@ class APIRouter(Injectable):
             if self._is_valid(endpoint):
                 clazz = self.class_map[endpoint]
                 result[endpoint] = []
-                for object in objects:
-                    result[endpoint].append(self._create_from_request(clazz, object))
+                for _object in objects:
+                    result[endpoint].append(self._create_from_request(clazz, _object))
         return Response(json.dumps(result), content_type="application/json")
 
     def create(self, endpoint):
@@ -273,13 +265,13 @@ class APIRouter(Injectable):
             return Response(json.dumps(self._create_from_request(clazz, request.get_json())))
         return Response(status=404)
 
-    def edit_object(self, endpoint, id):
+    def edit_object(self, endpoint, _id):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
             session = self.app.db.session()
             try:
                 dal = self._retrieve_dal(clazz)
-                instance = dal.edit_object(session, clazz, id, request.json)
+                instance = dal.edit_object(session, clazz, _id, request.json)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
             finally:
                 if session:
@@ -287,13 +279,13 @@ class APIRouter(Injectable):
                     session = None
         return Response(status=404)
 
-    def delete_object(self, endpoint, id):
+    def delete_object(self, endpoint, _id):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
             session = self.app.db.session()
             try:
                 dal = self._retrieve_dal(clazz)
-                instance = dal.delete_object(session, clazz, id)
+                instance = dal.delete_object(session, clazz, _id)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
             finally:
                 if session:
@@ -301,9 +293,9 @@ class APIRouter(Injectable):
                     session = None
         return Response(status=404)
 
-    def reset_action_instance(self, id):
+    def reset_action_instance(self, _id):
         try:
-            if self.action_instance_service.reset_action_instance(id, True):
+            if self.action_instance_service.reset_action_instance(_id, True):
                 return Response(json.dumps({"message": "Action instance reset"}), content_type='application/json')
             return Response(json.dumps({"message": "Unable to reset instance"}), content_type='application/json', status=505)
         except Exception as exception:
@@ -311,12 +303,12 @@ class APIRouter(Injectable):
 
         return Response(json.dumps({"message": "Something was wrong"}), content_type='application/json', status=500)
 
-    def callback_action_instance(self, id):
-        return Response(json.dumps(self.action_instance_service.callback(id, request.get_json())), content_type='application/json')
+    def callback_action_instance(self, _id):
+        return Response(json.dumps(self.action_instance_service.callback(_id, request.get_json())), content_type='application/json')
 
-    def finish_action_instance(self, id):
+    def finish_action_instance(self, _id):
         try:
-            return Response(json.dumps(self.action_instance_service.finish_action_instance(id, request.get_json())))
+            return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, request.get_json())))
         except Exception as exception:
             logger.error(exception)
             return Response("Something went wrong!", status=500)
@@ -325,13 +317,12 @@ class APIRouter(Injectable):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
             return Response(json.dumps(self._explode_class(clazz)), content_type="application/json")
-        else:
-            ret_map = {}
-            for key in self.class_map.keys():
-                clazz = self.class_map[key]
-                ret_map[key] = self._explode_class(clazz)
-                ret_map[key]['url'] = "/api/{}/metadata".format(key)
-            return Response(json.dumps(ret_map), content_type="application/json")
+        
+        ret_map = {}
+        for key, clazz in self.class_map.items():
+            ret_map[key] = self._explode_class(clazz)
+            ret_map[key]['url'] = "/api/{}/metadata".format(key)
+        return Response(json.dumps(ret_map), content_type="application/json")
 
     @json_response()
     def canned_report(self, report_name):
@@ -364,7 +355,7 @@ class APIRouter(Injectable):
 
     def _explode_class(self, clazz):
         columns = {}
-        for column in clazz.__table__._columns:
+        for column in clazz.__table__._columns:  # pylint: disable=protected-access
             columns[column.name] = column.type.__class__.__name__
 
         for field in clazz().__relationships__():
@@ -386,11 +377,11 @@ class APIRouter(Injectable):
         self.models = []
         self.table_names = []
 
-        for clazz in self.app.db.Model._decl_class_registry.values():
+        for clazz in self.app.db.Model._decl_class_registry.values():  # pylint: disable=protected-access
             try:
                 self.table_names.append(clazz.__tablename__)
                 self.classes.append(clazz)
-            except:
+            except Exception:
                 pass
         for table in self.app.db.metadata.tables.items():
             if table[0] in self.table_names:
@@ -405,11 +396,11 @@ class APIRouter(Injectable):
             raise Exception("Object not found.")
         return dal
 
-    def _create_from_request(self, clazz, json):
+    def _create_from_request(self, clazz, _json):
         session = self.app.db.session()
         try:
             dal = self._retrieve_dal(clazz)
-            return dal.create_object(session, clazz, json)
+            return dal.create_object(session, clazz, _json)
         except Exception as exception:
             logger.error(exception)
             raise exception

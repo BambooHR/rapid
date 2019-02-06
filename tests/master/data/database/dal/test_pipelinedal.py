@@ -26,7 +26,7 @@ from unittest import TestCase
 from mock.mock import Mock, patch
 from nose.tools import eq_
 
-from rapid.workflow.data.dal.PipelineDal import PipelineDal
+from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 
 
 class TestPipelineDal(TestCase):

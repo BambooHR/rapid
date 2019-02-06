@@ -16,7 +16,7 @@ limitations under the License.
 from rapid.lib.Constants import EventTypes
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.data.database.dal.general_dal import GeneralDal
-from rapid.workflow.data.dal.PipelineDal import PipelineDal
+from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.events.event_handler import EventHandlerFactory
 
 
@@ -45,5 +45,5 @@ class EventDal(GeneralDal, Injectable):
             try:
                 handler = EventHandlerFactory.get_event_handler(EventTypes(event.event_type_id))
                 handler.handle_event(pipeline_instance, action_instance, event)
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass

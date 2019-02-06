@@ -13,13 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=broad-except
+import os
+import json
+import logging
+
 from rapid.lib.Exceptions import InvalidReportException
 from rapid.lib.framework.Injectable import Injectable
 from rapid.master.data.database import execute_db_query
-
-import json
-import os
-import logging
 
 logger = logging.getLogger('rapid')
 
@@ -48,13 +49,13 @@ class ReportDal(Injectable):
                     column_count += 1
                 results.append(result)
             return {'headers': report['headers'], 'results': results}
-        except:
+        except Exception:
             pass
         raise InvalidReportException("Report is not found")
 
     def _read_report_files(self):
         try:
-            for root, dirs, files in os.walk(self._rapid_config.custom_reports_dir):
+            for root, dirs, files in os.walk(self._rapid_config.custom_reports_dir):  # pylint: disable=unused-variable
                 for filename in files:
                     try:
                         basename = os.path.splitext(filename)
@@ -63,6 +64,5 @@ class ReportDal(Injectable):
                             self._canned_reports[basename[0]]['sql'] = self._canned_reports[basename[0]]['sql'].replace('%', '%%')
                     except Exception as exception:
                         logger.error("Was Unable to process the directory defined. {}".format(exception))
-                        pass
-        except:
+        except Exception:
             pass

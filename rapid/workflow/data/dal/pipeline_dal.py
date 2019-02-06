@@ -13,16 +13,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=broad-except
+import logging
 import datetime
-
-from rapid.lib.Exceptions import InvalidObjectException
-from rapid.lib.StoreService import StoreService
-from rapid.workflow.data.models import PipelineEvent
-
 try:
     import simplejson as out_json
-except:
+except ImportError:
     import json as out_json
 
 
@@ -31,6 +27,9 @@ from flask.wrappers import Response
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.sql.expression import asc
 
+from rapid.lib.Exceptions import InvalidObjectException
+from rapid.lib.StoreService import StoreService
+from rapid.workflow.data.models import PipelineEvent
 from rapid.lib import api_key_required
 from rapid.lib.Constants import StatusConstants, ModuleConstants
 from rapid.lib.Exceptions import VcsNotFoundException
@@ -40,7 +39,7 @@ from rapid.master.data.database import get_db_session
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.models import Action, Pipeline, Stage, Workflow, PipelineInstance, \
     PipelineParameters
-import logging
+
 logger = logging.getLogger("rapid")
 
 
@@ -78,19 +77,17 @@ class PipelineDal(GeneralDal, Injectable):
         :return:
         :rtype PipelineInstance
         """
-        for session in get_db_session():
-            vcs = self.ci_module.get_vcs_by_repo_name(repo)
-            if vcs is not None:
-                if vcs.pipeline_id is not None:
-                    return self.create_pipeline_instance(vcs.pipeline_id, json_data, vcs_id=vcs.id)
-                if vcs.active:
-                    raise VcsNotFoundException("The repo[{}] did not have a default pipeline defined.".format(repo))
-            else:
-                raise VcsNotFoundException("The repo [{}] is not found in the system".format(repo))
+        vcs = self.ci_module.get_vcs_by_repo_name(repo)
+        if vcs is not None:
+            if vcs.pipeline_id is not None:
+                return self.create_pipeline_instance(vcs.pipeline_id, json_data, vcs_id=vcs.id)
+            if vcs.active:
+                raise VcsNotFoundException("The repo[{}] did not have a default pipeline defined.".format(repo))
+        raise VcsNotFoundException("The repo [{}] is not found in the system".format(repo))
 
     def start_pipeline_instances_via_pipeline_id(self, pipeline_id, json_data=None):
         for session in get_db_session():
-            return self.create_pipeline_instance(pipeline_id, json_data, session=session)
+            return self.create_pipeline_instance(pipeline_id, json_data, in_session=session)
 
     def start_pipeline_instance(self, pipeline_id):
         data = request.get_json()
@@ -179,7 +176,7 @@ class PipelineDal(GeneralDal, Injectable):
         _visited_objs = []
 
         class AlchemyEncoder(out_json.JSONEncoder):
-            def default(self, obj):
+            def default(self, obj):  # pylint: disable=arguments-differ,method-hidden
                 if isinstance(obj.__class__, DeclarativeMeta):
                     # don't re-visit self
                     if obj in _visited_objs:
@@ -208,12 +205,11 @@ class PipelineDal(GeneralDal, Injectable):
             .order_by(asc(Workflow.id)) \
             .order_by(asc(Action.order))
 
-    def create_pipeline_instance(self, pipeline_id, json_data=None, vcs_id=None, session=None):
-        if session:
+    def create_pipeline_instance(self, pipeline_id, json_data=None, vcs_id=None, in_session=None):
+        if in_session:
+            return self._process_pipeline(pipeline_id, vcs_id, json_data, in_session)
+        for session in get_db_session():
             return self._process_pipeline(pipeline_id, vcs_id, json_data, session)
-        else:
-            for session in get_db_session():
-                return self._process_pipeline(pipeline_id, vcs_id, json_data, session)
 
     def _process_pipeline(self, pipeline_id, vcs_id, json_data, session):
         pipeline = session.query(Pipeline).get(pipeline_id)
@@ -223,7 +219,7 @@ class PipelineDal(GeneralDal, Injectable):
                                                  start_date=datetime.datetime.utcnow())
             session.add(pipeline_instance)
             session.flush()
-            objects_to_add = self._setup_pipeline(session, pipeline_id, pipeline_instance.id)
+            self._setup_pipeline(session, pipeline_id, pipeline_instance.id)
             try:
                 if json_data and 'parameters' in json_data:
                     for parameter, value in json_data['parameters'].items():
@@ -231,13 +227,12 @@ class PipelineDal(GeneralDal, Injectable):
                         tmp.pipeline_instance_id = pipeline_instance.id
                         session.add(tmp)
 
-                        if "commit" == parameter:
+                        if parameter == "commit":
                             # Look for vcs and get the ID
                             if vcs_id is None:
                                 vcs = self.ci_module.get_vcs_by_pipeline_id(pipeline_id, session=session)
                                 vcs_id = vcs.id if vcs is not None else None
-
-                            if vcs_id is not None:
+                            else:
                                 self.ci_module.create_git_commit(value, vcs_id, pipeline_instance_id=pipeline_instance.id, session=session)
 
             except Exception as exception:
@@ -247,12 +242,11 @@ class PipelineDal(GeneralDal, Injectable):
             session.commit()
             create_pipeline_instance = pipeline_instance.serialize()
             return create_pipeline_instance
-        else:
-            try:
-                logger.info("Inactive pipeline: {}".format(pipeline.name))
-            except AttributeError:
-                pass
-            return {"message": "Invalid Pipeline, or inactive pipeline"}
+        try:
+            logger.info("Inactive pipeline: {}".format(pipeline.name))
+        except AttributeError:
+            pass
+        return {"message": "Invalid Pipeline, or inactive pipeline"}
 
     def cancel_pipeline_instance(self, pipeline_instance_id):
         for session in get_db_session():

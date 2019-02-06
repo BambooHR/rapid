@@ -24,9 +24,8 @@ class StatusDal(GeneralDal):
     def __init__(self, db_session=None):
         self.session = db_session
 
-    def get_status_by_id(self, id):
+    def get_status_by_id(self, _id):
         if self.session:
-            return self.session.query(Status).get(id).serialize()
-        else:
-            for session in get_db_session():
-                return session.query(Status).get(id).serialize()
+            return self.session.query(Status).get(_id).serialize()
+        for session in get_db_session():
+            return session.query(Status).get(_id).serialize()

@@ -17,16 +17,16 @@
 from rapid.lib.framework.IOC import IOC
 
 
-def register_ioc_globals(flask_app):
-    from rapid.workflow.ActionService import ActionService
-    from rapid.workflow.WorkflowService import WorkflowService
+def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
+    from rapid.workflow.action_service import ActionService
+    from rapid.workflow.workflow_service import WorkflowService
 
     IOC.register_global('workflow_module', IOC.get_class_instance(WorkflowService))
     IOC.register_global('action_module', IOC.get_class_instance(ActionService))
 
 
 def configure_module(flask_app):
-    from rapid.workflow.APIController import APIRouter
+    from rapid.workflow.api_controller import APIRouter
     router = IOC.get_class_instance(APIRouter)
     router.register_url_rules(flask_app)
 

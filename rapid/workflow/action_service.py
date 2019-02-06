@@ -15,9 +15,9 @@
 """
 
 from rapid.lib.framework.Injectable import Injectable
-from rapid.workflow.ActionDal import ActionDal
-from rapid.workflow.data.dal.PipelineDal import PipelineDal
-from rapid.workflow.data.dal.ReportDal import ReportDal
+from rapid.workflow.action_dal import ActionDal
+from rapid.workflow.data.dal.pipeline_dal import PipelineDal
+from rapid.workflow.data.dal.report_dal import ReportDal
 
 
 class ActionService(Injectable):

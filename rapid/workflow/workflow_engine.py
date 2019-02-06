@@ -13,16 +13,15 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=too-many-instance-attributes
 import datetime
+import logging
 
 from rapid.lib.StoreService import StoreService
 from rapid.lib.Constants import StatusTypes, status_type_severity_mapping, StatusConstants
-from rapid.workflow.data.dal.StatusDal import StatusDal
+from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import Pipeline, PipelineInstance, Stage, StageInstance, Action, \
     ActionInstance, Workflow, WorkflowInstance
-
-import logging
 logger = logging.getLogger('rapid')
 
 
@@ -67,17 +66,17 @@ class WorkflowEngine(object):
     def _get_actions_by_workflow_id(self, workflow_id):
         return self._get_actions(self._get_workflow(workflow_id))
 
-    def _get_action(self, id):
+    def _get_action(self, _id):
         self._load_pipeline()
-        return self.action_mapper[id]
+        return self.action_mapper[_id]
 
-    def _get_workflow(self, id):
+    def _get_workflow(self, _id):
         self._load_pipeline()
-        return self.workflow_mapper[id]
+        return self.workflow_mapper[_id]
 
-    def _get_stage(self, id):
+    def _get_stage(self, _id):
         self._load_pipeline()
-        return self.stage_mapper[id]
+        return self.stage_mapper[_id]
 
 
 class InstanceWorkflowEngine(WorkflowEngine):
@@ -154,19 +153,19 @@ class InstanceWorkflowEngine(WorkflowEngine):
             all_complete, all_passed, failed_type = self._check_and_verify_statuses(self._get_stages(self.pipeline))
 
             if all_complete:
-                self.complete_a_pipeline(self.pipeline.id, StatusConstants.SUCCESS if all_passed else failed_type.id)
+                self.complete_a_pipeline(StatusConstants.SUCCESS if all_passed else failed_type.id)
 
-    def complete_a_pipeline(self, pipeline_instance_id, status_id):
+    def complete_a_pipeline(self, status_id):
         pipeline_instance = self._load_pipeline()
         self._mark_pipeline_instance_complete(pipeline_instance, status_id)
 
     def _reconciled_stages(self, pipeline_instance, stage_instance):
         if StatusConstants.SUCCESS == stage_instance.status_id and len(self._get_stages(pipeline_instance)) < len(pipeline_instance.pipeline.stages):
-            next = False
+            _next = False
             for stage in pipeline_instance.pipeline.stages:
                 if stage.id == stage_instance.stage_id:
-                    next = True
-                elif next:
+                    _next = True
+                elif _next:
                     new_instance = stage.convert_to_instance()
                     new_instance.start_date = datetime.datetime.utcnow()
                     new_instance.status_id = StatusConstants.INPROGRESS
@@ -180,7 +179,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                     self.instances_to_add.append(new_instance)
                     break
             return False
-        elif StatusConstants.SUCCESS == stage_instance.status_id:
+        if StatusConstants.SUCCESS == stage_instance.status_id:
             found = False
             for s_instance in self._get_stages(pipeline_instance):
                 if found:
@@ -206,11 +205,11 @@ class InstanceWorkflowEngine(WorkflowEngine):
         for action in workflow.actions:
             slices = action.slices
             if slices > 0:
-                for slice in range(1, slices + 1):
+                for _slice in range(1, slices + 1):
                     a_instance = action.convert_to_instance()
                     a_instance.status_id = StatusConstants.READY if first else StatusConstants.NEW
                     a_instance.pipeline_instance_id = pipeline_instance.id
-                    a_instance.slice = "{}/{}".format(slice, action.slices)
+                    a_instance.slice = "{}/{}".format(_slice, action.slices)
                     w_instance.action_instances.append(a_instance)
                     self.instances_to_add.append(a_instance)
                 first = False
@@ -274,8 +273,8 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 or StatusConstants.READY in sliced_statuses \
                 or StatusConstants.INPROGRESS in sliced_statuses:
             return True
-        else:
-            return highest_severity < status_type_severity_mapping[StatusTypes.FAILED]
+
+        return highest_severity < status_type_severity_mapping[StatusTypes.FAILED]
 
     def _activate_next_action_all_complete(self, action_instances):
         order_check = None
@@ -283,7 +282,6 @@ class InstanceWorkflowEngine(WorkflowEngine):
         fail_found = False
         for instance in action_instances:
             if instance.status_id != StatusConstants.NEW:
-                status = self._get_status(instance.status_id)
                 if instance.status_id == StatusConstants.INPROGRESS:
                     all_complete = False
                     break  # if you are inprogress, don't bother checking the rest.
@@ -346,6 +344,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 for action in self._get_actions(workflow):
                     if action.id == action_id:
                         return action
+        return None
 
     def reset_action(self, action, first_stage=False):
         action.workflow_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
@@ -387,7 +386,6 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 else:
                     break
             else:
-                pass
                 instance.status_id = StatusConstants.NEW if not (first and first_stage) else StatusConstants.READY
                 instance.start_date = None
                 instance.assigned_to = None

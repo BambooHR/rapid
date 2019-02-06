@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from rapid.lib.framework.Injectable import Injectable
-from rapid.workflow.events.EventDal import EventDal
+from rapid.workflow.events.event_dal import EventDal
 
 
 class EventService(Injectable):

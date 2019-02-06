@@ -20,7 +20,7 @@ from nose.tools.trivial import ok_, eq_
 
 from rapid.lib.Constants import EventTypes
 from rapid.workflow.events.event_handler import EventHandlerFactory
-from rapid.workflow.events.handlers.RemoteNotificationHandler import RemoteNotificationHandler
+from rapid.workflow.events.handlers.remote_notification_handler import RemoteNotificationHandler
 
 
 class TestEventHandler(TestCase):

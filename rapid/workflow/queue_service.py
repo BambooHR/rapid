@@ -15,7 +15,7 @@
 """
 
 from rapid.lib.framework.Injectable import Injectable
-from rapid.workflow.ActionDal import ActionDal
+from rapid.workflow.action_dal import ActionDal
 
 
 class QueueService(Injectable):

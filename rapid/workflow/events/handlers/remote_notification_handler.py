@@ -13,15 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
-
 import json
-import re
-
+import logging
 import requests
 
 from rapid.lib.Constants import EventTypes
 from rapid.workflow.events.event_handler import EventHandler
+# pylint: disable=broad-except
 
 logger = logging.getLogger('rapid')
 
@@ -36,7 +34,7 @@ class RemoteNotification(object):
         for key in ['headers', 'url', 'payload', 'verify']:
             try:
                 setattr(self, key, config[key])
-            except:
+            except Exception:
                 pass
 
     def send(self):
@@ -70,7 +68,7 @@ class RemoteNotificationHandler(EventHandler):
             config_dict = {}
             try:
                 config_dict = json.loads(event.config)
-            except:
+            except Exception:
                 pass
             config = self.prepare(config_dict, pipeline_instance, action_instance)
             notification = RemoteNotification(config)
@@ -80,7 +78,7 @@ class RemoteNotificationHandler(EventHandler):
                 logger.error("Remote Notification was not sent for: {} with status: {}".format(pipeline_instance.id, response.status_code))
 
     def prepare(self, config, pipeline_instance, action_instance):
-        parameters = pipeline_instance._get_parameters_dict()
+        parameters = pipeline_instance.get_parameters_dict()
         config['payload'] = self.prepare_payload(config, pipeline_instance, action_instance, parameters)
         config['headers'] = self.prepare_headers(config, pipeline_instance, action_instance, parameters)
         config['url'] = self.prepare_url(config, pipeline_instance, action_instance, parameters)
@@ -90,7 +88,7 @@ class RemoteNotificationHandler(EventHandler):
         headers = None
         try:
             headers = self.__replace_with_parameters(config['headers'], pipeline_instance, action_instance, parameters)
-        except:
+        except Exception:
             pass
         return headers
 
@@ -102,10 +100,10 @@ class RemoteNotificationHandler(EventHandler):
             new_url = self._translate_string_for_action_instance(action_instance, new_url)
 
             if '{' in new_url and '}' in new_url:
-                    for key, value in parameters.items():
-                        if "{{{}}}".format(key) in new_url:
-                            new_url = new_url.replace('{{{}}}'.format(key), value)
-        except:
+                for key, value in parameters.items():
+                    if "{{{}}}".format(key) in new_url:
+                        new_url = new_url.replace('{{{}}}'.format(key), value)
+        except Exception:
             pass
         return new_url
 
@@ -121,7 +119,7 @@ class RemoteNotificationHandler(EventHandler):
         payload = None
         try:
             payload = self.__replace_with_parameters(config['payload'], pipeline_instance, action_instance, parameters)
-        except:
+        except Exception:
             pass
         return payload
 
@@ -140,8 +138,8 @@ class RemoteNotificationHandler(EventHandler):
                         new_dict[key] = parameters[value.replace('{', '').replace('}', '')]
                     elif '{' in value and '}' in value:
                         new_dict[key] = value.replace('{', '').replace('}', '')
-                except:
+                except Exception:
                     pass
-        except:
+        except Exception:
             pass
         return new_dict

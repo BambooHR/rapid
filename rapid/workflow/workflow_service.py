@@ -16,7 +16,7 @@
 
 from rapid.lib.framework.Injectable import Injectable
 from rapid.lib.modules.modules import WorkflowModule
-from rapid.workflow.ActionService import ActionService
+from rapid.workflow.action_service import ActionService
 
 
 class WorkflowService(WorkflowModule, Injectable):

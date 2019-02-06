@@ -23,7 +23,7 @@ from sqlalchemy.sql.sqltypes import NullType
 
 from rapid.lib.Exceptions import InvalidObjectException
 from rapid.lib.Constants import StatusConstants
-from rapid.workflow.ActionDal import ActionDal
+from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance
 
 

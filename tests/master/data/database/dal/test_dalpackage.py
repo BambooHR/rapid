@@ -24,7 +24,7 @@ from rapid.lib.framework.IOC import IOC
 from rapid.master.data.database import get_db_session
 from rapid.master.data.database.dal import get_dal, setup_dals
 from rapid.master.data.database.dal.general_dal import GeneralDal
-from rapid.workflow.data.dal.PipelineDal import PipelineDal
+from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.data.models import *
 
 
