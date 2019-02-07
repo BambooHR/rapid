@@ -130,7 +130,7 @@ class PipelineDal(GeneralDal, Injectable):
                         session.close()
                         session = None
 
-            return response
+                return response
 
         raise BaseException("No pipeline was created.")
 

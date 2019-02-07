@@ -89,8 +89,10 @@ class TestPipelineDal(TestCase):
             self.dal._get_pipeline(None)
         self.assertEqual("No pipeline was created.", str(cm.exception))
 
-    def test_get_pipeline_with_json(self):
+    @patch('rapid.workflow.data.dal.pipeline_dal.get_db_session')
+    def test_get_pipeline_with_json(self, get_db_session):
         self.dal.app = Mock()
+        get_db_session.return_value = [Mock()]
         pipeline = self.dal._get_pipeline({"name": "something", "active": True})
 
         eq_({"name": "something", "active": True, "id": None}, json.loads(pipeline))
