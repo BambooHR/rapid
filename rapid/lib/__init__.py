@@ -29,6 +29,7 @@ from rapid.lib.utils import RoutingUtil
 from rapid.lib.framework.ioc import IOC
 
 db = None
+Base = None
 
 UWSGI = False
 try:
@@ -36,6 +37,14 @@ try:
     UWSGI = True
 except ImportError:
     pass
+
+
+def get_declarative_base():
+    global Base  # pylint: disable=global-statement
+    if Base is None:
+        from sqlalchemy.ext.declarative import declarative_base
+        Base = declarative_base()
+    return Base
 
 
 def set_db(_db):

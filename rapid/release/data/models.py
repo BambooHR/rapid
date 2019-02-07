@@ -18,13 +18,12 @@
 import datetime
 
 from sqlalchemy.orm import relationship, backref
-
 from sqlalchemy import Column, String, ForeignKey, Integer, DateTime, Boolean, Text, Enum
-from sqlalchemy.ext.declarative import declarative_base
 
+from rapid.lib import get_declarative_base
 from rapid.master.data.database.models.base.base_model import BaseModel
 from rapid.lib.constants import VcsReleaseStepType
-Base = declarative_base()
+Base = get_declarative_base()
 
 
 class Release(BaseModel, Base):

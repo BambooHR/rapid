@@ -18,15 +18,14 @@ import datetime
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, String, ForeignKey, Integer, Boolean, Text, desc, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 
-from rapid.ci.data.models import Base
+from rapid.lib import get_declarative_base
 from rapid.lib.constants import StatusConstants
 from rapid.lib.converters import ObjectConverter
 from rapid.master.data.database.models.base.base_model import BaseModel
 from rapid.master.data.database.models.base.date_model import DateModel
 from rapid.master.data.database.models.base.active_model import ActiveModel
-Base = declarative_base()
+Base = get_declarative_base()
 
 
 class Action(BaseModel, Base):

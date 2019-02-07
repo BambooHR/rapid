@@ -13,10 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.lib import get_declarative_base
 
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+Base = get_declarative_base()
 # pylint: disable=no-member, too-few-public-methods
 
 

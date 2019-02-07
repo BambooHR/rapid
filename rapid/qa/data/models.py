@@ -17,12 +17,12 @@ import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy import Column, String, ForeignKey, Integer, DateTime, Boolean, Text
-from sqlalchemy.ext.declarative import declarative_base
 
+from rapid.lib import get_declarative_base
 from rapid.master.data.database.models.base.active_model import ActiveModel
 from rapid.master.data.database.models.base.base_model import BaseModel
 # pylint: disable=no-member,too-few-public-methods
-Base = declarative_base()
+Base = get_declarative_base()
 
 
 class QaTest(BaseModel, Base):
