@@ -22,7 +22,7 @@ from sqlalchemy.sql.expression import desc
 
 from rapid.lib.exceptions import DatabaseException, InvalidObjectException
 from rapid.lib import get_db_session
-from rapid.workflow.data.models import Commit, CommitParameters, Version, PipelineInstanceCommit, Vcs
+from rapid.ci.data.models import Commit, CommitParameters, Version, PipelineInstanceCommit, Vcs
 
 
 class CommitDal(object):

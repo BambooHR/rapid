@@ -26,7 +26,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
 from flask import Response, request
 
-from rapid.lib import json_response, api_key_required
+from rapid.lib import json_response, api_key_required, get_declarative_base, get_db_session
 from rapid.lib.constants import ModuleConstants
 from rapid.lib.utils import ORMUtil
 from rapid.lib.store_service import StoreService
@@ -125,25 +125,18 @@ class APIRouter(Injectable):
 
     def list_single_object(self, endpoint, _id):
         if self._is_valid(endpoint):
-            session = self.app.db.session()
-            try:
+            for session in get_db_session():
                 clazz = self.class_map[endpoint]
                 query = session.query(clazz).filter(clazz.id == _id)
                 allowed_fields = self._get_additional_fields(clazz)
                 instance = query.one()
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
-            finally:
-                if session:
-                    session.close()
-                    session = None
         return Response("Not Valid", status=404)
 
     def list(self, endpoint):
         if self._is_valid(endpoint):
-            session = self.app.db.session()
-            try:
+            for session in get_db_session():
                 clazz = self._get_clazz(endpoint)
-                results = []
                 query = self._get_query(session, clazz)
                 query = self._set_filter(clazz, query)
                 query = self._set_orderby_direction(query, clazz)
@@ -154,13 +147,6 @@ class APIRouter(Injectable):
                 for result in query.all():
                     results.append(result.serialize(fields))
                 return Response(json.dumps(results), content_type='application/json')
-            except Exception as exception:
-                logger.exception(exception)
-                raise
-            finally:
-                if session:
-                    session.close()
-                    session = None
         else:
             return Response(status=404)
 
@@ -273,29 +259,19 @@ class APIRouter(Injectable):
     def edit_object(self, endpoint, _id):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
-            session = self.app.db.session()
-            try:
+            for session in get_db_session():
                 dal = self._retrieve_dal(clazz)
                 instance = dal.edit_object(session, clazz, _id, request.json)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
-            finally:
-                if session:
-                    session.close()
-                    session = None
         return Response(status=404)
 
     def delete_object(self, endpoint, _id):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
-            session = self.app.db.session()
-            try:
+            for session in get_db_session():
                 dal = self._retrieve_dal(clazz)
                 instance = dal.delete_object(session, clazz, _id)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
-            finally:
-                if session:
-                    session.close()
-                    session = None
         return Response(status=404)
 
     def reset_action_instance(self, _id):
@@ -382,13 +358,14 @@ class APIRouter(Injectable):
         self.models = []
         self.table_names = []
 
-        for clazz in self.app.db.Model._decl_class_registry.values():  # pylint: disable=protected-access
+        _base = get_declarative_base()
+        for clazz in _base._decl_class_registry.values():  # pylint: disable=protected-access
             try:
                 self.table_names.append(clazz.__tablename__)
                 self.classes.append(clazz)
             except Exception:
                 pass
-        for table in self.app.db.metadata.tables.items():
+        for table in _base.metadata.tables.items():
             if table[0] in self.table_names:
                 clazz = self.classes[self.table_names.index(table[0])]
                 name = clazz.__tablename__.lower()
@@ -402,17 +379,9 @@ class APIRouter(Injectable):
         return dal
 
     def _create_from_request(self, clazz, _json):
-        session = self.app.db.session()
-        try:
+        for session in get_db_session():
             dal = self._retrieve_dal(clazz)
             return dal.create_object(session, clazz, _json)
-        except Exception as exception:
-            logger.error(exception)
-            raise exception
-        finally:
-            if session:
-                session.close()
-                session = None
 
     @staticmethod
     def _convert_to_dict(row):

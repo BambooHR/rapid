@@ -115,20 +115,20 @@ class PipelineDal(GeneralDal, Injectable):
 
     def _get_pipeline(self, json):
         if json:
-            session = self.app.db.session()
-            pipeline = Pipeline(**{"name": json['name'], 'active': json['active']})
-            session.add(pipeline)
-            session.flush()
-            pipeline.stages.extend(self.get_stages(json, pipeline, session))
+            for session in get_db_session():
+                pipeline = Pipeline(**{"name": json['name'], 'active': json['active']})
+                session.add(pipeline)
+                session.flush()
+                pipeline.stages.extend(self.get_stages(json, pipeline, session))
 
-            response = out_json.dumps(pipeline.serialize())
-            try:
-                session.commit()
-            finally:
-                if session:
-                    session.expunge_all()
-                    session.close()
-                    session = None
+                response = out_json.dumps(pipeline.serialize())
+                try:
+                    session.commit()
+                finally:
+                    if session:
+                        session.expunge_all()
+                        session.close()
+                        session = None
 
             return response
 
