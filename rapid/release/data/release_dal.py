@@ -14,7 +14,7 @@
  limitations under the License.
 """
 import logging
-from rapid.ci.data.models import Commit
+from rapid.workflow.data.models import Commit
 from rapid.lib.constants import ModuleConstants, StatusConstants, status_type_severity_mapping
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib import get_db_session

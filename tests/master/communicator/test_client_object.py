@@ -116,7 +116,7 @@ class TestClientObject(TestCase):
         client = Client("127.0.0.1", '8097', None, False)
         eq_("http://127.0.0.1:8097/status", client.get_status_uri())
 
-    @patch("rapid.master.communicator.Client.requests")
+    @patch("rapid.master.communicator.client.requests")
     def test_send_work(self, requests):
         client = Client(None, None, None, False)
         work_request = WorkRequest()

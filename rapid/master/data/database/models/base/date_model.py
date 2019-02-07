@@ -14,11 +14,11 @@
  limitations under the License.
 """
 import datetime
-from rapid.lib import db
+from sqlalchemy import Column, DateTime
 # pylint: disable=no-member,too-few-public-methods
 
 
 class DateModel(object):
-    created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow, index=True)
-    start_date = db.Column(db.DateTime, index=True)
-    end_date = db.Column(db.DateTime, index=True)
+    created_date = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    start_date = Column(DateTime, index=True)
+    end_date = Column(DateTime, index=True)

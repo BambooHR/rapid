@@ -47,7 +47,7 @@ class ClientConfiguration(Configuration):
         self.executors = []
 
     def _set_values(self, parser):
-        self._set_parser_value(parser, 'client', 'port', 8081, int)
+        self._set_parser_value(parser, 'client', 'port', '8081', str)
         self._set_parser_value(parser, 'client', 'workspace', os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'))
         self._set_parser_value(parser, 'client', 'master_uri', 'http://rapidci.local')
         self._set_parser_value(parser, 'client', 'registration_rate', 180, int)

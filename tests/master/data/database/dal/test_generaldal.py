@@ -18,32 +18,31 @@ from unittest import TestCase
 from nose.tools import eq_, ok_
 
 from rapid.master.data.database.dal.general_dal import GeneralDal
-from rapid.workflow.data.models import Status
 
 
 class TestGeneralDal(TestCase):
 
     def test_get_instance_with_attributes(self):
         dal = GeneralDal()
-        instance = dal.get_instance(Status, {'type': "WHOOOHOOO"})
+        instance = dal.get_instance(TestStatus, {'type': "WHOOOHOOO"})
 
         eq_("WHOOOHOOO", instance.type, "object attribute was not set correctly.")
 
     def test_get_instance_with_no_attributes(self):
         dal = GeneralDal()
-        instance = dal.get_instance(Status, {})
+        instance = dal.get_instance(TestStatus, {})
 
         eq_(None, instance.type, "object attribute was not set correctly.")
 
     def test_get_instance_with_none_attributes(self):
         dal = GeneralDal()
-        instance = dal.get_instance(Status, None)
+        instance = dal.get_instance(TestStatus, None)
 
         eq_(None, instance.type, "object attribute was not set correctly.")
 
     def test_set_attribute_on_object(self):
         dal = GeneralDal()
-        instance = Status()
+        instance = TestStatus()
 
         dal._set_attributes(instance, {"type": "Worked!"})
 
@@ -51,8 +50,16 @@ class TestGeneralDal(TestCase):
 
     def test_set_invalid_attribute_on_object(self):
         dal = GeneralDal()
-        instance = Status()
+        instance = TestStatus()
 
         dal._set_attributes(instance, {"foo": "No Worky!"})
 
         ok_(not hasattr(instance, 'foo'))
+
+
+class TestStatus(object):
+    type = None
+
+    def __init__(self, type=None):
+        self.type = type
+

@@ -19,8 +19,8 @@ import calendar
 import re
 from datetime import datetime
 
+from sqlalchemy import Column, Integer
 from sqlalchemy.ext.declarative import declared_attr
-from rapid.lib import db
 
 logger = logging.getLogger("rapid")
 # pylint: disable=no-member
@@ -42,7 +42,7 @@ class BaseModel(object):
 
     __table_args__ = {'mysql_engine': 'InnoDB'}
 
-    id = db.Column(db.Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
 
     def __repr__(self):
         return "<Model {}>".format(self.__class__)

@@ -13,13 +13,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from rapid.lib import db
+from sqlalchemy import Column, String, Boolean
 from .base_model import BaseModel
 # pylint: disable=no-member,too-few-public-methods
 
 
 class ActiveModel(BaseModel):
-    name = db.Column(db.String(100), nullable=False)
-    active = db.Column(db.Boolean, default=True)
+    name = Column(String(100), nullable=False)
+    active = Column(Boolean, default=True)
 

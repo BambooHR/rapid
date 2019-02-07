@@ -86,7 +86,7 @@ class TestXunitParser(TestCase):
 
         with self.assertRaises(Exception) as cm:
             parser.parse(['asfqwerf'])
-        eq_('Invalid first line identifier', cm.exception.message)
+        eq_('Invalid first line identifier', str(cm.exception))
 
     def test_nothing_tested(self):
         parser = XUnitParser()

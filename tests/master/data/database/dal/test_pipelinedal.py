@@ -41,7 +41,7 @@ class TestPipelineDal(TestCase):
         action_json = {'cmd': 'something'}
 
         actions = self.dal.get_actions({'actions': [action_json]}, Mock(id=1), Mock(id=2), Mock())
-        for key, value in {'cmd': 'something', 'pipeline_id': 1, 'workflow_id': 2, 'order': 0}.iteritems():
+        for key, value in {'cmd': 'something', 'pipeline_id': 1, 'workflow_id': 2, 'order': 0}.items():
             eq_(value, getattr(actions[0], key))
 
     def test_get_workflows_empty(self):
@@ -51,14 +51,14 @@ class TestPipelineDal(TestCase):
         workflow_json = {'name': 'foo', 'active': True}
 
         workflows = self.dal.get_workflows({'workflows': [workflow_json]}, Mock(id=1), Mock(id=2), Mock())
-        for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": []}.iteritems():
+        for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": []}.items():
             eq_(value, getattr(workflows[0], key))
 
     def test_get_workflows_data_with_actions(self):
         workflow_json = {'name': 'foo', 'active': True, 'actions': [{'cmd': 'something'}]}
 
         workflows = self.dal.get_workflows({'workflows': [workflow_json]}, Mock(id=1), Mock(id=2), Mock())
-        for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": 1 }.iteritems():
+        for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": 1 }.items():
             if key == 'actions':
                 eq_(value, len(getattr(workflows[0], 'actions')))
             else:
@@ -71,14 +71,14 @@ class TestPipelineDal(TestCase):
         stage_json = {'name': 'foostage', 'active': True}
 
         stages = self.dal.get_stages({'stages': [stage_json]}, Mock(id=1), Mock())
-        for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0}.iteritems():
+        for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0}.items():
             eq_(value, getattr(stages[0], key))
 
     def test_get_stages_data_with_workflows(self):
         stage_json = {'name': 'foostage', 'active': True, 'workflows': [{'name': 'foo', 'active': True, 'actions': []}]}
 
         stages = self.dal.get_stages({'stages': [stage_json]}, Mock(id=1), Mock())
-        for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0, 'workflows': 1}.iteritems():
+        for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0, 'workflows': 1}.items():
             if 'workflows' == key:
                 eq_(value, len(getattr(stages[0], key)))
             else:
@@ -87,7 +87,7 @@ class TestPipelineDal(TestCase):
     def test_get_pipeline_no_json(self):
         with self.assertRaises(BaseException) as cm:
             self.dal._get_pipeline(None)
-        self.assertEqual("No pipeline was created.", cm.exception.message)
+        self.assertEqual("No pipeline was created.", str(cm.exception))
 
     def test_get_pipeline_with_json(self):
         self.dal.app = Mock()
@@ -98,7 +98,7 @@ class TestPipelineDal(TestCase):
     def _register_helper(self, uri, name, func, methods):
         if not hasattr(self, 'registry'):
             self.registry = {}
-        self.registry[uri] = {'name': name, 'func': func.func_name, 'methods': methods}
+        self.registry[uri] = {'name': name, 'func': func.__name__, 'methods': methods}
 
     def test_register_url_rules(self):
         mock_app = Mock()
@@ -109,8 +109,8 @@ class TestPipelineDal(TestCase):
         eq_(self.registry['/api/pipelines/create'], {'name': 'create_pipeline', 'func': 'create_pipeline', 'methods': ['POST']})
         eq_(self.registry['/api/pipelines/<int:pipeline_id>/start'], {'name': 'start_pipeline_instance', 'func': 'start_pipeline_instance', 'methods': ['POST']})
 
-    @patch('rapid.workflow.data.dal.PipelineDal.PipelineDal.get_pipeline_instance_by_id')
-    @patch('rapid.workflow.data.dal.PipelineDal.get_db_session')
+    @patch('rapid.workflow.data.dal.pipeline_dal.PipelineDal.get_pipeline_instance_by_id')
+    @patch('rapid.workflow.data.dal.pipeline_dal.get_db_session')
     def test_cancel_pipeline_instance_returns_404_if_invalid(self, db_session, pipeline_instance_by_id):
         """
         @rapid-unit Workflow:Cancel Pipeline Instance:Should indicate not found if instance not found
@@ -126,9 +126,9 @@ class TestPipelineDal(TestCase):
         eq_(404, exception.exception.code)
         eq_("Pipeline Instance not found", exception.exception.description)
 
-    @patch('rapid.workflow.data.dal.PipelineDal.StoreService')
-    @patch('rapid.workflow.data.dal.PipelineDal.PipelineDal.get_pipeline_instance_by_id')
-    @patch('rapid.workflow.data.dal.PipelineDal.get_db_session')
+    @patch('rapid.workflow.data.dal.pipeline_dal.StoreService')
+    @patch('rapid.workflow.data.dal.pipeline_dal.PipelineDal.get_pipeline_instance_by_id')
+    @patch('rapid.workflow.data.dal.pipeline_dal.get_db_session')
     def test_cancel_pipeline_instance_cancels_current_running_clients(self, db_session, pipeline_instance_by_id, store_service):
         """
         @rapid-unit Workflow:Cancel Pipeline Instance:Should cancel current assigned clients

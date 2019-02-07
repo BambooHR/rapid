@@ -48,9 +48,9 @@ class TestRemoteNotificationHandler(TestCase):
         eq_('This is a test 2. Pipeline 1', config['payload']['message'])
 
 
-class TrialMock():
+class TrialMock(object):
     def __init__(self, id):
         self.id = id
 
-    def _get_parameters_dict(self):
+    def get_parameters_dict(self):
         return {"id": self.id}

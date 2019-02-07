@@ -60,7 +60,7 @@ class WorkRequest(object):
                     if tmp == '_grain':
                         tmp = 'grain'
                     setattr(self, attr, data_in[tmp])
-                except (TypeError, AttributeError):
+                except (TypeError, AttributeError, KeyError):
                     pass
         else:
             for attr in vars(self).keys():
@@ -69,7 +69,7 @@ class WorkRequest(object):
                     if tmp == '_grain':
                         tmp = 'grain'
                     setattr(self, attr, getattr(data_in, tmp))
-                except (TypeError, AttributeError):
+                except (TypeError, AttributeError, KeyError):
                     pass
 
         self.set_headers()

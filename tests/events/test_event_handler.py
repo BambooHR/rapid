@@ -33,7 +33,7 @@ class TestEventHandler(TestCase):
     def test_prepare_conditional(self):
         handler = RemoteNotificationHandler()
         mock_pipeline_instance = MagicMock()
-        mock_pipeline_instance._get_parameters_dict.return_value = {'__testing__': 12}
+        mock_pipeline_instance.get_parameters_dict.return_value = {'__testing__': 12}
         eq_('12 == 12', handler._prepare_conditional('{__testing__} == 12', mock_pipeline_instance, MagicMock()))
 
     def test_get_attribute_trait(self):
@@ -71,7 +71,7 @@ class TestEventHandler(TestCase):
     def test_passes_conditional_complex_passes(self):
         handler = RemoteNotificationHandler()
         mock_pipeline_instance = MagicMock(status_id=2)
-        mock_pipeline_instance._get_parameters_dict.return_value = {'__testing__': 2, '__trial__': 'True'}
+        mock_pipeline_instance.get_parameters_dict.return_value = {'__testing__': 2, '__trial__': 'True'}
 
         ok_(handler.passes_conditional(mock_pipeline_instance,
                                        MagicMock(),
@@ -80,7 +80,7 @@ class TestEventHandler(TestCase):
     def test_passes_conditional_complex_fails(self):
         handler = RemoteNotificationHandler()
         mock_pipeline_instance = MagicMock(status_id=2)
-        mock_pipeline_instance._get_parameters_dict.return_value = {'__testing__': 2, '__trial__': 'True'}
+        mock_pipeline_instance.get_parameters_dict.return_value = {'__testing__': 2, '__trial__': 'True'}
 
         ok_(not handler.passes_conditional(mock_pipeline_instance,
                                        MagicMock(),
@@ -103,7 +103,7 @@ class TestEventHandler(TestCase):
         handler = RemoteNotificationHandler()
         eq_('pipelineInstance.status_id == "testing"', handler._translate_string_for_key_string('pipelineIn', MagicMock(status_id=2), 'pipelineInstance.status_id == "testing"'))
 
-    @patch('rapid.workflow.events.handlers.RemoteNotificationHandler.RemoteNotificationHandler._translate_string_for_key_string')
+    @patch('rapid.workflow.events.handlers.remote_notification_handler.RemoteNotificationHandler._translate_string_for_key_string')
     def test_translate_string_for_pipeline_instance_contract(self, key_string):
         handler = RemoteNotificationHandler()
         magicMock = MagicMock()
@@ -111,7 +111,7 @@ class TestEventHandler(TestCase):
         eq_(1, key_string.call_count)
         key_string.assert_called_with('pipelineInstance', magicMock, '')
 
-    @patch('rapid.workflow.events.handlers.RemoteNotificationHandler.RemoteNotificationHandler._translate_string_for_key_string')
+    @patch('rapid.workflow.events.handlers.remote_notification_handler.RemoteNotificationHandler._translate_string_for_key_string')
     def test_translate_string_for_action_instance_contract(self, key_string):
         handler = RemoteNotificationHandler()
         magicMock = MagicMock()

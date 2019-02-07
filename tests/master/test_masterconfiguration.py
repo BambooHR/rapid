@@ -13,7 +13,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from ConfigParser import SafeConfigParser
+try:
+    from ConfigParser import SafeConfigParser
+except ImportError:
+    from configparser import ConfigParser as SafeConfigParser
+
 from nose.tools import eq_
 from unittest import TestCase
 from rapid.master.master_configuration import MasterConfiguration

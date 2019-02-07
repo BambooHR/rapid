@@ -19,7 +19,7 @@ from unittest.case import TestCase
 
 from mock.mock import patch, Mock
 from nose.tools.trivial import eq_, ok_
-from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy import Boolean
 
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.constants import StatusConstants
@@ -29,7 +29,7 @@ from rapid.workflow.data.models import ActionInstance, PipelineParameters, Pipel
 
 class TestActionDal(TestCase):
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_queryables(self, get_db_session):
         action_dal = ActionDal()
 
@@ -44,7 +44,7 @@ class TestActionDal(TestCase):
 
         eq_([ActionInstance, PipelineParameters, ActionInstance, PipelineParameters], session.query_args)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
         action_dal = ActionDal()
 
@@ -61,15 +61,16 @@ class TestActionDal(TestCase):
         eq_(PipelineParameters.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].left)
         eq_(ActionInstance.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].right)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_filters(self, get_db_session):
         action_dal = ActionDal()
 
         session = WrapperHelper()
         get_db_session.return_value = [session]
 
-        action_instance = ActionInstance()
-        pipeline_parameters = PipelineParameters()
+        action_instance = Mock()
+        action_instance.serialize.return_value = {}
+        pipeline_parameters = Mock()
         session.results.append((action_instance, pipeline_parameters))
 
         action_dal.get_workable_work_requests()
@@ -97,7 +98,7 @@ class TestActionDal(TestCase):
         eq_(PipelineInstance.__table__.columns['status_id'], filter_4.left)
         eq_(StatusConstants.INPROGRESS, filter_4.right.value)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_order_by(self, get_db_session):
         action_dal = ActionDal()
 
@@ -116,7 +117,7 @@ class TestActionDal(TestCase):
         eq_(ActionInstance.__table__.columns['order'], session.order_by_args[3].element)
         eq_(ActionInstance.__table__.columns['slice'], session.order_by_args[4].element)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_work_request_validation(self, get_db_session):
         action_dal = ActionDal()
 
@@ -138,23 +139,21 @@ class TestActionDal(TestCase):
 
         eq_({"foo": "bar", "foo2": "bar2"}, work_request.environment)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_verify_working_verify_join(self, get_db_session):
         action_dal = ActionDal()
 
         session = WrapperHelper()
         get_db_session.return_value = [session]
 
-        action_instance = ActionInstance()
-        session.results.append(action_instance)
-
         action_dal.get_verify_working(10)
 
         eq_(PipelineInstance, session.join_args[0])
         # eq_(StatusConstants.INPROGRESS, session.join_args[1].right.value)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
-    def test_get_verify_working_verify_filter_args(self, get_db_session):
+    @patch('rapid.workflow.data.models.Base')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_get_verify_working_verify_filter_args(self, get_db_session, base):
         action_dal = ActionDal()
 
         now = datetime.datetime.utcnow()
@@ -162,9 +161,6 @@ class TestActionDal(TestCase):
 
         session = WrapperHelper()
         get_db_session.return_value = [session]
-
-        action_instance = ActionInstance()
-        session.results.append(action_instance)
 
         action_dal.get_verify_working(10)
 
@@ -189,27 +185,27 @@ class TestActionDal(TestCase):
         eq_(diff.hour, filter_3.right.value.hour)
 
         eq_(ActionInstance.__table__.columns['end_date'], filter_4.left)
-        eq_(NullType, type(filter_4.type))
+        eq_(Boolean, type(filter_4.type))
 
         eq_(ActionInstance.__table__.columns['manual'], filter_5.left)
         eq_(0, filter_5.right.value)
 
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_verify_working_verify_results(self, get_db_session):
         action_dal = ActionDal()
 
         session = WrapperHelper()
         get_db_session.return_value = [session]
 
-        action_instance = ActionInstance(id=1, pipeline_instance_id=1)
+        action_instance = Mock(id=1, pipeline_instance_id=1)
         session.results.append(action_instance)
 
         results = action_dal.get_verify_working(10)
 
         eq_([action_instance.serialize()], results)
 
-    @patch('rapid.workflow.ActionDal.ActionDal.get_action_instance_by_id')
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_action_instance_returns_404_when_not_found(self, db_session, get_action_instance):
         """
         @rapid-unit Workflow:Cancel Action Instance:Should return a 404 if not found
@@ -226,9 +222,9 @@ class TestActionDal(TestCase):
         eq_(404, exception.exception.code)
         eq_("Action Instance not found", exception.exception.description)
 
-    @patch('rapid.workflow.ActionDal.StoreService')
-    @patch('rapid.workflow.ActionDal.ActionDal.get_action_instance_by_id')
-    @patch('rapid.workflow.ActionDal.get_db_session')
+    @patch('rapid.workflow.action_dal.StoreService')
+    @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.action_dal.get_db_session')
     def test_action_instance_cancels_current_running_clients(self, db_session, get_action_instance, store_service):
         """
         @rapid-unit Workflow:Cancel Action Instance:Should cancel active client

@@ -15,6 +15,7 @@
  limitations under the License.
 """
 import ssl
+import sys
 from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
@@ -38,10 +39,12 @@ requirements = [
     'requests==2.7.0',
     'futures',
     'jsonpickle',
-    'enum34==1.0.4',
     'simplejson==3.10.0',
     'simpleeval'
 ]
+
+if sys.version_info[0] == 2:
+    requirements.append('enum34==1.0.4')
 
 setup(
         name='rapid-framework',

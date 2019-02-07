@@ -17,6 +17,8 @@
 from unittest.case import TestCase
 
 import datetime
+
+import sys
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
@@ -39,7 +41,12 @@ class TestWorkController(TestCase):
 
         def set_url(*args, **kwargs):
             arguments = list(args)
-            arguments[2] = {'type_is': args[2].func_code.co_name, 'name': args[2].func_name, 'co_filename': args[2].func_code.co_filename}
+            if sys.version == '2':
+                arguments[2] = {'type_is': args[2].func_code.co_name, 'name': args[2].func_name, 'co_filename': args[2].func_code.co_filename}
+            else:
+                arguments[2] = {'type_is': args[2].__code__.co_name,
+                                'name': args[2].__wrapped__.__func__.__name__,
+                                'co_filename': args[2].__code__.co_filename}
             if kwargs:
                 arguments.append(kwargs)
             registered_rules[args[0]] = arguments
@@ -81,7 +88,7 @@ class TestWorkController(TestCase):
         store_service.get_executors.return_value = [1, 1]
         eq_(False, controller.can_work_on())
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_can_work_on_with_work(self, os):
         controller = WorkController()
         controller.app = Mock()
@@ -90,7 +97,7 @@ class TestWorkController(TestCase):
 
         eq_(True, controller.can_work_on(Mock(action_instance_id=1111)))
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_can_work_on_with_work_existing_action_instance(self, os):
         controller = WorkController()
         controller.app = Mock()

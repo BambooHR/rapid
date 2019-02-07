@@ -35,7 +35,9 @@ class EventHandlerFactory(object):
         for importer, modname, ispkg in pkgutil.iter_modules(handlers.__path__):  # pylint: disable=unused-variable
             try:
                 name = "{}.{}".format(handlers.__name__, modname)
-                tmp = getattr(__import__(name, fromlist=[modname]), modname)
+                module = __import__(name, fromlist=[modname])
+                class_name = ''.join([x.title() for x in modname.split('_')])
+                tmp = getattr(module, class_name)
                 if tmp.get_event_type() == in_type:
                     return tmp()
             except Exception:
