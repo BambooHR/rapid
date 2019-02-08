@@ -377,7 +377,7 @@ class Executor(object):
                 pass
         else:
             try:
-                os.mkdir(self.workspace)
+                os.makedirs(self.workspace)
             except Exception as exception:
                 Executor._log(self.work_request.action_instance_id, "{} - Workspace was unable to be created.".format(self.workspace), self.logger)
                 self.logger.exception(exception)

@@ -256,7 +256,7 @@ class TestExecutor(TestCase):
         mock_os.path.isdir.return_value = False
 
         executor.clean_workspace()
-        mock_os.mkdir.assert_called_with("boggus")
+        mock_os.makedirs.assert_called_with("boggus")
 
     @patch("rapid.client.executor.os")
     def test_clean_workspace_invalid_dir_exception(self, mock_os):
@@ -268,7 +268,7 @@ class TestExecutor(TestCase):
         def throw_exception(*args, **kwargs):
             raise self_exception
 
-        mock_os.mkdir = throw_exception
+        mock_os.makedirs = throw_exception
         mock_os.path.isdir.return_value = False
 
         executor.clean_workspace()

@@ -61,7 +61,7 @@ class BaseModel(object):
     def serialize(self, allowed_children=None, previous_relationship=None):
         serialized = Odict()
         relationships = self.__relationships__()
-        fields = [x for x in dir(self) if not x.startswith('_') and x != 'metadata']
+        fields = [x for x in dir(self) if not x.startswith('_') and x not in ['metadata', 'get_parameters_dict']]
         self._serialize_fields(serialized, fields, previous_relationship, allowed_children, relationships)
         return serialized
 
