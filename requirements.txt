@@ -1,10 +1,10 @@
 alembic
 SQLAlchemy
 Flask-SQLAlchemy
-requests
+requests==2.20.0
 futures
 jsonpickle
 mysql-connector-python
 pygithub
-simplejson
+simplejson==3.10.0
 simpleeval
