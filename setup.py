@@ -32,7 +32,7 @@ execfile('./rapid/lib/Version.py')
 
 requirements = [
     'flask',
-    'requests==2.7.0',
+    'requests==2.20.0',
     'futures',
     'jsonpickle',
     'enum34==1.0.4',
