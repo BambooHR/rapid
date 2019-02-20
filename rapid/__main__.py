@@ -17,7 +17,7 @@
 import argparse
 import logging
 
-from ConfigurationGenerator import ConfigurationGenerator
+from .configuration_generator import ConfigurationGenerator
 
 parser = argparse.ArgumentParser(description='Rapid Framework client main control')
 parser.add_argument('-f', '--config', dest='config_file', help="config file path")
