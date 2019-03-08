@@ -18,13 +18,13 @@ from unittest.case import TestCase
 from mock.mock import MagicMock
 from nose.tools.trivial import eq_
 
-from rapid.ci.vcs.GithubController import GithubController
+from rapid.ci.vcs.github_controller import GithubController
 
 
 class TestGithubController(TestCase):
 
     def test_get_json_value(self):
         mock_config = MagicMock()
-        controller = GithubController(MagicMock(), MagicMock(), mock_config, MagicMock(), MagicMock())
+        controller = GithubController(MagicMock(), MagicMock(), mock_config, MagicMock())
 
         eq_('something', controller._get_json_value({'test': {'trial': {'value': 'something'}}}, 'test.trial.value'))

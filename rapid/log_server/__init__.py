@@ -14,39 +14,16 @@
  limitations under the License.
 """
 
-import glob
-import logging
-
 from flask import Flask
-from flask.wrappers import Response
-import subprocess
 
+from rapid.lib import setup_logging
 
 app = Flask("rapidci_logger")
 app.rapid_config = {'_is': 'logger'}
 
-UWSGI = False
-try:
-    import uwsgi
-    UWSGI = True
-except ImportError:
-    pass
-
-
-def setup_logging(flask_app):
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    flask_app.logger.addHandler(handler)
-    flask_app.logger.setLevel(logging.INFO)
-
-    logger = logging.getLogger('rapid')
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-
 
 def configure_application(flask_app, args):
     setup_logging(flask_app)
-    from rapid.lib.LogServer import LogServer
+    from rapid.lib.log_server import LogServer
     log_server = LogServer(args.log_dir)
     log_server.configure_application(flask_app)

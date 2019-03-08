@@ -16,34 +16,37 @@
 import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import UniqueConstraint
+from sqlalchemy import Column, String, ForeignKey, Integer, DateTime, Boolean, Text
 
-from rapid.master.data.database.models.base.ActiveModel import ActiveModel
-from rapid.master.data import db
-from rapid.master.data.database.models.base.BaseModel import BaseModel
-
-
-class QaTest(BaseModel, db.Model):
-    name = db.Column(db.String(1000), nullable=False)
-    active = db.Column(db.Boolean, default=True)
-    qa_test_type_id = db.Column(db.Integer, db.ForeignKey('qa_test_types.id'), nullable=True, index=True)
+from rapid.lib import get_declarative_base
+from rapid.master.data.database.models.base.active_model import ActiveModel
+from rapid.master.data.database.models.base.base_model import BaseModel
+# pylint: disable=no-member,too-few-public-methods
+Base = get_declarative_base()
 
 
-class QaStatusSummary(BaseModel, db.Model):
-    action_instance_id = db.Column(db.Integer, db.ForeignKey('action_instances.id'), nullable=False, index=True)
-    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False, index=True)
-    count = db.Column(db.Integer)
+class QaTest(BaseModel, Base):
+    name = Column(String(1000), nullable=False)
+    active = Column(Boolean, default=True)
+    qa_test_type_id = Column(Integer, ForeignKey('qa_test_types.id'), nullable=True, index=True)
+
+
+class QaStatusSummary(BaseModel, Base):
+    action_instance_id = Column(Integer, ForeignKey('action_instances.id'), nullable=False, index=True)
+    status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
+    count = Column(Integer)
 
     status = relationship('Status')
     action_instance = relationship("ActionInstance", backref="status_summary")
 
 
-class QaTestHistory(BaseModel, db.Model):
-    test_id = db.Column(db.Integer, db.ForeignKey('qa_tests.id'), nullable=False, index=True)
-    pipeline_instance_id = db.Column(db.Integer, db.ForeignKey('pipeline_instances.id'), nullable=False, index=True)
-    action_instance_id = db.Column(db.Integer, db.ForeignKey('action_instances.id'), nullable=False, index=True)
-    duration = db.Column(db.Integer)
-    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), index=True)
-    date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow)
+class QaTestHistory(BaseModel, Base):
+    test_id = Column(Integer, ForeignKey('qa_tests.id'), nullable=False, index=True)
+    pipeline_instance_id = Column(Integer, ForeignKey('pipeline_instances.id'), nullable=False, index=True)
+    action_instance_id = Column(Integer, ForeignKey('action_instances.id'), nullable=False, index=True)
+    duration = Column(Integer)
+    status_id = Column(Integer, ForeignKey('statuses.id'), index=True)
+    date_created = Column(DateTime(), nullable=False, default=datetime.datetime.utcnow)
 
     test = relationship('QaTest')
     pipeline_instance = relationship('PipelineInstance')
@@ -52,39 +55,39 @@ class QaTestHistory(BaseModel, db.Model):
     stacktrace = relationship("Stacktrace", single_parent=True, backref="qa_test_history", cascade="all,delete")
 
 
-class Stacktrace(BaseModel, db.Model):
-    qa_test_history_id = db.Column(db.Integer, db.ForeignKey('qa_test_histories.id'), nullable=False, index=True, unique=True)
-    stacktrace = db.Column(db.Text)
+class Stacktrace(BaseModel, Base):
+    qa_test_history_id = Column(Integer, ForeignKey('qa_test_histories.id'), nullable=False, index=True, unique=True)
+    stacktrace = Column(Text)
 
 
-class QaProduct(BaseModel, db.Model):
-    name = db.Column(db.String(250), nullable=False, index=True)
-    vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
+class QaProduct(BaseModel, Base):
+    name = Column(String(250), nullable=False, index=True)
+    vcs_id = Column(Integer, ForeignKey('vcs.id'), nullable=False, index=True)
 
     qa_areas = relationship('QaArea', backref="qa_product", order_by="asc(QaArea.name)")
     vcs = relationship('Vcs', backref='qa_product')
 
 
-class QaArea(BaseModel, db.Model):
-    name = db.Column(db.String(250), nullable=False, index=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("qa_products.id"), nullable=False, index=True)
+class QaArea(BaseModel, Base):
+    name = Column(String(250), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("qa_products.id"), nullable=False, index=True)
 
 
-class QaFeature(BaseModel, db.Model):
-    name = db.Column(db.String(250), nullable=False, index=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("qa_products.id"), nullable=False, index=True)
+class QaFeature(BaseModel, Base):
+    name = Column(String(250), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("qa_products.id"), nullable=False, index=True)
 
 
-class QaBehaviorPoint(BaseModel, db.Model):
-    name = db.Column(db.String(400), nullable=False, index=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("qa_products.id"), nullable=False, index=True)
+class QaBehaviorPoint(BaseModel, Base):
+    name = Column(String(400), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("qa_products.id"), nullable=False, index=True)
 
 
-class QaTestMapping(BaseModel, db.Model):
-    area_id = db.Column(db.Integer, db.ForeignKey("qa_areas.id"), nullable=False, index=True)
-    feature_id = db.Column(db.Integer, db.ForeignKey('qa_features.id'), index=True)
-    behavior_id = db.Column(db.Integer, db.ForeignKey('qa_behavior_points.id'), nullable=False, index=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('qa_tests.id'), nullable=False)
+class QaTestMapping(BaseModel, Base):
+    area_id = Column(Integer, ForeignKey("qa_areas.id"), nullable=False, index=True)
+    feature_id = Column(Integer, ForeignKey('qa_features.id'), index=True)
+    behavior_id = Column(Integer, ForeignKey('qa_behavior_points.id'), nullable=False, index=True)
+    test_id = Column(Integer, ForeignKey('qa_tests.id'), nullable=False)
 
     area = relationship('QaArea')
     feature = relationship('QaFeature')
@@ -94,14 +97,14 @@ class QaTestMapping(BaseModel, db.Model):
     __table_args__ = (UniqueConstraint('area_id', 'feature_id', 'behavior_id', 'test_id', name="uix_qatm"),)
 
 
-class QaTestMapTag(BaseModel, db.Model):
-    qa_testmap_id = db.Column(db.Integer, db.ForeignKey('qa_test_mappings.id'), nullable=False, index=True)
-    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), nullable=False, index=True)
+class QaTestMapTag(BaseModel, Base):
+    qa_testmap_id = Column(Integer, ForeignKey('qa_test_mappings.id'), nullable=False, index=True)
+    tag_id = Column(Integer, ForeignKey('tags.id'), nullable=False, index=True)
 
 
-class Tag(BaseModel, db.Model):
-    name = db.Column(db.String(100), nullable=False, index=True)
+class Tag(BaseModel, Base):
+    name = Column(String(100), nullable=False, index=True)
 
 
-class QaTestType(ActiveModel, db.Model):
+class QaTestType(ActiveModel, Base):
     pass

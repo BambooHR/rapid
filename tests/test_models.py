@@ -54,5 +54,5 @@ class TestModels(TestCase):
         eq_(1, getattr(instance_conversion, model_map['parent_id']))
 
         if 'check_fields' in model_map:
-            for key, value in model_map['check_fields'].iteritems():
+            for key, value in model_map['check_fields'].items():
                 eq_(value, getattr(instance_conversion, key))

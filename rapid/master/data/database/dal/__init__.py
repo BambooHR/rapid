@@ -14,13 +14,13 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 registered_dals = []
 
 
 def get_dal(model):
-    global registered_dals
+    global registered_dals  # pylint: disable=global-statement
     for dal in registered_dals:
         if dal.is_serviceable(model):
             return dal
@@ -28,8 +28,8 @@ def get_dal(model):
 
 
 def setup_dals(flask_app):
-    from rapid.master.data.database.dal.GeneralDal import GeneralDal
-    from rapid.workflow.data.dal.PipelineDal import PipelineDal
+    from rapid.master.data.database.dal.general_dal import GeneralDal
+    from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 
     for dal in [PipelineDal, GeneralDal]:
         tmp = IOC.get_class_instance(dal)

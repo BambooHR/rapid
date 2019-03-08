@@ -14,13 +14,13 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.IOC import IOC
+from rapid.lib.framework.ioc import IOC
 
 
 def register_controllers(app):
-    from rapid.master.controllers.api.UtilityController import UtilityRouter
+    from rapid.master.controllers.api.utility_controller import UtilityRouter
     utility_router = UtilityRouter(app)
     utility_router.register_url_rules()
 
-    from rapid.master.controllers.api.UpgradeController import UpgradeController
+    from rapid.master.controllers.api.upgrade_controller import UpgradeController
     UpgradeController(app).configure_routing()

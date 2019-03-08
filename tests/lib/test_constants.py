@@ -18,7 +18,7 @@ from unittest.case import TestCase
 
 from nose.tools.trivial import eq_
 
-from rapid.lib.Constants import Constants
+from rapid.lib.constants import Constants
 
 
 class TestConstants(TestCase):

@@ -13,15 +13,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+# pylint: disable=broad-except
+import logging
 from abc import ABCMeta, abstractmethod
 import os
 
 import re
 
-from rapid.lib.Utils import deep_merge
-from rapid.lib.framework.IOC import IOC
-import logging
+from rapid.lib.utils import deep_merge
 
 logger = logging.getLogger("rapid")
 
@@ -62,23 +61,23 @@ class QaTestFile(object):
                     if action:
                         try:
                             getattr(self, "handle_{}".format(action))(line)
-                        except:
+                        except Exception:
                             pass
                     else:
                         self.handle_test(line, name_map)
-                except:
+                except Exception:
                     import traceback
                     traceback.print_exc()
-                    pass
+
         if self.is_reversed() and self._current_settings:
             self._finalize_test(self._current_test)
 
     def parse_action(self, line):
         tmp = self._strip_comment_characters(line).lstrip()
         if tmp.startswith('rapid-') or tmp.startswith('@rapid-'):
-            m = re.findall('rapid-([a-zA-Z]+)', tmp)
-            if m and len(m) > 0:
-                return m[0]
+            _match = re.findall('rapid-([a-zA-Z]+)', tmp)
+            if _match and len(_match) >= 1:
+                return _match[0]
         return None
 
     def handle_unit(self, line):
@@ -162,18 +161,18 @@ class QaTestFile(object):
 
     def _finalize_test(self, test):
         if test['current_settings'].get('area', None):
-            bp = self._get_behavior_point_map(test['current_settings'].get(self.AREA, None),
-                                              test['current_settings'].get(self.FEATURE, None),
-                                              test['current_settings'].get(self.BP, None))
+            _bp = self._get_behavior_point_map(test['current_settings'].get(self.AREA, None),
+                                               test['current_settings'].get(self.FEATURE, None),
+                                               test['current_settings'].get(self.BP, None))
 
-            bp.append(test)
+            _bp.append(test)
 
     def printout(self):
         if self._areas:
-            for area, area_map in self._areas.iteritems():
-                for feature, feature_map in area_map.iteritems():
-                    for bp, tests in feature_map.iteritems():
-                        print("{}:{}:{}".format(area, feature, bp))
+            for area, area_map in self._areas.items():
+                for feature, feature_map in area_map.items():
+                    for _bp, tests in feature_map.items():
+                        print("{}:{}:{}".format(area, feature, _bp))
                         for test in tests:
                             print("      - ({}) {} -- [{}]".format(test['current_settings'].get('level'), test['name'],
                                                                    ",".join(test['current_settings'].get('tags', []))))
@@ -183,7 +182,7 @@ class PythonFile(QaTestFile):
     def _get_comment_characters(self):
         return "#"
 
-    _CUSTOM_RE = re.compile('\s{1,}def (test[\S]*)\(.*$')
+    _CUSTOM_RE = re.compile(r'\s{1,}def (test[\S]*)\(.*$')
 
     @property
     def regex(self):
@@ -197,7 +196,7 @@ class PHPFile(QaTestFile):
     def _get_comment_characters(self):
         return "/*"
 
-    _CUSTOM_RE = re.compile('\s{1,}function (test[\S]*)\(.*$')
+    _CUSTOM_RE = re.compile(r'\s{1,}function (test[\S]*)\(.*$')
 
     @property
     def regex(self):
@@ -211,7 +210,7 @@ class JSFile(QaTestFile):
     def _get_comment_characters(self):
         return "/*"
 
-    _CUSTOM_RE = re.compile('\s{1,}it\([\'"`]([^\'`"]*)')
+    _CUSTOM_RE = re.compile(r'\s{1,}it\([\'"`]([^\'`"]*)')
 
     @property
     def regex(self):
@@ -230,16 +229,16 @@ class FileTestFactory(object):
         file_type = filename.split('.')[-1]
         if file_type == 'php':
             return PHPFile(filename, rootdir)
-        elif file_type == 'py':
+        if file_type == 'py':
             return PythonFile(filename, rootdir)
-        elif file_type == 'js':
+        if file_type == 'js':
             return JSFile(filename, rootdir)
         return None
 
 
 def process_directory(workspace, dirname, cmdline=False, name_map=None):
     results = {}
-    for root, dirs, files in os.walk(dirname):
+    for root, dirs, files in os.walk(dirname):  # pylint: disable=unused-variable
         for filename in files:
             try:
                 testfile = FileTestFactory.create_file_test("{}/{}".format(root, filename), workspace)
@@ -248,7 +247,6 @@ def process_directory(workspace, dirname, cmdline=False, name_map=None):
                     deep_merge(results, testfile.get_results())
             except Exception as exception:
                 logger.error("Was Unable to process the directory defined. {}".format(exception))
-                pass
     if cmdline:
         __print_results(results)
     return results
@@ -263,8 +261,8 @@ def __print_results(areas):
         print(area)
         for feature, feature_map in area_map.iteritems():
             print("  {}".format(feature))
-            for bp, tests in feature_map.iteritems():
-                print("   {}".format(bp))
+            for _bp, tests in feature_map.iteritems():
+                print("   {}".format(_bp))
                 # print "{}:{}:{}".format(area, feature, bp)
                 for test in tests:
                     print("      - ({}) {} -- [{}]".format(test['current_settings'].get('level'), test['name'],
@@ -272,9 +270,9 @@ def __print_results(areas):
         print("")
 
 
-def register_ioc_globals(flask_app):
+def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
     pass
 
 
-def configure_module(flask_app):
+def configure_module(flask_app):  # pylint: disable=unused-argument
     pass

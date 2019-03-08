@@ -13,37 +13,33 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from os.path import basename
-
 try:
     import simplejson as json
-except:
+except ImportError:
     import json
 
 import os
-import pickle
-import threading
+from os.path import basename
+
 import time
+import pickle
+import logging
+import threading
 
 from flask.globals import request
 from flask.wrappers import Response
 
-from rapid.client.communicator.ClientCommunicator import ClientCommunicator
+from rapid.client.communicator.client_communicator import ClientCommunicator
 from rapid.lib import api_key_required
-from rapid.lib.StoreService import StoreService
-from rapid.lib.Utils import UpgradeUtil
-from rapid.lib.WorkRequest import WorkRequest
-from ..executor.Executor import Executor
-from ...lib.BaseController import BaseController
-from ...lib.Version import Version
-import logging
+from rapid.lib.store_service import StoreService
+from rapid.lib.utils import UpgradeUtil
+from rapid.lib.work_request import WorkRequest
+from rapid.client.executor import Executor
+from ...lib.base_controller import BaseController
+from ...lib.version import Version
 
 logger = logging.getLogger("rapid")
-
-try:
-    import uwsgi
-except:
-    pass
+# pylint: disable=broad-except
 
 
 class WorkController(BaseController):
@@ -92,8 +88,8 @@ class WorkController(BaseController):
                                                           get_files_auth=self.app.rapid_config.get_files_basic_auth)
                     try:
                         delete_file = False
-                        with open("{}/{}".format(quarantine_directory, item), 'r') as file:
-                            data = pickle.loads(file.read())
+                        with open("{}/{}".format(quarantine_directory, item), 'r') as tmp_file:
+                            data = pickle.loads(tmp_file.read())
                             try:
                                 status = data['status']
                                 parameters = data['parameters'] if 'parameters' in data else None
@@ -102,22 +98,20 @@ class WorkController(BaseController):
 
                                 communicator.send_done(int(item), status, parameters, stats, results, logger, headers={'X-Rapid-Quarantine': 'true'})
                                 delete_file = True
-                            except:
+                            except Exception:
                                 import traceback
                                 traceback.print_exc()
-                                pass
 
                         if delete_file:
                             try:
                                 os.remove("{}/{}".format(quarantine_directory, item))
-                            except:
+                            except Exception:
                                 logger.error("Couldn't remove.")
-                    except:
+                    except Exception:
                         import traceback
                         traceback.print_exc()
-                        pass
 
-                except:
+                except Exception:
                     pass
         return items
 
@@ -139,7 +133,7 @@ class WorkController(BaseController):
                 pid_exists = StoreService.check_for_pidfile(work['action_instance_id'])
                 if pid_exists is not None:
                     logger.info("Request was sent, but was already running, ignoring for [{}]".format(work['action_instance_id']))
-        except:
+        except Exception:
             pass
 
         return pid_exists
@@ -148,16 +142,13 @@ class WorkController(BaseController):
         if Version.HEADER in check_request.headers:
             if check_request.headers[Version.HEADER] == self.get_version():
                 return True
-            else:
-                if not StoreService.is_updating(self.app):
-                    StoreService.set_updating(self.app)
-                    updating = True
-                    thread = threading.Thread(target=self._perform_upgrade, args=(check_request.headers[Version.HEADER],))
-                    thread.daemon = True
-                    thread.start()
+            if not StoreService.is_updating(self.app):
+                StoreService.set_updating(self.app)
+                thread = threading.Thread(target=self._perform_upgrade, args=(check_request.headers[Version.HEADER],))
+                thread.daemon = True
+                thread.start()
 
                 return False
-
         return False
 
     def _perform_upgrade(self, new_version):
@@ -167,7 +158,7 @@ class WorkController(BaseController):
         self._start_upgrade(new_version, executors)
 
     def _start_upgrade(self, new_version, executors):
-        if len(executors) == 0:
+        if not executors:
             UpgradeUtil.upgrade_version(new_version, self.app.rapid_config)
         else:
             logger.info("Waiting for executors...")
@@ -177,7 +168,7 @@ class WorkController(BaseController):
     def _sleep_for_executors(seconds_to_sleep=10, count_limit=10):
         executors = StoreService.get_executors()
         count = 0
-        while len(executors) != 0:
+        while executors:
             time.sleep(seconds_to_sleep)
             count += 1
             if count >= count_limit:
@@ -199,7 +190,7 @@ class WorkController(BaseController):
                 return Response(json.dumps({"message": "Work started"}), status=201, content_type="application/json", headers=headers)
         except Exception as exception:
             logger.error(exception)
-            return Response(json.dumps({'message': exception.message}), status=422, content_type='application/json')
+            return Response(json.dumps({'message': str(exception)}), status=422, content_type='application/json')
 
         return Response(json.dumps({"message": "Cannot execute work at this time."}), status=423, content_type='application/json')
 
@@ -220,7 +211,7 @@ class WorkController(BaseController):
                 base_name = basename(pid_file)
                 os.kill(int(base_name.split('-')[-1]), 9)
                 return Response(json.dumps({"message": "Killed process."}), 200)
-            except:
+            except Exception:
                 pass
 
         return Response(json.dumps({"message": "Failed to kill process"}), 501)

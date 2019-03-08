@@ -24,8 +24,8 @@ from unittest.case import TestCase
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_
 
-from rapid.client.communicator.ClientCommunicator import ClientCommunicator
-from rapid.master.MasterConfiguration import MasterConfiguration
+from rapid.client.communicator.client_communicator import ClientCommunicator
+from rapid.master.master_configuration import MasterConfiguration
 
 
 class TestClientCommunicator(TestCase):
@@ -38,7 +38,7 @@ class TestClientCommunicator(TestCase):
         eq_("/tmp/trial", client_communicator.quarantine_directory)
         eq_(mock_app, client_communicator.flask_app)
 
-    @patch("rapid.client.communicator.ClientCommunicator.socket")
+    @patch("rapid.client.communicator.client_communicator.socket")
     def test_register_post_data(self, socket):
         config = MasterConfiguration()
         config.grain_restrict = False
@@ -49,7 +49,7 @@ class TestClientCommunicator(TestCase):
         test = {"grains": "one;two", "grain_restrict": False, "hostname": 'bogus'}
         eq_(test, json.loads(ClientCommunicator._get_register_post_data(config)))
 
-    @patch("rapid.client.communicator.ClientCommunicator.time")
+    @patch("rapid.client.communicator.client_communicator.time")
     def test_get_register_headers(self, time):
         time.time.return_value = 1
         config = MasterConfiguration()

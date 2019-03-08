@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+args=${1}
+export push_live=0
+export is_master_branch=0
+
+type fail > /dev/null 2>&1
+if [[ $? -ne 0 ]]
+then
+    function fail() {
+        echo "${1}"
+        exit 1
+    }
+fi
+
+function setup() {
+    if [[ "${branch}" == "" ]]
+    then
+        export branch=`git branch | grep '*'|awk '{print $2}'`
+    fi
+
+    if [[ "${branch}" == "master" ]]
+    then
+        export is_master_branch=1
+    fi
+
+    if [[ "${args}" == 'live' ]]
+    then
+        export push_live=1
+    fi
+
+
+}
+
+function run_tox_tests() {
+    tox -e py27
+    if [[ $? -ne 0 ]]
+    then
+        fail "Failed to run tox tests"
+    fi
+}
+
+
+function release_build() {
+    if [[ ${is_master_branch} -eq 1 ]]
+    then
+        if [[ ${push_live} -eq 1 ]]
+        then
+            version=`python setup.py sdist upload -r pypi|grep 'Submitting dist'| awk '{print $2}'|awk -F'/' '{print $2}'|awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
+            if [[ ${PIPESTATUS[0]} -ne 0 ]]
+            then
+                fail "Failed to release to pypi"
+            fi
+
+            echo "Released version: ${version} to pypi.python.org"
+        else
+            version=`python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}'`
+            if [[ $? -ne 0 ]]
+            then
+                fail "Something failed to roll"
+            fi
+
+            release_python_internal dist/*${version}*.tar.gz
+            if [[ $? -ne 0 ]]
+            then
+                fail "Internal Release failed"
+            fi
+
+            echo "Rolling version[${version}]"
+            if [[ "${version}" != "" ]]
+            then
+                upgrade_rapid "${version}"
+                if [[ $? -ne 0 ]]
+                then
+                    fail "Failed to deploy new rapid version"
+                fi
+            fi
+
+            notify_rapid_release ${version}
+        fi
+    fi
+}
+
+
+function run_build() {
+    export args=${1}
+    setup
+    run_tox_tests
+    release_build
+}
+

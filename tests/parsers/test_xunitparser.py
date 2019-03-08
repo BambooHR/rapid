@@ -17,8 +17,8 @@ import pprint
 from unittest import TestCase
 from nose.tools import eq_
 
-from rapid.lib.Constants import Constants
-from rapid.client.parsers.XUnitParser import XUnitParser
+from rapid.lib.constants import Constants
+from rapid.client.parsers.xunit_parser import XUnitParser
 
 
 class TestXunitParser(TestCase):
@@ -86,7 +86,7 @@ class TestXunitParser(TestCase):
 
         with self.assertRaises(Exception) as cm:
             parser.parse(['asfqwerf'])
-        eq_('Invalid first line identifier', cm.exception.message)
+        eq_('Invalid first line identifier', str(cm.exception))
 
     def test_nothing_tested(self):
         parser = XUnitParser()

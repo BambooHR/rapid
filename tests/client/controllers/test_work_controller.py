@@ -17,12 +17,14 @@
 from unittest.case import TestCase
 
 import datetime
+
+import sys
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
 from rapid.client.controllers.work_controller import WorkController
 import rapid.lib
-from rapid.lib import Version
+from rapid.lib import version
 
 
 class TestWorkController(TestCase):
@@ -39,7 +41,12 @@ class TestWorkController(TestCase):
 
         def set_url(*args, **kwargs):
             arguments = list(args)
-            arguments[2] = {'type_is': args[2].func_code.co_name, 'name': args[2].func_name, 'co_filename': args[2].func_code.co_filename}
+            if sys.version.startswith('2'):  # TODO: Remove after moved to python3
+                arguments[2] = {'type_is': args[2].func_code.co_name, 'name': args[2].func_name, 'co_filename': args[2].func_code.co_filename}
+            else:
+                arguments[2] = {'type_is': args[2].__code__.co_name,
+                                'name': args[2].__wrapped__.__func__.__name__,
+                                'co_filename': args[2].__code__.co_filename}
             if kwargs:
                 arguments.append(kwargs)
             registered_rules[args[0]] = arguments
@@ -81,7 +88,7 @@ class TestWorkController(TestCase):
         store_service.get_executors.return_value = [1, 1]
         eq_(False, controller.can_work_on())
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_can_work_on_with_work(self, os):
         controller = WorkController()
         controller.app = Mock()
@@ -90,7 +97,7 @@ class TestWorkController(TestCase):
 
         eq_(True, controller.can_work_on(Mock(action_instance_id=1111)))
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_can_work_on_with_work_existing_action_instance(self, os):
         controller = WorkController()
         controller.app = Mock()
@@ -105,14 +112,14 @@ class TestWorkController(TestCase):
 
     def test_check_version_same_versions(self):
         controller = WorkController()
-        eq_(True, controller.check_version(Mock(headers={Version.Version.HEADER: Version.__version__})))
+        eq_(True, controller.check_version(Mock(headers={version.Version.HEADER: version.__version__})))
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_check_version_different_versions_is_updating(self, store_service):
         controller = WorkController()
         controller.app = Mock()
         store_service.is_updating.return_value = True
-        eq_(False, controller.check_version(Mock(headers={Version.Version.HEADER: "1"})))
+        eq_(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
 
     @patch("rapid.client.controllers.work_controller.threading")
     @patch("rapid.client.controllers.work_controller.StoreService")
@@ -120,12 +127,12 @@ class TestWorkController(TestCase):
         controller = WorkController()
         controller.app = Mock()
         store_service.is_updating.return_value = False
-        eq_(False, controller.check_version(Mock(headers={Version.Version.HEADER: "1"})))
+        eq_(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
         eq_(1, threading.Thread.call_count)
 
     def test_get_version(self):
         controller = WorkController()
-        eq_(Version.Version.get_version(), controller.get_version())
+        eq_(version.Version.get_version(), controller.get_version())
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_sleep_for_executors_zero_length(self, store_service):

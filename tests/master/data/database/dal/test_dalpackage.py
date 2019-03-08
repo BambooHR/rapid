@@ -19,12 +19,12 @@ from mock import Mock
 from mock.mock import patch
 from nose.tools.trivial import eq_
 
-from rapid.lib.Constants import ModuleConstants
-from rapid.lib.framework.IOC import IOC
-from rapid.master.data.database import get_db_session
+from rapid.lib.constants import ModuleConstants
+from rapid.lib.framework.ioc import IOC
+from rapid.lib import get_db_session
 from rapid.master.data.database.dal import get_dal, setup_dals
-from rapid.master.data.database.dal.GeneralDal import GeneralDal
-from rapid.workflow.data.dal.PipelineDal import PipelineDal
+from rapid.master.data.database.dal.general_dal import GeneralDal
+from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.data.models import *
 
 
@@ -46,13 +46,13 @@ class TestDalPackage(TestCase):
     def test_get_bogus_dal(self):
         eq_(None, get_dal("BogusClass"))
 
-    @patch("rapid.master.data.database.db")
+    @patch("rapid.lib.db")
     def test_get_db_session_if_None(self, db):
         db.session = None
         for session in get_db_session():
             eq_(None, session)
 
-    @patch("rapid.master.data.database.db")
+    @patch("rapid.lib.db")
     def test_get_db_session_if_not_none(self, db):
         db.session = Mock(id='trial')
         for session in get_db_session():

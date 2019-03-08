@@ -13,9 +13,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+# pylint: disable=unused-argument,bare-except,unused-import
 
-from rapid.lib.framework.IOC import IOC
-from rapid.release.ReleaseController import ReleaseRouter
+from rapid.lib.framework.ioc import IOC
+from rapid.release.release_controller import ReleaseRouter
 
 
 def register_ioc_globals(flask_app):

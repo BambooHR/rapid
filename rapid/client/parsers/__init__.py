@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from rapid.lib.Constants import Constants
+from rapid.lib.constants import Constants
 
 parsers = {}
 
@@ -21,6 +21,14 @@ parsers = {}
 def register(clz):
     parsers[clz.get_type()] = clz
     return clz
+
+
+def load_parsers():
+    from .xunit_parser import XUnitParser
+    from .tap_parser import TapParser
+
+    for parser in [XUnitParser, TapParser]:
+        register(parser)
 
 
 def parse_file(lines, parser=None, workspace=None):
@@ -48,7 +56,7 @@ def get_parser(identifier, workspace=None, failures_only=False, failures_count=F
     return None
 
 
-class FileWrapper(object):
+class FileWrapper(object):  # pylint: disable=too-few-public-methods
     def __init__(self, workspace, file_definition):
         self.file_name = file_definition
         self.parser = None
@@ -59,23 +67,19 @@ class FileWrapper(object):
 
     def populate(self):
         try:
-            sp = self.file_name.split('#')
-            self.file_name = sp[1]
+            _sp = self.file_name.split('#')
+            self.file_name = _sp[1]
 
-            identifier = sp[0]
+            identifier = _sp[0]
             failures_only = False
             failures_count = False
             try:
-                failures_only = sp[0].split('-')[1] == Constants.FAILURES
-                failures_count = sp[0].split('-')[1] == Constants.FAILURES_COUNT
-                identifier = sp[0].split('-')[0]
-            except:
+                failures_only = _sp[0].split('-')[1] == Constants.FAILURES
+                failures_count = _sp[0].split('-')[1] == Constants.FAILURES_COUNT
+                identifier = _sp[0].split('-')[0]
+            except (IndexError, AttributeError):
                 pass
 
             self.parser = get_parser(identifier, self._workspace, failures_only, failures_count)
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
-
-
-from XUnitParser import XUnitParser
-from TapParser import TapParser

@@ -20,7 +20,7 @@ import jsonpickle
 from mock.mock import Mock, patch
 from nose.tools.trivial import eq_, ok_
 
-from rapid.lib.StoreService import StoreService
+from rapid.lib.store_service import StoreService
 
 
 class TestStoreService(TestCase):
@@ -31,20 +31,20 @@ class TestStoreService(TestCase):
 
         eq_(True, StoreService.is_updating(config))
 
-    @patch("rapid.lib.StoreService.uwsgi")
+    @patch("rapid.lib.store_service.uwsgi")
     def test_set_updating_with_uwsgi(self, uwsgi):
         config = Mock()
         StoreService.set_updating(config)
 
         uwsgi.cache_update.assert_called_with("_rapidci_updating", jsonpickle.dumps(True))
 
-    @patch("rapid.lib.StoreService.uwsgi")
+    @patch("rapid.lib.store_service.uwsgi")
     def test_is_updating_no_uwsgi(self, uwsgi):
         config = Mock(rapid_config=Mock(_rapidci_updating=True))
 
         eq_(True, StoreService.is_updating(config))
 
-    @patch("rapid.lib.StoreService.uwsgi")
+    @patch("rapid.lib.store_service.uwsgi")
     def test_is_updating_with_uwsgi(self, uwsgi):
         config = Mock()
         uwsgi.cache_get.return_value = jsonpickle.dumps(True)
@@ -55,7 +55,7 @@ class TestStoreService(TestCase):
         config = Mock(rapid_config=Mock(_rapidci_master_key="API_KEY"))
         eq_("API_KEY", StoreService.get_master_key(config))
 
-    @patch("rapid.lib.StoreService.uwsgi")
+    @patch("rapid.lib.store_service.uwsgi")
     def test_get_master_key_with_uwsgi(self, uwsgi):
         config = Mock()
         uwsgi.cache_get.return_value = jsonpickle.dumps("API_KEY")
@@ -67,19 +67,19 @@ class TestStoreService(TestCase):
         StoreService.save_master_key(config, "API_KEY")
         eq_("API_KEY", StoreService.get_master_key(config))
 
-    @patch("rapid.lib.StoreService.uwsgi")
+    @patch("rapid.lib.store_service.uwsgi")
     def test_save_master_key_with_uwsgi(self, uwsgi):
         config = Mock()
         StoreService.save_master_key(config, "API_KEY")
 
         uwsgi.cache_update.assert_called_with("_rapidci_master_key", jsonpickle.dumps("API_KEY"))
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_check_pidfile(self, os):
         os.listdir.return_value = ['rapid-111-1111']
         ok_(StoreService.check_for_pidfile(111), "Pidfile should be found")
 
-    @patch("rapid.lib.StoreService.os")
+    @patch("rapid.lib.store_service.os")
     def test_check_pidfile(self, os):
         os.listdir.return_value = ['rapid-11-1111']
         ok_(not StoreService.check_for_pidfile(111), "Pidfile should not be found")
@@ -96,19 +96,19 @@ class TestStoreService(TestCase):
         self.assertFalse(StoreService.is_calculating_workflow(12345))
         self.assertFalse(StoreService.is_completing(12345))
 
-    @patch('rapid.lib.StoreService.os')
+    @patch('rapid.lib.store_service.os')
     def test_check_for_pid_file(self, os):
         os.listdir.return_value = ['rapid-12345.txt']
         self.assertEqual('rapid-12345.txt', StoreService.check_for_pidfile('12345'))
 
-    @patch('rapid.lib.StoreService.tempfile')
-    @patch('rapid.lib.StoreService.os')
+    @patch('rapid.lib.store_service.tempfile')
+    @patch('rapid.lib.store_service.os')
     def test_get_executors_with_nothing_to_see_returns_empty(self, os, tempfile):
         os.listdir.return_value = []
         self.assertEqual([], StoreService.get_executors())
 
-    @patch('rapid.lib.StoreService.tempfile')
-    @patch('rapid.lib.StoreService.os')
+    @patch('rapid.lib.store_service.tempfile')
+    @patch('rapid.lib.store_service.os')
     def test_get_executors_returns_what_is_running(self, os, tempfile):
         os.listdir.return_value = ['rapid-1-12']
         tempfile.gettempdir.return_value = '/tmp/boo'
@@ -116,14 +116,14 @@ class TestStoreService(TestCase):
         self.assertEqual([{'action_instance_id': '1', 'pid': '12'}], StoreService.get_executors())
         os.kill.assert_called_with(12, 0)
 
-    @patch('rapid.lib.StoreService.tempfile')
-    @patch('rapid.lib.StoreService.os')
+    @patch('rapid.lib.store_service.tempfile')
+    @patch('rapid.lib.store_service.os')
     def test_get_executors_filters_invalid_running_pids(self, os, tempfile):
         os.listdir.return_value = ['rapid-1-12']
         os.path.join.return_value = 'flibertygibet'
         tempfile.gettempdir.return_value = '/tmp/boo'
 
-        os.kill.side_effect = Exception('foobar')
+        os.kill.side_effect = OSError('foobar')
 
         self.assertEqual([], StoreService.get_executors())
         os.kill.assert_called_with(12, 0)

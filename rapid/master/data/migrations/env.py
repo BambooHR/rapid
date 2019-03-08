@@ -24,7 +24,7 @@ import sys
 sys.path.append(os.getcwd())
 
 # get the app
-from rapid.master.data.database import db
+from rapid.lib import db
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -4,8 +4,7 @@ Flask-SQLAlchemy
 requests==2.20.0
 futures
 jsonpickle
-mysql-python
-enum34==1.0.4
+mysql-connector-python
 pygithub
 simplejson==3.10.0
 simpleeval

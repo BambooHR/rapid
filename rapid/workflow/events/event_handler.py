@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=broad-except
 import re
 from abc import abstractmethod, ABCMeta
 
@@ -23,21 +24,23 @@ from simpleeval import simple_eval
 class EventHandlerFactory(object):
 
     @staticmethod
-    def get_event_handler(type):
+    def get_event_handler(in_type):
         """
-        :param type:
-        :type type: lib.Constants.EventTypes
+        :param in_type:
+        :type in_type: lib.Constants.EventTypes
         :return:
         :rtype: EventHandler
         """
         import rapid.workflow.events.handlers as handlers
-        for importer, modname, ispkg in pkgutil.iter_modules(handlers.__path__):
+        for importer, modname, ispkg in pkgutil.iter_modules(handlers.__path__):  # pylint: disable=unused-variable
             try:
                 name = "{}.{}".format(handlers.__name__, modname)
-                tmp = getattr(__import__(name, fromlist=[modname]), modname)
-                if tmp.get_event_type() == type:
+                module = __import__(name, fromlist=[modname])
+                class_name = ''.join([x.title() for x in modname.split('_')])
+                tmp = getattr(module, class_name)
+                if tmp.get_event_type() == in_type:
                     return tmp()
-            except Exception as exception:
+            except Exception:
                 pass
         return None
 
@@ -89,7 +92,7 @@ class EventHandler(object):
         :rtype:
         """
         new_conditional = conditional
-        for parameter, value in pipeline_instance._get_parameters_dict().items():
+        for parameter, value in pipeline_instance.get_parameters_dict().items():
             if "{{{}}}".format(parameter) in new_conditional:
                 new_conditional = new_conditional.replace("{{{}}}".format(parameter), str(value))
 
@@ -104,7 +107,7 @@ class EventHandler(object):
     def _evaluate_condition(self, condition):
         try:
             return simple_eval(condition)
-        except:
+        except Exception:
             return False
 
     def _translate_string_for_pipeline_instance(self, pipeline_instance, string):
@@ -116,10 +119,10 @@ class EventHandler(object):
     def _translate_string_for_key_string(self, key_string, obj_instance, string):
         new_string = string
         try:
-            for term in re.findall('(' + key_string + '\.[^\s^}]{0,})', new_string):
+            for term in re.findall(r'(' + key_string + r'\.[^\s^}]{0,})', new_string):
                 replaced_term = term.replace('{}.'.format(key_string), '', 1)
                 new_string = new_string.replace(term, str(self._get_attribute_trait(obj_instance, replaced_term)))
-        except:
+        except Exception:
             pass
         return new_string
 
@@ -130,7 +133,6 @@ class EventHandler(object):
 
             if len(sp_obj) > 1:
                 return self._get_attribute_trait(new_obj, sp_obj[1])
-            else:
-                return new_obj
-        else:
-            return getattr(obj, trait)
+            return new_obj
+
+        return getattr(obj, trait)

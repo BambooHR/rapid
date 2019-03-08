@@ -15,6 +15,7 @@
  limitations under the License.
 """
 import ssl
+import sys
 from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
@@ -28,17 +29,22 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-execfile('./rapid/lib/Version.py')
+try:
+    execfile('./rapid/lib/version.py')
+except NameError:
+    exec(open('./rapid/lib/version.py').read())
 
 requirements = [
     'flask',
     'requests==2.20.0',
     'futures',
     'jsonpickle',
-    'enum34==1.0.4',
     'simplejson==3.10.0',
     'simpleeval'
 ]
+
+if sys.version_info[0] == 2:
+    requirements.append('enum34==1.0.4')
 
 setup(
         name='rapid-framework',

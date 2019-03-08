@@ -13,58 +13,60 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
 import datetime
 
+from sqlalchemy import Column, String, Integer, ForeignKey, desc, DateTime, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import desc
 
-from rapid.master.data import db
-from rapid.master.data.database.models.base.BaseModel import BaseModel
+from rapid.lib import get_declarative_base
+from rapid.master.data.database.models.base.base_model import BaseModel
+
+Base = get_declarative_base()
+# pylint: disable=no-member, too-few-public-methods
 
 
-class Commit(BaseModel, db.Model):
-    commit_identifier = db.Column(db.String(255), nullable=False, index=True)
-    vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
+class Commit(BaseModel, Base):
+    commit_identifier = Column(String(255), nullable=False, index=True)
+    vcs_id = Column(Integer, ForeignKey('vcs.id'), nullable=False, index=True)
 
     pipeline_instances = relationship("PipelineInstance", backref="commit", secondary="pipeline_instance_commits", order_by=desc("created_date"))
     versions = relationship('Version', backref="commit", order_by=desc('date_created'))
     vcs = relationship('Vcs')
 
 
-class CommitIntegration(BaseModel, db.Model):
-    commit_id = db.Column(db.Integer, db.ForeignKey('commits.id'), nullable=False, index=True)
-    integration_id = db.Column(db.Integer, db.ForeignKey('integrations.id'), nullable=False, index=True)
+class CommitIntegration(BaseModel, Base):
+    commit_id = Column(Integer, ForeignKey('commits.id'), nullable=False, index=True)
+    integration_id = Column(Integer, ForeignKey('integrations.id'), nullable=False, index=True)
 
 
-class CommitParameters(BaseModel, db.Model):
-    commit_id = db.Column(db.Integer, db.ForeignKey("commits.id"), index=True)
-    name = db.Column(db.String(255), nullable=False, index=True)
-    value = db.Column(db.String(500), nullable=False)
+class CommitParameters(BaseModel, Base):
+    commit_id = Column(Integer, ForeignKey("commits.id"), index=True)
+    name = Column(String(255), nullable=False, index=True)
+    value = Column(String(500), nullable=False)
 
 
-class VcsType(BaseModel, db.Model):
-    name = db.Column(db.String(255), nullable=False)
-    active = db.Column(db.Boolean, default=True, nullable=False)
+class Version(BaseModel, Base):
+    name = Column(String(255), nullable=False, index=True)
+    commit_id = Column(Integer, ForeignKey("commits.id"))
+    date_created = Column(DateTime(), nullable=False, default=datetime.datetime.utcnow)
 
 
-class Vcs(BaseModel, db.Model):
-    name = db.Column(db.String(1500), nullable=False)
-    repo = db.Column(db.String(500), nullable=False)
-    active = db.Column(db.Boolean, default=True, nullable=False)
-    vcs_type_id = db.Column(db.Integer, db.ForeignKey('vcs_types.id'), nullable=False)
-    pipeline_id = db.Column(db.Integer, db.ForeignKey('pipelines.id'), index=True, nullable=True)
+class PipelineInstanceCommit(BaseModel, Base):
+    pipeline_instance_id = Column(Integer, ForeignKey("pipeline_instances.id"), index=True, nullable=False)
+    commit_id = Column(Integer, ForeignKey('commits.id'), index=True, nullable=False)
+
+
+class Vcs(BaseModel, Base):
+    name = Column(String(1500), nullable=False)
+    repo = Column(String(500), nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
+    vcs_type_id = Column(Integer, ForeignKey('vcs_types.id'), nullable=False)
+    pipeline_id = Column(Integer, ForeignKey('pipelines.id'), index=True, nullable=True)
 
     vcs_type = relationship("VcsType")
     pipeline = relationship("Pipeline")
 
 
-class Version(BaseModel, db.Model):
-    name = db.Column(db.String(255), nullable=False, index=True)
-    commit_id = db.Column(db.Integer, db.ForeignKey("commits.id"))
-    date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow)
-
-
-class PipelineInstanceCommit(BaseModel, db.Model):
-    pipeline_instance_id = db.Column(db.Integer, db.ForeignKey("pipeline_instances.id"), index=True, nullable=False)
-    commit_id = db.Column(db.Integer, db.ForeignKey('commits.id'), index=True, nullable=False)
+class VcsType(BaseModel, Base):
+    name = Column(String(255), nullable=False)
+    active = Column(Boolean, default=True, nullable=False)

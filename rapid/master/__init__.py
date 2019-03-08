@@ -20,31 +20,25 @@ import time
 
 from flask import Flask, Response
 
-from rapid.master.data import run_db_downgrade
+from rapid.master.data import run_db_downgrade, configure_db
+from rapid.lib import setup_config_from_file, is_primary_worker, setup_status_route
+from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
-from rapid.lib import setup_config_from_file
-from rapid.lib.framework.IOC import IOC
 
 app = Flask("rapidci_master")
 app.rapid_config = {'_is': 'master'}
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
+app.logger.addHandler(handler)  # pylint: disable=no-member
+app.logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 logger = logging.getLogger("rapid")
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger.addHandler(handler)  # pylint: disable=no-member
+logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
-
-UWSGI = False
-try:
-    import uwsgi
-    UWSGI = True
-except ImportError:
-    pass
+# pylint: disable=broad-except
 
 # Debug Code for sniffing out nplus one code!
 # try:
@@ -53,36 +47,33 @@ except ImportError:
 #     app.config['NPLUSONE_RAISE'] = True
 #     from nplusone.ext.flask_sqlalchemy import NPlusOne
 #     NPlusOne(app)
-# except:
+# except Exception:
 #     pass
-
-
-@app.route('/status')
-def status():
-    return "Running"
 
 
 @app.errorhandler(500)
 def internal_error(exception):
     response = Response(status=500, content_type='application/json')
     response.data = _to_dict(exception)
-    app.logger.error(exception.message)
+    app.logger.error(exception.message)  # pylint: disable=no-member
     return response
 
 
 def _to_dict(exception):
-    rv = dict()
-    rv['message'] = exception.message if hasattr(exception, 'message') else 'An exception has occurred'
-    return rv
+    _rv = dict()
+    _rv['message'] = exception.message if hasattr(exception, 'message') else 'An exception has occurred'
+    return _rv
 
 
 def configure_application(flask_app, args):
     IOC.register_global('flask_app', flask_app)
     setup_config_from_file(flask_app, args)
+    configure_db()
     configure_sub_modules(flask_app, args)
     configure_data_layer(flask_app)
     register_controllers(flask_app)
-    if (UWSGI and 1 == uwsgi.worker_id()) or not UWSGI:
+    setup_status_route(flask_app)
+    if is_primary_worker():
         if args.db_downgrade:
             run_db_downgrade(flask_app, args.db_downgrade)
         else:
@@ -94,7 +85,7 @@ def create_migration_script(flask_app, migration):
     create_revision(flask_app, migration)
 
 
-def configure_sub_modules(flask_app, args):
+def configure_sub_modules(flask_app, args): # pylint: disable=unused-argument
     logger.info("------- Searching for and starting modules --------")
     modules = {}
     logger.info("-- Registering IOC Globals")
@@ -104,16 +95,16 @@ def configure_sub_modules(flask_app, args):
             modules[name] = module
             module.register_ioc_globals(flask_app)
             logger.info("    Registered: {}".format(name))
-        except:
+        except Exception:
             import traceback
             traceback.print_exc()
 
     logger.info("-- Configuring modules")
-    for name in modules.keys():
+    for name, item in modules.items():  # pylint: disable=unused-variable
         try:
             modules[name].configure_module(flask_app)
             logger.info("    Configured: {}".format(name))
-        except:
+        except Exception:
             import traceback
             traceback.print_exc()
             logger.warning("NOT LOADED! Module {} did not load.".format(name))
@@ -131,15 +122,15 @@ def setup_queue_thread(flask_app):
 
 
 def run_queue(flask_app):
-    from rapid.lib.StoreService import StoreService
-    from rapid.workflow.Queue import Queue
+    from rapid.lib.store_service import StoreService
+    from rapid.workflow.queue import Queue
     with flask_app.app_context():
         queue = IOC.get_class_instance(Queue, flask_app)
         while True:
             clients = []
             try:
                 clients = StoreService.get_clients(flask_app)
-            except:
+            except Exception:
                 pass
 
             try:

@@ -29,7 +29,7 @@ depends_on = None
 
 from alembic import op
 import sqlalchemy as sa
-from rapid.lib.Constants import VcsReleaseStepType
+from rapid.lib.constants import VcsReleaseStepType
 
 def upgrade():
     op.create_table('vcs_releases',

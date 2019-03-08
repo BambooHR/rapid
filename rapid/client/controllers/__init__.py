@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.client.controllers.Main import Main
+from rapid.client.controllers.main import Main
 from rapid.client.controllers.work_controller import WorkController
 
 

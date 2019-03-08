@@ -1,0 +1,8 @@
+name: BambooHR/Rapid
+stages:
+  - name: Build/Release
+    workflows:
+      - name: Build and Release
+        actions:
+          - name: Build/Release Rapid
+            type: generic/build

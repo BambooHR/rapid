@@ -22,14 +22,16 @@ from unittest import TestCase
 
 from nose.tools.trivial import ok_
 
-from rapid import testmapper
-from rapid.client.executor.Executor import Executor
-from rapid.lib.Communication import Communication
-from rapid.lib.Constants import Constants
-from rapid.lib.WorkRequest import WorkRequest
+from rapid.client import load_parsers
+from rapid.client.executor import Executor
+from rapid.lib.communication import Communication
+from rapid.lib.constants import Constants
+from rapid.lib.work_request import WorkRequest
 
 
 class TestExecutor(TestCase):
+    def setUp(self):
+        load_parsers()
 
     def test_get_command(self):
         work_request = WorkRequest({"action_instance_id": 1,
@@ -46,7 +48,7 @@ class TestExecutor(TestCase):
     def test_get_remote_files_invalid_line(self):
         with self.assertRaises(Exception) as cm:
             Executor._get_remote_files("This is a test")
-        self.assertEqual("list index out of range", cm.exception.message)
+        self.assertEqual("list index out of range", str(cm.exception))
 
     def test_get_remote_files_valid_line(self):
         self.assertEqual(["trial.sh"], Executor._get_remote_files("{}{}".format(Constants.REQUIRED_FILES, "trial.sh")))
@@ -77,7 +79,7 @@ class TestExecutor(TestCase):
 
         with self.assertRaises(Exception) as cm:
             executor._get_parameters_files("nothing")
-        self.assertEqual("list index out of range", cm.exception.message)
+        self.assertEqual("list index out of range", str(cm.exception))
 
     def test_get_stats(self):
         executor = Executor(WorkRequest(), None)
@@ -90,7 +92,7 @@ class TestExecutor(TestCase):
     def test_get_results(self):
         executor = Executor(WorkRequest(), None)
         file_name = '{}/parsers/*.xml'.format(os.path.dirname(os.path.realpath(__file__)))
-
+        print(file_name)
         eq_({
             'JUnitXmlReporter.constructor~should default path to an empty string': {
                 'status': 'FAILED',
@@ -125,7 +127,7 @@ class TestExecutor(TestCase):
 
         with self.assertRaises(Exception) as cm:
             executor.verify_work_request()
-        self.assertEqual("Invalid action_instance_id", cm.exception.message)
+        self.assertEqual("Invalid action_instance_id", str(cm.exception))
 
     def test_verify_work_request_no_executable(self):
         work_request = WorkRequest()
@@ -134,7 +136,7 @@ class TestExecutor(TestCase):
 
         with self.assertRaises(Exception) as cm:
             executor.verify_work_request()
-        self.assertEqual("Executable not set, nothing to run.", cm.exception.message)
+        self.assertEqual("Executable not set, nothing to run.", str(cm.exception))
 
     def test_verify_work_request_no_pipeline_instance_id(self):
         work_request = WorkRequest()
@@ -144,7 +146,7 @@ class TestExecutor(TestCase):
 
         with self.assertRaises(Exception) as cm:
             executor.verify_work_request()
-        self.assertEqual("No pipline_instance_id set.", cm.exception.message)
+        self.assertEqual("No pipline_instance_id set.", str(cm.exception))
 
     def test_verify_work_request_no_cmd(self):
         work_request = WorkRequest()
@@ -155,7 +157,7 @@ class TestExecutor(TestCase):
 
         with self.assertRaises(Exception) as cm:
             executor.verify_work_request()
-        self.assertEqual("No command was set.", cm.exception.message)
+        self.assertEqual("No command was set.", str(cm.exception))
 
     def test_get_state(self):
         mock = Mock()
@@ -165,6 +167,7 @@ class TestExecutor(TestCase):
              'work_request': mock, 'parameter_files': [],
              'master_uri': 'http', 'thread_id': None,
              'read_pid': None, 'status_overrides': {},
+             'pid': None,
              'workspace': os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'),
              'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
 
@@ -179,7 +182,7 @@ class TestExecutor(TestCase):
     def test_get_status_override_bad_status(self):
         eq_({}, Executor._get_status_overrides("#{}2_SUCCESS,3_FAILED".format(Constants.STATUS_OVERRIDE)))
 
-    @patch("rapid.client.executor.Executor.threading")
+    @patch("rapid.client.executor.threading")
     def test_start(self, threading):
         executor = Executor(Mock(), "bogus")
 
@@ -190,8 +193,8 @@ class TestExecutor(TestCase):
     def test_get_parameters_no_parameter_files(self):
         eq_(None, Executor._get_parameters(None, None))
 
-    @patch("rapid.client.executor.Executor.open")
-    @patch("rapid.client.executor.Executor.glob")
+    @patch("rapid.client.executor.open")
+    @patch("rapid.client.executor.glob")
     def test_get_parameters_valid_parameter_files(self, glob, open_mock):
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
@@ -201,8 +204,8 @@ class TestExecutor(TestCase):
     def test_get_stats_no_stats_files(self):
         eq_(None, Executor._get_stats(None, None))
 
-    @patch("rapid.client.executor.Executor.open")
-    @patch("rapid.client.executor.Executor.glob")
+    @patch("rapid.client.executor.open")
+    @patch("rapid.client.executor.glob")
     def test_get_stats_valid_stats_files(self, glob, open_mock):
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
@@ -226,8 +229,8 @@ class TestExecutor(TestCase):
         eq_(["testing", "arguments"], executor.get_arguments())
 
     @patch("rapid.client.controllers.work_controller.logger")
-    @patch("rapid.client.executor.Executor.shutil")
-    @patch("rapid.client.executor.Executor.os")
+    @patch("rapid.client.executor.shutil")
+    @patch("rapid.client.executor.os")
     def test_clean_workspace_valid_dir(self, mock_os, mock_shutil, mock_logger):
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus", logger=mock_logger)
 
@@ -235,8 +238,8 @@ class TestExecutor(TestCase):
         mock_shutil.rmtree.assert_called_with("boggus", ignore_errors=True)
 
     @patch("rapid.client.controllers.work_controller.logger")
-    @patch("rapid.client.executor.Executor.shutil")
-    @patch("rapid.client.executor.Executor.os")
+    @patch("rapid.client.executor.shutil")
+    @patch("rapid.client.executor.os")
     def test_clean_workspace_valid_dir_exception(self, mock_os, mock_shutil, mock_logger):
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus", logger=mock_logger)
 
@@ -246,16 +249,16 @@ class TestExecutor(TestCase):
         mock_shutil.rmtree = throw_exception
         executor.clean_workspace()
 
-    @patch("rapid.client.executor.Executor.os")
+    @patch("rapid.client.executor.os")
     def test_clean_workspace_invalid_dir(self, mock_os):
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus")
 
         mock_os.path.isdir.return_value = False
 
         executor.clean_workspace()
-        mock_os.mkdir.assert_called_with("boggus")
+        mock_os.makedirs.assert_called_with("boggus")
 
-    @patch("rapid.client.executor.Executor.os")
+    @patch("rapid.client.executor.os")
     def test_clean_workspace_invalid_dir_exception(self, mock_os):
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus")
         mock_logger = Mock()
@@ -265,7 +268,7 @@ class TestExecutor(TestCase):
         def throw_exception(*args, **kwargs):
             raise self_exception
 
-        mock_os.mkdir = throw_exception
+        mock_os.makedirs = throw_exception
         mock_os.path.isdir.return_value = False
 
         executor.clean_workspace()
@@ -319,7 +322,7 @@ class TestExecutor(TestCase):
         ok_('testGetDateDiffString with data set #0' in name_map)
         ok_('testSendOfferLetterMissingRequestDataException' in name_map)
 
-    @patch('rapid.client.executor.Executor.Executor.verify_lines')
+    @patch('rapid.client.executor.Executor.verify_lines')
     def test_check_for_dynamic_config_file(self, verify_lines):
         executor = Executor(None, None)
 

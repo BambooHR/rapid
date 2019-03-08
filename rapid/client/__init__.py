@@ -13,37 +13,28 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-try:
-    import simplejson as json
-except:
-    import json
-
 import logging
 import os
 import threading
-from flask import Flask
 import time
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
+from flask import Flask
+
+from rapid.lib import is_primary_worker, setup_logging, setup_status_route
+from .parsers import load_parsers
 from ..lib import setup_config_from_file
-from .communicator.ClientCommunicator import ClientCommunicator
+from .communicator.client_communicator import ClientCommunicator
 from .controllers import register_controllers
 
 app = Flask("rapidci_client")
 app.rapid_config = {'_is': 'client'}
 logger = logging.getLogger("rapid")
 
-
-UWSGI = None
-try:
-    import uwsgi
-    UWSGI = True
-except ImportError:
-    pass
-
-
-@app.route('/status')
-def status():
-    return "Running"
 
 @app.errorhandler(500)
 def internal_error(exception):
@@ -54,26 +45,21 @@ def internal_error(exception):
 
 
 def setup_logger(flask_app):
-    global logger
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    flask_app.logger.addHandler(handler)
-    flask_app.logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    setup_logging(flask_app)
 
 
 def configure_application(flask_app, args):
+    setup_status_route(flask_app)
     setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
+    load_parsers()
     register_controllers(flask_app)
-    if (UWSGI and 1 == uwsgi.worker_id()) or UWSGI is None:
+    if is_primary_worker():
         setup_client_register_thread()
         clean_workspace()
 
     if args.mode_logging:
-        from rapid.lib.LogServer import LogServer
+        from rapid.lib.log_server import LogServer
         log_server = LogServer(args.log_dir)
         log_server.configure_application(flask_app)
 
@@ -81,18 +67,18 @@ def configure_application(flask_app, args):
 def clean_workspace():
     try:
         import shutil
-        if os.path.isdir(app.rapid_config.workspace):
-            shutil.rmtree(app.rapid_config.workspace)
-        os.mkdir(app.rapid_config.workspace)
-    except:
+        if os.path.isdir(app.rapid_config.workspace):  # pylint: disable=no-member
+            shutil.rmtree(app.rapid_config.workspace)  # pylint: disable=no-member
+        os.mkdir(app.rapid_config.workspace)  # pylint: disable=no-member
+    except Exception:  # pylint: disable=broad-except
         pass
 
 
 def _registration_thread():
-    communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)
+    communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)  # pylint: disable=no-member
     while True:
         communicator.register(app.rapid_config)
-        time.sleep(app.rapid_config.registration_rate)
+        time.sleep(app.rapid_config.registration_rate)  # pylint: disable=no-member
 
 
 def setup_client_register_thread():
@@ -100,3 +86,5 @@ def setup_client_register_thread():
     thread = threading.Thread(target=_registration_thread)
     thread.daemon = True
     thread.start()
+
+

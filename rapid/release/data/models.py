@@ -13,80 +13,83 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+# pylint: disable=no-member,too-few-public-methods
 
 import datetime
 
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, String, ForeignKey, Integer, DateTime, Boolean, Text, Enum
 
-from rapid.master.data import db
-from rapid.master.data.database.models.base.BaseModel import BaseModel
-from rapid.lib.Constants import VcsReleaseStepType
+from rapid.lib import get_declarative_base
+from rapid.master.data.database.models.base.base_model import BaseModel
+from rapid.lib.constants import VcsReleaseStepType
+Base = get_declarative_base()
 
 
-class Release(BaseModel, db.Model):
-    name = db.Column(db.String(255), nullable=False, index=True)
-    date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow, index=True)
-    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False, index=True)
-    commit_id = db.Column(db.Integer, db.ForeignKey('commits.id'), nullable=False, index=True)
-    integration_id = db.Column(db.Integer, db.ForeignKey('integrations.id'), index=True)
+class Release(BaseModel, Base):
+    name = Column(String(255), nullable=False, index=True)
+    date_created = Column(DateTime(), nullable=False, default=datetime.datetime.utcnow, index=True)
+    status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
+    commit_id = Column(Integer, ForeignKey('commits.id'), nullable=False, index=True)
+    integration_id = Column(Integer, ForeignKey('integrations.id'), index=True)
 
     status = relationship('Status')
     integration = relationship('Integration')
     commit = relationship('Commit', backref=backref('release', uselist=False))
 
 
-class StepIntegration(BaseModel, db.Model):
-    step_id = db.Column(db.Integer, db.ForeignKey('steps.id'), nullable=False, index=True)
-    integration_id = db.Column(db.Integer, db.ForeignKey('integrations.id'), nullable=False, index=True)
+class StepIntegration(BaseModel, Base):
+    step_id = Column(Integer, ForeignKey('steps.id'), nullable=False, index=True)
+    integration_id = Column(Integer, ForeignKey('integrations.id'), nullable=False, index=True)
 
 
-class Step(BaseModel, db.Model):
-    name = db.Column(db.String(100), nullable=False)
-    custom_id = db.Column(db.String(25), nullable=False)
-    status_id = db.Column(db.Integer, db.ForeignKey('statuses.id'), nullable=False, index=True)
-    user_required = db.Column(db.Boolean, default=False, nullable=False)
-    release_id = db.Column(db.Integer, db.ForeignKey('releases.id'), nullable=False, index=True)
-    sort_order = db.Column(db.Integer, default=0)
+class Step(BaseModel, Base):
+    name = Column(String(100), nullable=False)
+    custom_id = Column(String(25), nullable=False)
+    status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
+    user_required = Column(Boolean, default=False, nullable=False)
+    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False, index=True)
+    sort_order = Column(Integer, default=0)
 
     release = relationship("Release", lazy='subquery', backref="steps")
     status = relationship('Status')
     integrations = relationship("Integration", secondary="step_integrations")
 
 
-class StepUser(BaseModel, db.Model):
-    step_id = db.Column(db.Integer, db.ForeignKey('steps.id'), nullable=False, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    date_created = db.Column(db.DateTime(), nullable=False, default=datetime.datetime.utcnow)
+class StepUser(BaseModel, Base):
+    step_id = Column(Integer, ForeignKey('steps.id'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    date_created = Column(DateTime(), nullable=False, default=datetime.datetime.utcnow)
 
 
-class StepUserComment(BaseModel, db.Model):
-    step_user_id = db.Column(db.Integer, db.ForeignKey('step_users.id'), nullable=False)
-    comment = db.Column(db.Text)
+class StepUserComment(BaseModel, Base):
+    step_user_id = Column(Integer, ForeignKey('step_users.id'), nullable=False)
+    comment = Column(Text)
 
 
-class User(BaseModel, db.Model):
-    name = db.Column(db.String(150), nullable=False)
-    username = db.Column(db.String(150), nullable=False)
-    active = db.Column(db.Boolean, default=True, nullable=False)
+class User(BaseModel, Base):
+    name = Column(String(150), nullable=False)
+    username = Column(String(150), nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
 
 
-class VcsRelease(BaseModel, db.Model):
-    search_filter = db.Column(db.String(500), nullable=False)
-    notification_id = db.Column(db.String(250), nullable=False)
-    vcs_id = db.Column(db.Integer, db.ForeignKey('vcs.id'), nullable=False, index=True)
-    auto_release = db.Column(db.Boolean, nullable=False, default=False)
+class VcsRelease(BaseModel, Base):
+    search_filter = Column(String(500), nullable=False)
+    notification_id = Column(String(250), nullable=False)
+    vcs_id = Column(Integer, ForeignKey('vcs.id'), nullable=False, index=True)
+    auto_release = Column(Boolean, nullable=False, default=False)
 
     vcs = relationship('Vcs', lazy='subquery', backref='product_release')
     steps = relationship("VcsReleaseStep", backref='vcs_release')
 
 
-class VcsReleaseStep(BaseModel, db.Model):
-    name = db.Column(db.String(250), nullable=False)
-    custom_id = db.Column(db.String(250), nullable=False)
-    user_required = db.Column(db.Boolean, default=False, nullable=False)
-    sort_order = db.Column(db.Integer, default=0)
-    type = db.Column(db.Enum(*list(map(lambda x: x.name, VcsReleaseStepType))), nullable=False, default='PRE')
-    vcs_release_id = db.Column(db.Integer, db.ForeignKey('vcs_releases.id'), nullable=False, index=True)
+class VcsReleaseStep(BaseModel, Base):
+    name = Column(String(250), nullable=False)
+    custom_id = Column(String(250), nullable=False)
+    user_required = Column(Boolean, default=False, nullable=False)
+    sort_order = Column(Integer, default=0)
+    type = Column(Enum(*list(map(lambda x: x.name, VcsReleaseStepType))), nullable=False, default='PRE')
+    vcs_release_id = Column(Integer, ForeignKey('vcs_releases.id'), nullable=False, index=True)
 
 
-__all__ = [Release, StepIntegration, Step, StepUser, StepUserComment, StepIntegration, User, VcsRelease, VcsReleaseStep]
+__all__ = ['Release', 'StepIntegration', 'Step', 'StepUser', 'StepUserComment', 'StepIntegration', 'User', 'VcsRelease', 'VcsReleaseStep']

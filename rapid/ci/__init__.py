@@ -14,13 +14,13 @@
  limitations under the License.
 """
 
-from rapid.ci.CIController import CIController
-from rapid.ci.services.VcsService import VcsService
-from rapid.ci.vcs.GithubController import GithubController
-from rapid.lib.framework.IOC import IOC
+from rapid.ci.ci_controller import CIController
+from rapid.ci.services.vcs_service import VcsService
+from rapid.ci.vcs.github_controller import GithubController
+from rapid.lib.framework.ioc import IOC
 
 
-def register_ioc_globals(flask_app):
+def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
     IOC.register_global('ci_module', IOC.get_class_instance(VcsService))
 
 
@@ -30,11 +30,12 @@ def configure_module(flask_app):
     try:
         IOC.get_class_instance(GithubController, flask_app).register_url_rules(flask_app)
         IOC.get_class_instance(CIController).register_url_rules()
-    except:
+    except Exception: # pylint: disable=broad-except
         import traceback
         traceback.print_exc()
 
 
 def load_model_layers():
-    import rapid.ci.data.models
+    # Used for JIT loading dependencies.
+    import rapid.ci.data.models  # pylint: disable=unused-import
 
