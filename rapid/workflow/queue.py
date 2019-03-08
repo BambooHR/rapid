@@ -75,7 +75,7 @@ class Queue(Injectable):
                                 if response.status_code == 423:
                                     client.sleep = True
                                     raise Exception("Client was busy, can't take work.")
-                                elif response.status_code == 201:
+                                if response.status_code == 201:
                                     if 'X-Exclude-Resource'.lower() in response.headers:
                                         client.sleep = True
                                 else:

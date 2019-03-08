@@ -41,7 +41,7 @@ class TestWorkController(TestCase):
 
         def set_url(*args, **kwargs):
             arguments = list(args)
-            if sys.version == '2':
+            if sys.version.startswith('2'):  # TODO: Remove after moved to python3
                 arguments[2] = {'type_is': args[2].func_code.co_name, 'name': args[2].func_name, 'co_filename': args[2].func_code.co_filename}
             else:
                 arguments[2] = {'type_is': args[2].__code__.co_name,
