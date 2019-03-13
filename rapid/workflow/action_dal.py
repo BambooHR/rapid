@@ -180,8 +180,8 @@ class ActionDal(GeneralDal, Injectable):
 
             self.store_service.set_completing(_id)
             try:
-                self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
                 self._save_status(action_instance, session, post_data)
+                self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
                 self._save_stats(action_instance.pipeline_instance_id, session, post_data)
                 if self.qa_module is not None:
                     self.qa_module.save_results(action_instance, session, post_data)
@@ -203,9 +203,10 @@ class ActionDal(GeneralDal, Injectable):
     def reset_pipeline_instance(self, pipeline_instance_id):
         for session in get_db_session():
             pipeline_instance = session.query(PipelineInstance)\
-                                              .options(joinedload('stage_instances'))\
-                                              .options(joinedload('stage_instances.workflow_instances'))\
-                                              .options(joinedload('stage_instances.workflow_instances.action_instances')).filter(PipelineInstance.id == pipeline_instance_id).first()
+                                              .options(
+                                                  joinedload(PipelineInstance.stage_instances)
+                                                  .joinedload(StageInstance.workflow_instances)
+                                                  .joinedload(WorkflowInstance.action_instances)).filter(PipelineInstance.id == pipeline_instance_id).first()
 
             instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
             instance_workflow_engine.reset_pipeline()
