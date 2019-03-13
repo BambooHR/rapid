@@ -2,7 +2,7 @@
 
 args=${1}
 export push_live=0
-export is_master_branch=0
+export is_release_branch=0
 
 type fail > /dev/null 2>&1
 if [[ $? -ne 0 ]]
@@ -19,9 +19,9 @@ function setup() {
         export branch=`git branch | grep '*'|awk '{print $2}'`
     fi
 
-    if [[ "${branch}" == "master" ]]
+    if [[ "${branch}" =~ ^release/.* ]]
     then
-        export is_master_branch=1
+        export is_release_branch=1;
     fi
 
     if [[ "${args}" == 'live' ]]
@@ -48,8 +48,10 @@ function run_tox_tests() {
 
 
 function release_build() {
-    if [[ ${is_master_branch} -eq 1 ]]
+    if [[ ${is_release_branch} -eq 1 ]]
     then
+        buildStepNotify
+        
         if [[ ${push_live} -eq 1 ]]
         then
             version=`python setup.py sdist upload -r pypi|grep 'Submitting dist'| awk '{print $2}'|awk -F'/' '{print $2}'|awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
@@ -83,6 +85,7 @@ function release_build() {
             fi
 
             notify_rapid_release ${version}
+            buildStepNotify 'deployRapid'
         fi
     fi
 }
