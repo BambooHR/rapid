@@ -29,7 +29,13 @@ function setup() {
         export push_live=1
     fi
 
+    setupPythonEnv
 
+    pip install tox
+    if [[ $? -ne 0 ]]
+    then
+        fail "Failed to install tox"
+    fi
 }
 
 function run_tox_tests() {
@@ -84,6 +90,8 @@ function release_build() {
 
 function run_build() {
     export args=${1}
+
+    pending_status "Running CI..."
     setup
     run_tox_tests
     release_build

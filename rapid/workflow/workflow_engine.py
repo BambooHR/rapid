@@ -188,6 +188,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
 
                     for w_instance in self._get_workflows(s_instance):
                         w_instance.start_date = datetime.datetime.utcnow()
+                        w_instance.status_id = StatusConstants.INPROGRESS
 
                         first_order = -1
                         for action in self._get_actions(w_instance):
