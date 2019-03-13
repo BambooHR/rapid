@@ -14,6 +14,8 @@ then
 fi
 
 function setup() {
+    set_log_uri ''
+    
     if [[ "${branch}" == "" ]]
     then
         export branch=`git branch | grep '*'|awk '{print $2}'`
