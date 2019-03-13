@@ -52,7 +52,7 @@ function run_tox_tests() {
 function release_build() {
     if [[ ${is_release_branch} -eq 1 ]]
     then
-        buildStepNotify
+        buildStepNotify 'rapidBuild'
         
         if [[ ${push_live} -eq 1 ]]
         then
