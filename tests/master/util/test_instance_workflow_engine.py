@@ -357,7 +357,7 @@ class TestInstanceWorkflowEngine(TestCase):
         first_stage = pipeline_instance.stage_instances[0]
         second_stage = pipeline_instance.stage_instances[1]
 
-        self.assertEquals(StatusConstants.INPROGRESS, first_stage.status_id)
+        self.assertEquals(StatusConstants.READY, first_stage.status_id)
         self.assertEquals(StatusConstants.INPROGRESS, first_stage.workflow_instances[0].status_id)
         self.assertEquals(StatusConstants.READY, first_stage.workflow_instances[0].action_instances[0].status_id)
 
