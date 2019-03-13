@@ -70,24 +70,31 @@ function release_build() {
                 fail "Something failed to roll"
             fi
 
-            release_python_internal dist/*${version}*.tar.gz
-            if [[ $? -ne 0 ]]
-            then
-                fail "Internal Release failed"
-            fi
+            set_build_version "${version}" "${commit}"
 
-            echo "Rolling version[${version}]"
-            if [[ "${version}" != "" ]]
+            commit_is_head_of_release ${commit}
+            if [[ $? == 1 ]]
             then
-                upgrade_rapid "${version}"
+                
+                release_python_internal dist/rapid-framework-${version}.tar.gz
                 if [[ $? -ne 0 ]]
                 then
-                    fail "Failed to deploy new rapid version"
+                    fail "Internal Release failed"
                 fi
-            fi
 
-            notify_rapid_release ${version}
-            buildStepNotify 'deployRapid'
+                echo "Rolling version[${version}]"
+                if [[ "${version}" != "" ]]
+                then
+                    upgrade_rapid "${version}"
+                    if [[ $? -ne 0 ]]
+                    then
+                        fail "Failed to deploy new rapid version"
+                    fi
+                fi
+
+                notify_rapid_release ${version}
+                buildStepNotify 'deployRapid'
+            fi
         fi
     fi
 }
