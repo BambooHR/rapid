@@ -90,6 +90,8 @@ function release_build() {
 
 function run_build() {
     export args=${1}
+
+    pending_status "Running CI..."
     setup
     run_tox_tests
     release_build
