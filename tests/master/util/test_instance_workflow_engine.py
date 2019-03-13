@@ -349,6 +349,46 @@ class TestInstanceWorkflowEngine(TestCase):
         self.assertEquals(None, action_instance.end_date)
         self.assertEquals(StatusConstants.READY, action_instance.status_id)
 
+    def test_complex_reset_action_instance_first_stage_should_be_ready(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1', '7:1-1-1-1,1,4,1-1-1-1'], True)
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        workflow_engine.reset_pipeline()
+        first_stage = pipeline_instance.stage_instances[0]
+        second_stage = pipeline_instance.stage_instances[1]
+
+        self.assertEquals(StatusConstants.INPROGRESS, first_stage.status_id)
+        self.assertEquals(StatusConstants.INPROGRESS, first_stage.workflow_instances[0].status_id)
+        self.assertEquals(StatusConstants.READY, first_stage.workflow_instances[0].action_instances[0].status_id)
+
+        self.assertEquals(StatusConstants.NEW, second_stage.status_id)
+        for workflow_instance in second_stage.workflow_instances:
+            self.assertEquals(StatusConstants.NEW, workflow_instance.status_id)
+            for action_instance in workflow_instance.action_instances:
+                self.assertEquals(StatusConstants.NEW, action_instance.status_id)
+
+    def test_complex_reset_action_complete_stage_should_activate_proper_actions(self):
+        pipeline_instance = self._build_pipeline_instance(['1:1', '7:1-1-1-1,1,4,1-1-1-1'])
+
+        workflow_engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        workflow_engine.reset_pipeline()
+        first_stage = pipeline_instance.stage_instances[0]
+        second_stage = pipeline_instance.stage_instances[1]
+        workflow_engine.complete_an_action(1, StatusConstants.SUCCESS)
+
+        self.assertEquals(StatusConstants.SUCCESS, first_stage.status_id)
+        self.assertEquals(StatusConstants.SUCCESS, first_stage.workflow_instances[0].status_id)
+        self.assertEquals(StatusConstants.SUCCESS, first_stage.workflow_instances[0].action_instances[0].status_id)
+
+        self.assertEquals(StatusConstants.INPROGRESS, second_stage.status_id)
+        for workflow_instance in second_stage.workflow_instances:
+            self.assertEquals(StatusConstants.INPROGRESS, workflow_instance.status_id)
+            for action_instance in workflow_instance.action_instances:
+                if action_instance.order == 0:
+                    self.assertEquals(StatusConstants.READY, action_instance.status_id)
+                else:
+                    self.assertEquals(StatusConstants.NEW, action_instance.status_id)
+
     def test_complete_an_action_instance_sets_dates_and_status(self):
         pipeline_instance = self._build_pipeline_instance(['1:1'])
 
