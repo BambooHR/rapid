@@ -29,7 +29,13 @@ function setup() {
         export push_live=1
     fi
 
+    setupPythonEnv
 
+    pip install tox
+    if [[ $? -ne 0 ]]
+    then
+        fail "Failed to install tox"
+    fi
 }
 
 function run_tox_tests() {
