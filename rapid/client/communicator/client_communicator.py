@@ -94,7 +94,7 @@ class ClientCommunicator(Communicator):
     def send_test_analysis(self, pipeline_instance_id, analysis, logger_in):
         if analysis:
             try:
-                self._default_send(self.api_uri("qa_tests/analysis"), None, 'post', {'X-Pipeline-Instance-Id': pipeline_instance_id}, in_json=analysis)
+                self._default_send(self.api_uri("qa_tests/analysis"), None, 'post', {'X-Pipeline-Instance-Id': str(pipeline_instance_id)}, in_json=analysis)
             except Exception as exception:
                 logger_in.error(exception)
 
@@ -146,10 +146,10 @@ class ClientCommunicator(Communicator):
     @staticmethod
     def _get_register_headers(client_config):
         headers = {'Content-Type': 'application/json',
-                   'X-RAPIDCI-PORT': client_config.port if hasattr(client_config, 'port') else None,
-                   'X-RAPIDCI-REGISTER-KEY': client_config.register_api_key if hasattr(client_config, 'register_api_key') else None,
-                   'X-RAPIDCI-TIME': time.time() * 1000,
-                   'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else None}
+                   'X-RAPIDCI-PORT': str(client_config.port) if hasattr(client_config, 'port') else '',
+                   'X-RAPIDCI-REGISTER-KEY': client_config.register_api_key if hasattr(client_config, 'register_api_key') else '',
+                   'X-RAPIDCI-TIME': str(time.time() * 1000),
+                   'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else ''}
         if hasattr(client_config, 'use_ssl') and client_config.use_ssl:
             headers['X-Is-Ssl'] = 'true'
         return headers
@@ -166,9 +166,19 @@ class ClientCommunicator(Communicator):
         except Exception as exception:
             logger.error(exception)
 
+    def _string_header_values(self, headers):
+        _headers = {}
+        try:
+            for key, value in headers.items():
+                _headers[key] = str(value) if value is not None else ''
+        except (TypeError, AttributeError):
+            pass
+        return _headers
+
     def _default_send(self, uri, data, in_type='put', headers=None, in_json=None):
         master_key = StoreService.get_master_key(self.flask_app)
-        headers = {} if headers is None else headers
+        headers = self._string_header_values(headers)
+        
         if master_key is not None:
             headers['X-Rapidci-Api-Key'] = master_key
 
