@@ -93,7 +93,7 @@ function release_build() {
                 fi
 
                 notify_rapid_release ${version}
-                buildStepNotify 'deployRapid'
+                buildStepNotify 'deploypackage'
             fi
         fi
     fi
