@@ -18,9 +18,9 @@ import socket
 from abc import ABCMeta, abstractmethod
 import os
 try:
-    from ConfigParser import SafeConfigParser
+    from ConfigParser import SafeConfigParser as ConfigParser
 except ImportError:
-    from configparser import SafeConfigParser
+    from configparser import ConfigParser
 
 import logging
 
@@ -35,7 +35,7 @@ class Configuration(object):
         self.parse_config_file(file_name)
 
     def parse_config_file(self, file_name):
-        parser = SafeConfigParser()
+        parser = ConfigParser()
         try:
             if file_name:
                 if os.path.exists(file_name):

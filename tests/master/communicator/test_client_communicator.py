@@ -55,9 +55,60 @@ class TestClientCommunicator(TestCase):
         config = MasterConfiguration()
         config.register_api_key = 'Testing!@$%^'
 
+        # per requests > 2.11.0 - All header values must be strings
         test = {'Content-Type': 'application/json',
-                'X-RAPIDCI-PORT': config.port,
+                'X-RAPIDCI-PORT': str(config.port),
                 'X-RAPIDCI-REGISTER-KEY': config.register_api_key,
-                'X-RAPIDCI-TIME': 1000,
+                'X-RAPIDCI-TIME': '1000',
                 'X-RAPIDCI-CLIENT-KEY': config.api_key}
         eq_(test, ClientCommunicator._get_register_headers(config))
+
+    @patch('rapid.client.communicator.client_communicator.StoreService')
+    @patch('rapid.client.communicator.client_communicator.requests')
+    def test_default_send_includes_the_master_api_key(self, requests, store_service):
+        mock_app = Mock(rapid_config=Mock(verify_certs=False))
+        store_service.get_master_key.return_value='bogus_key'
+        communicator = ClientCommunicator(None, flask_app=mock_app)
+        requests.put.return_value = Mock(status_code=200)
+        communicator._default_send('bogus', None)
+
+        store_service.get_master_key.assert_called_with(mock_app)
+        requests.put.assert_called_with('bogus', data=None, json=None, headers={'X-Rapidci-Api-Key': 'bogus_key'}, verify=False)
+
+    @patch('rapid.client.communicator.client_communicator.StoreService')
+    @patch('rapid.client.communicator.client_communicator.requests')
+    @patch('rapid.client.communicator.client_communicator.ClientCommunicator._string_header_values')
+    def test_default_send_stringifies_headers(self, header_values, requests, store_service):
+        communicator = ClientCommunicator(None)
+        requests.put.return_value = Mock(status_code=200)
+        communicator._default_send('bogus', None)
+
+        header_values.assert_called_with(None)
+
+    @patch('rapid.client.communicator.client_communicator.StoreService')
+    @patch('rapid.client.communicator.client_communicator.requests')
+    def test_default_send_defaults_to_put(self, requests, store_service):
+        communicator = ClientCommunicator(None)
+        requests.put.return_value = Mock(status_code=200)
+        communicator._default_send('bogus', None)
+
+        requests.put.assert_called()
+
+    @patch('rapid.client.communicator.client_communicator.StoreService')
+    @patch('rapid.client.communicator.client_communicator.requests')
+    def test_default_send_supports_post(self, requests, store_service):
+        communicator = ClientCommunicator(None)
+        requests.post.return_value = Mock(status_code=200)
+        communicator._default_send('bogus', None, 'post')
+
+        requests.post.assert_called()
+
+    @patch('rapid.client.communicator.client_communicator.StoreService')
+    @patch('rapid.client.communicator.client_communicator.requests')
+    def test_default_send_throws_exception(self, requests, store_service):
+        communicator = ClientCommunicator(None)
+        requests.put.return_value = Mock(status_code=404)
+        with self.assertRaises(Exception) as exception:
+            communicator._default_send('bogus', None)
+
+        self.assertEqual('Status Code Failure: 404', str(exception.exception))
