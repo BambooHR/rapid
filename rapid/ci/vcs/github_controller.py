@@ -68,7 +68,7 @@ class GithubController(Injectable):
         request_json = request.get_json()
         return request_json
 
-    @json_response
+    @json_response()
     def process_webhooks_pipeline(self, pipeline_id):
         request_json = self.__process_request()
         pipeline_instance = self.workflow_module.start_pipeline_by_id(pipeline_id, self._build_request_parameters(request_json))
@@ -78,7 +78,7 @@ class GithubController(Injectable):
 
         raise HttpException({'message': 'Something went wrong'}, code=500)
 
-    @json_response
+    @json_response()
     def process_webhooks(self):
         # perform operation
         request_json = self.__process_request()
