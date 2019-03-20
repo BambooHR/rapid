@@ -41,6 +41,8 @@ function setup() {
 
     setRapidAnalyzeTests "code/tests"
     setRapidResultsFiles "XUnit#nosetests.xml"
+
+    cat ${WORKSPACE}/rapid_config
 }
 
 function run_tox_tests() {
