@@ -39,7 +39,7 @@ function setup() {
         fail "Failed to install tox"
     fi
 
-    setRapidAnalyzeTests "rapid"
+    setRapidAnalyzeTests "code/tests"
     setRapidResultsFiles "XUnit#nosetests.xml"
 }
 
