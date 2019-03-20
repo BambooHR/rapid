@@ -38,6 +38,9 @@ function setup() {
     then
         fail "Failed to install tox"
     fi
+
+    setRapidAnalyzeTests "rapid"
+    setRapidResultsFiles "XUnit#nosetests.xml"
 }
 
 function run_tox_tests() {
