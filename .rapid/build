@@ -39,10 +39,8 @@ function setup() {
         fail "Failed to install tox"
     fi
 
-    setRapidAnalyzeTests "code/tests/"
+    setRapidAnalyzeTests "code/tests/**"
     setRapidResultsFiles "XUnit#nosetests.xml"
-    echo "${WORKSPACE}/code/tests/"
-    ls -al "${WORKSPACE}/code/tests/"
 }
 
 function run_tox_tests() {
