@@ -93,7 +93,7 @@ def json_response(exception_class=None, message=None):
     :param message: str
     """
     def wrap(_f):
-        def wrapped_func(*args, **kwargs):
+        def wrapped_json_response(*args, **kwargs):
             try:
                 response = _f(*args, **kwargs)
                 return Response(json.dumps(response), content_type="application/json")
@@ -107,7 +107,7 @@ def json_response(exception_class=None, message=None):
                 response.status_code = exception.status_code if hasattr(exception, 'status_code') else 500
                 response.content_type = 'application/json'
                 return response
-        return wrapped_func
+        return wrapped_json_response
     return wrap
 
 

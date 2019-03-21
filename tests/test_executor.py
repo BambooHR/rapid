@@ -34,6 +34,11 @@ class TestExecutor(TestCase):
         load_parsers()
 
     def test_get_command(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Will download remote file when remote: is used.
+        :return:
+        :rtype:
+        """
         work_request = WorkRequest({"action_instance_id": 1,
                                     "cmd": "/bin/sh",
                                     "executable": "{}trial.sh".format(Communication.REMOTE_FILE),
@@ -46,35 +51,70 @@ class TestExecutor(TestCase):
         eq_(["/bin/sh", "/tmp/rapidci/workspace/trial.sh"], executor.get_command(communicator))
 
     def test_get_remote_files_invalid_line(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Will download remote file when remote: is used.
+        :return:
+        :rtype:
+        """
         with self.assertRaises(Exception) as cm:
             Executor._get_remote_files("This is a test")
         self.assertEqual("list index out of range", str(cm.exception))
 
     def test_get_remote_files_valid_line(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Will download remote file when remote: is used.
+        :return:
+        :rtype:
+        """
         self.assertEqual(["trial.sh"], Executor._get_remote_files("{}{}".format(Constants.REQUIRED_FILES, "trial.sh")))
 
     def test_get_results_SUCCESS(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Return codes greater than 0 will result in failure.
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
 
         eq_("SUCCESS", executor._get_status(0))
 
     def test_get_results_FAILURE(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Return codes greater than 0 will result in failure.
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
 
         eq_("FAILED", executor._get_status(1))
 
     def test_get_results_OVERRIDE(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:You can override return codes with different statuses.
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
         executor.status_overrides = {4: "GIT_ERROR"}
 
         eq_("GIT_ERROR", executor._get_status(4))
 
     def test_get_parameters(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Parameters can be recorded and passed via pipeline_instance
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
 
         eq_(["/tmp/testing.txt", "/tmp/*.txt"], executor._get_parameters_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.PARAMETERS)))
 
     def test_get_parameters_error(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Parameters can be recorded and passed via pipeline_instance
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
 
         with self.assertRaises(Exception) as cm:
@@ -82,17 +122,31 @@ class TestExecutor(TestCase):
         self.assertEqual("list index out of range", str(cm.exception))
 
     def test_get_stats(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Statistics can be recorded per pipeline_instance
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
 
         eq_(['/tmp/testing.txt', '/tmp/*.txt'], executor._get_stats_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.STATS)))
 
     def test_convert_to_dict(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         eq_({"first": "is good", "second": "is=bad"}, Executor._convert_to_dict(["first=is good", "second=is=bad"]))
 
     def test_get_results(self):
+        """
+        rapid-unit: Rapid Client:Can gather test results
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest(), None)
         file_name = '{}/parsers/*.xml'.format(os.path.dirname(os.path.realpath(__file__)))
-        print(file_name)
         eq_({
             'JUnitXmlReporter.constructor~should default path to an empty string': {
                 'status': 'FAILED',
@@ -110,6 +164,11 @@ class TestExecutor(TestCase):
             '__summary__': {'FAILED': 1, 'SKIPPED': 1, 'SUCCESS': 1, Constants.FAILURES_COUNT: False}}, executor._get_results('/', [file_name]))
 
     def test_get_environment(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2, 'environment': {'Something': 'More'}}), None)
         environment = os.environ
         environment.update({'Something': 'More', 'action_instance_id': '1', 'pipeline_instance_id': '2', 'PYTHONUNBUFFERED': 'true'})
@@ -120,8 +179,12 @@ class TestExecutor(TestCase):
         eq_('2', executor.get_environment()['pipeline_instance_id'])
         eq_('true', executor.get_environment()['PYTHONUNBUFFERED'])
 
-
     def test_verify_work_request_no_action_instance_id(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         work_request = WorkRequest()
         executor = Executor(work_request, "http")
 
@@ -130,6 +193,11 @@ class TestExecutor(TestCase):
         self.assertEqual("Invalid action_instance_id", str(cm.exception))
 
     def test_verify_work_request_no_executable(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         work_request = WorkRequest()
         executor = Executor(work_request, "http")
         work_request.action_instance_id = 1
@@ -139,6 +207,11 @@ class TestExecutor(TestCase):
         self.assertEqual("Executable not set, nothing to run.", str(cm.exception))
 
     def test_verify_work_request_no_pipeline_instance_id(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         work_request = WorkRequest()
         executor = Executor(work_request, "http")
         work_request.action_instance_id = 1
@@ -149,6 +222,11 @@ class TestExecutor(TestCase):
         self.assertEqual("No pipline_instance_id set.", str(cm.exception))
 
     def test_verify_work_request_no_cmd(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         work_request = WorkRequest()
         executor = Executor(work_request, "http")
         work_request.action_instance_id = 1
@@ -160,6 +238,11 @@ class TestExecutor(TestCase):
         self.assertEqual("No command was set.", str(cm.exception))
 
     def test_get_state(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         mock = Mock()
         executor = Executor(mock, "http", logger=Mock())
 
@@ -172,18 +255,38 @@ class TestExecutor(TestCase):
              'failure_threshold': 0, 'stats_files': [], 'quarantine': None, 'verify_certs': True}, executor.__getstate__())
 
     def test_get_status_overrides(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:You can override return codes with different statuses.
+        :return:
+        :rtype:
+        """
         line = "#{}2:SUCCESS,3:FAILED".format(Constants.STATUS_OVERRIDE)
 
         eq_({2: "SUCCESS", 3: "FAILED"}, Executor._get_status_overrides(line))
 
     def test_get_status_override_no_status(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:You can override return codes with different statuses.
+        :return:
+        :rtype:
+        """
         eq_({}, Executor._get_status_overrides("qwerqwer:qpoiuadsfj"))
 
     def test_get_status_override_bad_status(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:You can override return codes with different statuses.
+        :return:
+        :rtype:
+        """
         eq_({}, Executor._get_status_overrides("#{}2_SUCCESS,3_FAILED".format(Constants.STATUS_OVERRIDE)))
 
     @patch("rapid.client.executor.threading")
     def test_start(self, threading):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         executor = Executor(Mock(), "bogus")
 
         executor.start()
@@ -191,39 +294,74 @@ class TestExecutor(TestCase):
         threading.Thread.assert_called_with(target=executor._start_child_process)
 
     def test_get_parameters_no_parameter_files(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Parameters can be recorded and passed via pipeline_instance
+        :return:
+        :rtype:
+        """
         eq_(None, Executor._get_parameters(None, None))
 
     @patch("rapid.client.executor.open")
     @patch("rapid.client.executor.glob")
     def test_get_parameters_valid_parameter_files(self, glob, open_mock):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Parameters can be recorded and passed via pipeline_instance
+        :return:
+        :rtype:
+        """
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
 
         eq_({"something": "12345"}, Executor._get_parameters("", [""]))
 
     def test_get_stats_no_stats_files(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Statistics can be recorded per pipeline_instance
+        :return:
+        :rtype:
+        """
         eq_(None, Executor._get_stats(None, None))
 
     @patch("rapid.client.executor.open")
     @patch("rapid.client.executor.glob")
     def test_get_stats_valid_stats_files(self, glob, open_mock):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Statistics can be recorded per pipeline_instance
+        :return:
+        :rtype:
+        """
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
 
         eq_({"something": "12345"}, Executor._get_stats("", [""]))
 
     def test_log(self):
+        """
+        rapid-unit: Rapid Client:Logging:Logging is formatted a specified way
+        :return:
+        :rtype:
+        """
         mock_logger = Mock()
         Executor._log(1, "Testing", mock_logger)
 
         mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "Testing"))
 
     def test_get_arguments_empty_work_request(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': None}), "bogus")
 
         eq_([], executor.get_arguments())
 
     def test_get_arguments_from_work_request(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus")
 
         eq_(["testing", "arguments"], executor.get_arguments())
@@ -232,6 +370,11 @@ class TestExecutor(TestCase):
     @patch("rapid.client.executor.shutil")
     @patch("rapid.client.executor.os")
     def test_clean_workspace_valid_dir(self, mock_os, mock_shutil, mock_logger):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Code will execute in sandboxed workspace
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus", logger=mock_logger)
 
         executor.clean_workspace()
@@ -241,6 +384,11 @@ class TestExecutor(TestCase):
     @patch("rapid.client.executor.shutil")
     @patch("rapid.client.executor.os")
     def test_clean_workspace_valid_dir_exception(self, mock_os, mock_shutil, mock_logger):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Code will execute in sandboxed workspace
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus", logger=mock_logger)
 
         def throw_exception(*args, **kwargs):
@@ -251,6 +399,11 @@ class TestExecutor(TestCase):
 
     @patch("rapid.client.executor.os")
     def test_clean_workspace_invalid_dir(self, mock_os):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Code will execute in sandboxed workspace
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus")
 
         mock_os.path.isdir.return_value = False
@@ -260,6 +413,11 @@ class TestExecutor(TestCase):
 
     @patch("rapid.client.executor.os")
     def test_clean_workspace_invalid_dir_exception(self, mock_os):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Code will execute in sandboxed workspace
+        :return:
+        :rtype:
+        """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus")
         mock_logger = Mock()
         executor.logger = mock_logger
@@ -276,12 +434,27 @@ class TestExecutor(TestCase):
         mock_logger.exception.assert_called_with(self_exception)
 
     def test_get_executable_name_no_remote_file(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         eq_("filename", Executor._get_executable_name("filename"))
 
     def test_get_executable_name_with_remote_file(self):
+        """
+        rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client
+        :return:
+        :rtype:
+        """
         eq_("filename", Executor._get_executable_name("{}filename".format(Communication.REMOTE_FILE)))
 
     def test_get_read_process_output(self):
+        """
+        rapid-unit: Rapid Client:Logging:Can read the output from external process
+        :return:
+        :rtype:
+        """
         mock_logger = Mock()
         mock_child_process = Mock()
 
@@ -298,6 +471,11 @@ class TestExecutor(TestCase):
         mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(None, os.getpid(), "Cleaning up thread."))
 
     def test_get_read_process_output_with_exception(self):
+        """
+        rapid-unit: Rapid Client:Logging:Can read the output from external process
+        :return:
+        :rtype:
+        """
         mock_logger = Mock()
         mock_child_process = Mock()
 
@@ -312,6 +490,11 @@ class TestExecutor(TestCase):
         mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(None, os.getpid(), "Shouldn't see this."))
 
     def test_get_name_map(self):
+        """
+        rapid-unit: Rapid Client:Can gather test results
+        :return:
+        :rtype:
+        """
         executor = Executor(None, None)
         results = {
             'LegacyDateTest::testGetDateDiffString~testGetDateDiffString with data set #0': "success",
@@ -324,6 +507,11 @@ class TestExecutor(TestCase):
 
     @patch('rapid.client.executor.Executor.verify_lines')
     def test_check_for_dynamic_config_file(self, verify_lines):
+        """
+        rapid-unit: Rapid Client:Can gather test results
+        :return:
+        :rtype:
+        """
         executor = Executor(None, None)
 
         executor.verify_file_lines(['{}bogus2'.format(Constants.PARAMETERS)], None)
