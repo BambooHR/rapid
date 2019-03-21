@@ -224,7 +224,7 @@ class APIRouter(Injectable):
                     for field in relation_split[1].split(','):
                         try:
                             fields[table_name].append(field)
-                        except (AttributeError, TypeError):
+                        except (AttributeError, TypeError, KeyError):
                             fields[table_name] = []
                             fields[table_name].append(field)
         except Exception:
