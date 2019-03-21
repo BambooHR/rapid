@@ -236,7 +236,7 @@ class APIRouter(Injectable):
 
         try:
             limit = int(self._get_args()['limit'])
-        except (AttributeError, TypeError, ValueError, BadRequestKeyError):
+        except (AttributeError, TypeError, ValueError, BadRequestKeyError, KeyError):
             pass
         return query.limit(limit)
 
