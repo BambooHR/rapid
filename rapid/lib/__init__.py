@@ -115,8 +115,8 @@ def setup_logging(flask_app):
     handler = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    flask_app.logger.addHandler(handler)
-    flask_app.logger.setLevel(logging.INFO)
+    # flask_app.logger.addHandler(handler)
+    # flask_app.logger.setLevel(logging.INFO)
 
     logger = logging.getLogger('rapid')
     logger.addHandler(handler)
