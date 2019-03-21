@@ -161,12 +161,14 @@ class QaDal(GeneralDal):
                         test['model'] = None
                         test_mapper[test['name']] = test
 
-        for area in session.query(QaArea).filter(QaArea.name.in_(area_keys)):
-            try:
-                area_keys.remove(area.name)
-                area_mapper[area.name]['model'] = area
-            except:
-                pass
+        if area_keys:
+            for area in session.query(QaArea).filter(QaArea.name.in_(area_keys))\
+                                             .filter(QaArea.product_id == product_id).all():
+                try:
+                    area_keys.remove(area.name)
+                    area_mapper[area.name]['model'] = area
+                except:
+                    pass
 
         for area in area_keys:
             area_model = QaArea(name=area, product_id=product_id)
@@ -175,15 +177,16 @@ class QaDal(GeneralDal):
 
         session.flush()
 
-        for feature in session.query(QaFeature).filter(QaFeature.name.in_(feature_keys)):
-            try:
-                feature_keys.remove(feature.name)
-            except:
-                pass
-            try:
-                feature_mapper[feature.name]['model'] = feature
-            except:
-                pass
+        if feature_keys:
+            for feature in session.query(QaFeature).filter(QaFeature.name.in_(feature_keys)).all():
+                try:
+                    feature_keys.remove(feature.name)
+                except:
+                    pass
+                try:
+                    feature_mapper[feature.name]['model'] = feature
+                except:
+                    pass
 
         for feature in feature_keys:
             feature_model = QaFeature(name=feature, product_id=product_id)
@@ -195,15 +198,16 @@ class QaDal(GeneralDal):
 
         session.flush()
 
-        for _bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)):
-            try:
-                bp_keys.remove(_bp.name)
-            except:
-                pass
-            try:
-                bp_mapper[_bp.name]['model'] = _bp
-            except:
-                pass
+        if bp_keys:
+            for _bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)).all():
+                try:
+                    bp_keys.remove(_bp.name)
+                except:
+                    pass
+                try:
+                    bp_mapper[_bp.name]['model'] = _bp
+                except:
+                    pass
 
         for _bp in bp_keys:
             bp_model = QaBehaviorPoint(name=_bp, product_id=product_id)
@@ -215,24 +219,25 @@ class QaDal(GeneralDal):
 
         session.flush()
 
-        for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
-                .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
-                .filter(QaTest.name.in_(test_keys)).all():
-            if test.name in test_mapper:
-                (area, feature, _bp) = test_mapper[test.name]['__key__'].split(':', 2)
-                if qa_test_mapping is None:
-                    qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
-                                                    test_id=test.id,
-                                                    feature_id=feature_mapper[feature]['model'].id,
-                                                    behavior_id=bp_mapper[_bp]['model'].id)
-                    session.add(qa_test_mapping)
-                else:
-                    if qa_test_mapping.area_id != area_mapper[area]['model'].id:
-                        qa_test_mapping.area_id = area_mapper[area]['model'].id
-                    if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
-                        qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
-                    if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
-                        qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
+        if test_keys:
+            for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
+                    .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
+                    .filter(QaTest.name.in_(test_keys)).all():
+                if test.name in test_mapper:
+                    (area, feature, _bp) = test_mapper[test.name]['__key__'].split(':', 2)
+                    if qa_test_mapping is None:
+                        qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
+                                                        test_id=test.id,
+                                                        feature_id=feature_mapper[feature]['model'].id,
+                                                        behavior_id=bp_mapper[_bp]['model'].id)
+                        session.add(qa_test_mapping)
+                    else:
+                        if qa_test_mapping.area_id != area_mapper[area]['model'].id:
+                            qa_test_mapping.area_id = area_mapper[area]['model'].id
+                        if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
+                            qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
+                        if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
+                            qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
 
         session.flush()
         session.commit()
