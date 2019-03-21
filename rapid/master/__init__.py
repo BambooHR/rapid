@@ -31,8 +31,8 @@ app.rapid_config = {'_is': 'master'}
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-app.logger.addHandler(handler)  # pylint: disable=no-member
-app.logger.setLevel(logging.INFO)  # pylint: disable=no-member
+# app.logger.addHandler(handler)  # pylint: disable=no-member
+# app.logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 logger = logging.getLogger("rapid")
 logger.addHandler(handler)  # pylint: disable=no-member
