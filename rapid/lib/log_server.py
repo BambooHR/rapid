@@ -38,7 +38,7 @@ class LogServer(object):
             log_files = glob.glob(os.path.join(self.log_dir, "*.log"))
 
             if log_files:
-                for check in [{'cmd': 'grep {} {}', 'files': ' '.join(log_files)}, {'cmd': 'zgrep {} {}', 'files': ' '.join(gz_files)}]:
+                for check in [{'cmd': 'grep -a {} {}', 'files': ' '.join(log_files)}, {'cmd': 'zgrep -a {} {}', 'files': ' '.join(gz_files)}]:
                     cmd = check['cmd'].format(string_grep, check['files'])
                     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     for line in iter(process.stdout.readline, ''):
