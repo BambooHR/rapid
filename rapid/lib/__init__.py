@@ -120,6 +120,7 @@ def setup_logging(flask_app):
 
     logger = logging.getLogger('rapid')
     logger.addHandler(handler)
+    logger.propagate = False  # Turn off double logging.
     logger.setLevel(logging.INFO)
 
 
