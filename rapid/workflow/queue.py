@@ -87,7 +87,7 @@ class Queue(Injectable):
                                 self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
                                                                                                                     "start_date": None,
                                                                                                                     "assigned_to": None})
-                        except ConnectTimeout:
+                        except ConnectionError:
                             # Should reset, this is a problem, server not there.
                             self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
                                                                                                                 "start_date": None,
@@ -95,7 +95,7 @@ class Queue(Injectable):
                         except ReadTimeout as read_timeout:
                             logger.error(read_timeout)
                             logger.error(client.get_work_uri())
-                        except ConnectionError as error:
+                        except ConnectTimeout as error:
                             logger.error(error)
                             logger.error(client.get_work_uri())
                         except Exception as exception:
