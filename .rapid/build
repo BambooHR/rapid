@@ -31,6 +31,13 @@ function setup() {
         export push_live=1
     fi
 
+    git_check=`git log --format='%s' ${commit}..origin/master -- rapid/lib/version.py | grep '#pushlive'`
+
+    if [[ "${git_check}" != "" ]]
+    then
+        export push_live=1
+    fi
+
     setupPythonEnv
 
     pip install tox
@@ -57,47 +64,46 @@ function release_build() {
     then
         buildStepNotify 'rapidBuild'
         
-        if [[ ${push_live} -eq 1 ]]
+        version=`python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}'`
+        if [[ $? -ne 0 ]]
         then
-            version=`python setup.py sdist upload -r pypi|grep 'Submitting dist'| awk '{print $2}'|awk -F'/' '{print $2}'|awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
-            if [[ ${PIPESTATUS[0]} -ne 0 ]]
+            fail "Something failed to roll"
+        fi
+
+        set_build_version "${version}" "${commit}"
+
+        commit_is_head_of_release ${commit}
+        if [[ $? == 1 ]]
+        then
+            if [[ ${push_live} -eq 1 ]]
             then
-                fail "Failed to release to pypi"
+                version=`python setup.py sdist upload -r pypi|grep 'Submitting dist'| awk '{print $2}'|awk -F'/' '{print $2}'|awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
+                if [[ ${PIPESTATUS[0]} -ne 0 ]]
+                then
+                    fail "Failed to release to pypi"
+                fi
+
+                notify_pypi_release ${version}
             fi
 
-            echo "Released version: ${version} to pypi.python.org"
-        else
-            version=`python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}'`
+            release_python_internal dist/rapid-framework-${version}.tar.gz
             if [[ $? -ne 0 ]]
             then
-                fail "Something failed to roll"
+                fail "Internal Release failed"
             fi
 
-            set_build_version "${version}" "${commit}"
-
-            commit_is_head_of_release ${commit}
-            if [[ $? == 1 ]]
+            echo "Rolling version[${version}]"
+            if [[ "${version}" != "" ]]
             then
-                
-                release_python_internal dist/rapid-framework-${version}.tar.gz
+                upgrade_rapid "${version}"
                 if [[ $? -ne 0 ]]
                 then
-                    fail "Internal Release failed"
+                    fail "Failed to deploy new rapid version"
                 fi
-
-                echo "Rolling version[${version}]"
-                if [[ "${version}" != "" ]]
-                then
-                    upgrade_rapid "${version}"
-                    if [[ $? -ne 0 ]]
-                    then
-                        fail "Failed to deploy new rapid version"
-                    fi
-                fi
-
-                notify_rapid_release ${version}
-                buildStepNotify 'deploypackage'
             fi
+
+            notify_rapid_release ${version}
+            buildStepNotify 'deploypackage'
         fi
     fi
 }
