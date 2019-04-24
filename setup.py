@@ -14,6 +14,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import os
 import ssl
 import sys
 from setuptools import setup, find_packages
@@ -30,9 +31,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 try:
-    execfile('./rapid/lib/version.py')
+    execfile(os.path.join('.', 'rapid', 'lib', 'version.py'))
 except NameError:
-    exec(open('./rapid/lib/version.py').read())
+    exec(open(os.path.join('.', 'rapid', 'lib', 'version.py')).read())
 
 requirements = [
     'flask',
