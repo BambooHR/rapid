@@ -30,6 +30,15 @@ function setup() {
     then
         export push_live=1
     fi
+    
+    generate_build_version ${commit} 'true'
+    if [[ "${BUILD_VERSION}" == "" ]]
+    then
+        fail "Failed to generate build version"
+    fi
+
+    perl -pie "s/^(__version__ = ').*('.*)/\$1${BUILD_VERSION}\$2/" rapid/lib/version.py
+
 
     setupPythonEnv
 
@@ -56,13 +65,7 @@ function release_build() {
     if [[ ${is_release_branch} -eq 1 ]]
     then
         buildStepNotify 'rapidBuild'
-        generate_build_version ${commit} 'true'
-        if [[ "${BUILD_VERSION}" == "" ]]
-        then
-            fail "Failed to generate build version"
-        fi
 
-        perl -pie "s/^(__version__ = ').*('.*)/\$1${BUILD_VERSION}\$2/" rapid/lib/version.py
         if [[ $? -ne 0 ]]
         then
             fail "Failed to set version in version.py"
