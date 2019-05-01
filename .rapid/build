@@ -37,8 +37,11 @@ function setup() {
         fail "Failed to generate build version"
     fi
 
+    cat rapid/lib/version.py
+    set -x
     perl -pie "s/^(__version__ = ').*('.*)/\$1${BUILD_VERSION}\$2/" rapid/lib/version.py
-
+    set +x
+    cat rapid/lib/version.py
 
     setupPythonEnv
 
