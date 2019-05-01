@@ -46,22 +46,32 @@ class ClientConfiguration(Configuration):
         super(ClientConfiguration, self).__init__(file_name)
         self.executors = []
 
+    @property
+    def section_mapping(self):
+        return {
+            'client': {
+                'port': [8081, int],
+                'workspace': [os.path.join(tempfile.gettempdir(), 'rapid', 'workspace')],
+                'master_uri': ['http://rapidci.local'],
+                'registration_rate': [180, int],
+                'executor_count': [2, int],
+                'grains': [None],
+                'grain_restrict': [False, bool],
+                'quarantine_directory': [os.path.join(tempfile.gettempdir(), 'rapid', 'quarantine')],
+                'register_api_key': [None],
+                'api_key': [str(uuid.uuid3(uuid.NAMESPACE_OID, 'ClientApiKey!')).replace('-', '')],
+                'install_uri': ['https://pypi.python.org/pypi/'],
+                'install_options': [''],
+                'get_files_basic_auth': [None, list, ':']
+            },
+            'general': {
+                'use_ssl': [False, bool],
+                'verify_certs': [True, bool]
+            }
+        }
+
     def _set_values(self, parser):
-        self._set_parser_value(parser, 'client', 'port', '8081', str)
-        self._set_parser_value(parser, 'client', 'workspace', os.path.join(tempfile.gettempdir(), 'rapid', 'workspace'))
-        self._set_parser_value(parser, 'client', 'master_uri', 'http://rapidci.local')
-        self._set_parser_value(parser, 'client', 'registration_rate', 180, int)
-        self._set_parser_value(parser, 'client', 'executor_count', 2, int)
-        self._set_parser_value(parser, 'client', 'grains', None)
-        self._set_parser_value(parser, 'client', 'grain_restrict', False, bool)
-        self._set_parser_value(parser, 'client', 'quarantine_directory', os.path.join(tempfile.gettempdir(), 'rapid', 'quarantine'))
-        self._set_parser_value(parser, 'client', 'register_api_key', None)
-        self._set_parser_value(parser, 'client', 'api_key', str(uuid.uuid3(uuid.NAMESPACE_OID, 'ClientApiKey!')).replace('-', ''))
-        self._set_parser_value(parser, 'client', 'install_uri', 'https://pypi.python.org/pypi/')
-        self._set_parser_value(parser, 'client', 'install_options', '')
-        self._set_parser_value(parser, 'client', 'get_files_basic_auth', None, list, ':')
-        self._set_parser_value(parser, 'general', 'use_ssl', False, bool)
-        self._set_parser_value(parser, 'general', 'verify_certs', True, bool)
+        super(ClientConfiguration, self)._set_values(parser)
 
         if self.get_files_basic_auth:
             try:

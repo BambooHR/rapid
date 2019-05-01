@@ -57,3 +57,7 @@ class TestMasterConfiguration(TestCase):
         config._set_values(parser)
 
         eq_(8881, config.port, "Config override did not work right. [8881 != {}]".format(config.port))
+
+    def test_config_get_section(self):
+        config = MasterConfiguration()
+        eq_('master', config.get_section('api_key'))
