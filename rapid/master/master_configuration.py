@@ -35,6 +35,7 @@ class MasterConfiguration(Configuration):
         self.install_uri = None
         self.install_options = None
         self.verify_certs = None
+        self.custom_reports_dir = None
 
         super(MasterConfiguration, self).__init__(file_name)
 
@@ -54,7 +55,7 @@ class MasterConfiguration(Configuration):
                 'github_pass': [None],
                 'github_webhooks_key': [None],
                 'github_default_parameters': [None],
-                'customer_reports_dir': [None]
+                'custom_reports_dir': [None]
             },
             'general': {
                 'install_uri': ['https://pypi.python.org/pypi/'],
