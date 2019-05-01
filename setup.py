@@ -94,7 +94,7 @@ setup(
         # $ pip install -e .[dev,test]
         extras_require={
             'test': ['coverage', 'nose', 'ddt', 'mock', 'MagicMock'],
-            'master': ['alembic', 'SQLAlchemy>=1.0.6', 'Flask-SQLAlchemy>=2.3.0', 'mysql-python', 'pygithub', 'simpleeval'],
+            'master': ['alembic', 'SQLAlchemy>=1.0.6', 'Flask-SQLAlchemy>=2.3.0', 'mysqlclient', 'pygithub', 'simpleeval'],
             'client': []
         },
 

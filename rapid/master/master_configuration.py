@@ -38,22 +38,26 @@ class MasterConfiguration(Configuration):
 
         super(MasterConfiguration, self).__init__(file_name)
 
-    def _set_values(self, parser):
-        self._set_parser_value(parser, 'master', 'port', 8080, int)
-        self._set_parser_value(parser, 'master', 'queue_time', 6, int)
-        self._set_parser_value(parser, 'master', 'db_connect_string', 'sqlite:///data.db')
-        self._set_parser_value(parser, 'master', 'data_type', 'inmemory')
-        self._set_parser_value(parser, 'master', 'queue_manager', True, bool)
-        self._set_parser_value(parser, 'master', 'queue_consider_late_time', 10, float)
-        self._set_parser_value(parser, 'master', 'register_api_key', None)
-        self._set_parser_value(parser, 'master', 'api_key', str(uuid.uuid3(uuid.NAMESPACE_OID, 'MasterApiKey!')).replace('-', ''))
-        self._set_parser_value(parser, 'master', 'github_user', None)
-        self._set_parser_value(parser, 'master', 'github_pass', None)
-        self._set_parser_value(parser, 'master', 'github_webhooks_key', None)
-        self._set_parser_value(parser, 'master', 'github_default_parameters', None)
-        self._set_parser_value(parser, 'master', 'custom_reports_dir', None)
-
-        self._set_parser_value(parser, 'general', 'install_uri', None)
-        self._set_parser_value(parser, 'general', 'install_options', '')
-        self._set_parser_value(parser, 'general', 'verify_certs', True, bool)
-
+    @property
+    def section_mapping(self):
+        return {
+            'master': {
+                'port': [8080, int],
+                'queue_time': [6, int],
+                'db_connect_string': ['sqlite:///data.db'],
+                'data_type': ['inmemory'],
+                'queue_manager': [True, bool],
+                'queue_consider_late_time': [10, float],
+                'register_api_key': [None],
+                'api_key': [str(uuid.uuid3(uuid.NAMESPACE_OID, 'MasterApiKey!')).replace('-', '')],
+                'github_user': [None],
+                'github_pass': [None],
+                'github_webhooks_key': [None],
+                'customer_reports_dir': [None]
+            },
+            'general': {
+                'install_uri': [None],
+                'install_options': [''],
+                'verify_certs': [True, bool]
+            }
+        }

@@ -19,7 +19,7 @@ class ConfigurationGenerator(object):
     """
     ConfigurationGenerator is used to generator a configuration file for rapid.
     """
-    def generate(self, config_type):
+    def generate(self, config_type, config_file=None):
         config = None
         if config_type == 'master':
             from rapid.master.master_configuration import MasterConfiguration
@@ -28,19 +28,32 @@ class ConfigurationGenerator(object):
         elif config_type == 'client':
             from rapid.client.client_configuration import ClientConfiguration
             config = ClientConfiguration()
-        self.gather_output(config)
+        self.gather_output(config, config_type, config_file)
 
-    def gather_output(self, config):
-        for key, value in config.__dict__.items():
-            read_input = None
-            try:
-                read_input = raw_input("Enter value for '{}'[{}]? ".format(key, value))
-            except NameError:
-                read_input = input(prompt="Enter the value for '{}'[{}]? ".format(key, value))
+    def gather_output(self, config, config_type, config_file):
+        if config_file is not None:
+            config.parse_config_file(config_file)
+        else:
+            for key, value in config.__dict__.items():
+                if key in ['hostname']:
+                    continue
 
-            if not read_input:
-                read_input = value
+                read_input = None
+                try:
+                    read_input = raw_input("Enter value for '{}'[{}]? ".format(key, value))
+                except NameError:
+                    read_input = input(prompt="Enter the value for '{}'[{}]? ".format(key, value))
 
-            setattr(config, key, read_input)
+                if not read_input:
+                    read_input = value
 
-        print(config.__dict__)
+                setattr(config, key, read_input)
+
+        print("---------------------------")
+        print("### {}.cfg".format(config_type))
+        print("---------------------------")
+        for section, mappings in config.section_mapping.items():
+            print('[{}]'.format(section))
+            for key in sorted(mappings.keys()):
+                print("{}:{}".format(key, getattr(config, key)))
+            print('')

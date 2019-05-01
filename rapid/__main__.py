@@ -45,7 +45,7 @@ elif args.qa_dir:
     sys.exit(0)
 elif args.generate_config:
     import sys
-    ConfigurationGenerator().generate(args.generate_config)
+    ConfigurationGenerator().generate(args.generate_config, args.config_file)
     sys.exit(0)
 else:
     from .master import app, configure_application
