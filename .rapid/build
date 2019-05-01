@@ -37,12 +37,12 @@ function setup() {
         fail "Failed to generate build version"
     fi
 
-    cat rapid/lib/version.py
-    set -x
-    perl -pie "s/^(__version__ = ').*('.*)/\$1${BUILD_VERSION}\$2/" rapid/lib/version.py
-    set +x
-    cat rapid/lib/version.py
-
+    perl -p -i -e "s/^(__version__ = ').*('.*)/\$1${BUILD_VERSION}\$2/" rapid/lib/version.py
+    if [[ $? -ne 0 ]]
+    then
+        fail "Failed to generate build version"
+    fi
+    
     setupPythonEnv
 
     pip install tox
