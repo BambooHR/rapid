@@ -55,5 +55,8 @@ class ConfigurationGenerator(object):
         for section, mappings in config.section_mapping.items():
             print('[{}]'.format(section))
             for key in sorted(mappings.keys()):
-                print("{}:{}".format(key, getattr(config, key)))
+                value = getattr(config, key)
+                if type(value) == str and "\n" in value:
+                    value = value.replace("\n", "\n  ")
+                print("{}:{}".format(key, value))
             print('')
