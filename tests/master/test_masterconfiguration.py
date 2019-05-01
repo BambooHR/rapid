@@ -62,6 +62,15 @@ class TestMasterConfiguration(TestCase):
         config = MasterConfiguration()
         eq_('master', config.get_section('api_key'))
 
+    def test_custom_reports_dir(self):
+        config = MasterConfiguration()
+        parser = SafeConfigParser({'master': {'custom_reports_dir': "/tmp/trial"}})
+        parser.add_section('master')
+        parser.set('master', 'custom_reports_dir', "/tmp/trial")
+
+        config._set_values(parser)
+        eq_("/tmp/trial", config.custom_reports_dir)
+
     def test_git_default_parameters(self):
         config = MasterConfiguration()
         parser = SafeConfigParser({'master': {'github_default_parameters': "repository:repository.clone_url\nssh_url:respository.ssh_url"}})
