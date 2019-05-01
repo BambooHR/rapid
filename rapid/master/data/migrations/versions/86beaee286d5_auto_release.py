@@ -33,7 +33,10 @@ from sqlalchemy.dialects import mysql
 
 
 def upgrade():
-    op.add_column('vcs_releases', sa.Column('auto_release', sa.Boolean(), default=False, nullable=False))
+    if 'sqlite' == op.get_context().dialect.name:
+        op.add_column('vcs_releases', sa.Column('auto_release', sa.Boolean(), default=False))
+    else:
+        op.add_column('vcs_releases', sa.Column('auto_release', sa.Boolean(), default=False, nullable=False))
 
 
 def downgrade():

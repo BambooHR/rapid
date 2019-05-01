@@ -46,9 +46,22 @@ class Configuration(object):
         self._set_values(parser)
         return self
 
+    @property
     @abstractmethod
+    def section_mapping(self):
+        """type: () -> dict of string"""
+        yield
+
+    def get_section(self, key):
+        for section, value in self.section_mapping.items():
+            if key in value:
+                return section
+        return None
+
     def _set_values(self, parser):
-        yield None
+        for section, map in self.section_mapping.items():
+            for key, value in map.items():
+                self._set_parser_value(parser, section, key, *value)
 
     def _set_parser_value(self, parser, section, key, default=None, type_cast=str, delim=','):
         try:
