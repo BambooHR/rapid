@@ -56,7 +56,7 @@ class MasterConfiguration(Configuration):
                 'customer_reports_dir': [None]
             },
             'general': {
-                'install_uri': [None],
+                'install_uri': ['https://pypi.python.org/pypi/'],
                 'install_options': [''],
                 'verify_certs': [True, bool]
             }
