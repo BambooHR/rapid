@@ -61,3 +61,12 @@ class TestMasterConfiguration(TestCase):
     def test_config_get_section(self):
         config = MasterConfiguration()
         eq_('master', config.get_section('api_key'))
+
+    def test_git_default_parameters(self):
+        config = MasterConfiguration()
+        parser = SafeConfigParser({'master': {'github_default_parameters': "repository:repository.clone_url\nssh_url:respository.ssh_url"}})
+        parser.add_section('master')
+        parser.set('master', 'github_default_parameters', "repository:repository.clone_url\nssh_url:respository.ssh_url")
+
+        config._set_values(parser)
+        eq_("repository:repository.clone_url\nssh_url:respository.ssh_url", config.github_default_parameters)

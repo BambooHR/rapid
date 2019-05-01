@@ -53,6 +53,7 @@ class MasterConfiguration(Configuration):
                 'github_user': [None],
                 'github_pass': [None],
                 'github_webhooks_key': [None],
+                'github_default_parameters': [None],
                 'customer_reports_dir': [None]
             },
             'general': {
