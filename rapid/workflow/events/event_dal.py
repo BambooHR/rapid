@@ -43,7 +43,7 @@ class EventDal(GeneralDal, Injectable):
         """
         for event in self.pipeline_dal.get_pipeline_events_by_pipeline_id(pipeline_instance.pipeline_id, session=session):
             try:
-                handler = EventHandlerFactory.get_event_handler(EventTypes(event.event_type_id))
+                handler = EventHandlerFactory.get_event_handler(EventTypes(event['event_type_id']))
                 handler.handle_event(pipeline_instance, action_instance, event)
             except Exception:  # pylint: disable=broad-except
                 pass

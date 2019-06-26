@@ -19,6 +19,7 @@ from mock.mock import MagicMock, patch
 from nose.tools.trivial import ok_, eq_
 
 from rapid.lib.constants import EventTypes
+from rapid.workflow.events.event_dal import EventDal
 from rapid.workflow.events.event_handler import EventHandlerFactory
 from rapid.workflow.events.handlers.remote_notification_handler import RemoteNotificationHandler
 
@@ -118,3 +119,16 @@ class TestEventHandler(TestCase):
         handler._translate_string_for_action_instance(magicMock, '')
         eq_(1, key_string.call_count)
         key_string.assert_called_with('actionInstance', magicMock, '')
+
+    @patch('rapid.workflow.events.event_dal.EventHandlerFactory')
+    def test_trigger_possible_event_utilizes_dict_structure(self, handler_factory):
+        mock_handler = MagicMock()
+        handler_factory.get_event_handler.return_value = mock_handler
+        mock_dal = MagicMock()
+        mock_dal.get_pipeline_events_by_pipeline_id.return_value = [{'event_type_id': 1}]
+
+        handler = EventDal(mock_dal)
+        handler.trigger_possible_event(MagicMock(), None, None)
+
+        self.assertEqual(1, handler_factory.get_event_handler.call_count)
+        self.assertEqual(1, mock_handler.handle_event.call_count)
