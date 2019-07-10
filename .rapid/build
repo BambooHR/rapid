@@ -23,7 +23,7 @@ function setup() {
     then
         export is_release_branch=1;
 
-        export modified_code=`git diff master.. --name-only | grep '/rapid/'`
+        export modified_code=`git diff master.. --name-only | grep 'rapid/'`
 
         if [[ "${modified_code}" != "" ]]
         then

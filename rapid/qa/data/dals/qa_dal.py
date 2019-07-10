@@ -45,6 +45,7 @@ class QaDal(GeneralDal):
         """
         session.execute(Stacktrace.__table__.delete().where(Stacktrace.qa_test_history_id.in_(
             session.query(QaTestHistory.id).filter(QaTestHistory.action_instance_id == action_instance_id))))
+
         session.execute(QaTestHistory.__table__.delete().where(QaTestHistory.action_instance_id == action_instance_id))
         session.execute(QaStatusSummary.__table__.delete().where(QaStatusSummary.action_instance_id == action_instance_id))
 
