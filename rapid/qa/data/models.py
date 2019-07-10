@@ -52,7 +52,7 @@ class QaTestHistory(BaseModel, Base):
     pipeline_instance = relationship('PipelineInstance')
     action_instance = relationship('ActionInstance', backref="qa_test_histories")
     status = relationship('Status')
-    stacktrace = relationship("Stacktrace", single_parent=True, backref="qa_test_history", cascade="all,delete")
+    stacktrace = relationship("Stacktrace", single_parent=True, backref="qa_test_history", cascade="all,delete,delete-orphan")
 
 
 class Stacktrace(BaseModel, Base):
