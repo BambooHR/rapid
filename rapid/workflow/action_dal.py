@@ -15,6 +15,7 @@
 """
 # pylint: disable=singleton-comparison,broad-except
 import datetime
+import random
 
 import time
 from sqlalchemy import func
@@ -179,6 +180,11 @@ class ActionDal(GeneralDal, Injectable):
             action_instance.end_date = datetime.datetime.utcnow()
 
             self.store_service.set_completing(_id)
+            
+            check = '{}__{}'.format(action_instance.pipeline_instance_id, action_instance.action_id)
+            if self.store_service.is_completing(check):
+                time.sleep(random.randint(3, 10) * 0.01)
+            self.store_service.set_completing(check)
             try:
                 self._save_status(action_instance, session, post_data)
                 self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
@@ -190,7 +196,7 @@ class ActionDal(GeneralDal, Injectable):
                 traceback.print_exc()
             finally:
                 self.store_service.clear_completing(_id)
-
+                self.store_service.clear_completing(check)
             session.commit()
 
         return True
