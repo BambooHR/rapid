@@ -46,7 +46,7 @@ class CommitDal(object):
                 version = Version(commit_id=commit.id, name=data_version)
                 session.add(version)
                 session.commit()
-                return json.dumps(version.serialize())
+                return version.serialize()
         raise DatabaseException("Invalid commit", code=404)
 
     def get_versions(self, commit_identifier, latest_only=False):
