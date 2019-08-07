@@ -253,7 +253,7 @@ class APIRouter(Injectable):
     def create(self, endpoint):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
-            return Response(json.dumps(self._create_from_request(clazz, request.get_json())))
+            return Response(json.dumps(self._create_from_request(clazz, request.get_json())), content_type="application/json")
         return Response(status=404)
 
     def edit_object(self, endpoint, _id):
@@ -289,7 +289,7 @@ class APIRouter(Injectable):
 
     def finish_action_instance(self, _id):
         try:
-            return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, request.get_json())))
+            return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, request.get_json())), content_type='application/json')
         except Exception as exception:
             logger.error(exception)
             return Response("Something went wrong!", status=500)
