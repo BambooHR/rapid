@@ -26,7 +26,7 @@ from rapid.workflow.events.handlers.remote_notification_handler import RemoteNot
 
 class TestEventHandler(TestCase):
     def test_factory_get_event_handler_valid_type(self):
-        eq_(RemoteNotificationHandler.get_event_type(), EventHandlerFactory.get_event_handler(EventTypes.RemoteNotification).get_event_type())
+        eq_(RemoteNotificationHandler.get_event_type(), EventHandlerFactory.get_event_handler(EventTypes.RemoteNotification.value).get_event_type())
 
     def test_factory_get_invalid_handler_returns_none(self):
         eq_(None, EventHandlerFactory.get_event_handler(None))
@@ -132,3 +132,7 @@ class TestEventHandler(TestCase):
 
         self.assertEqual(1, handler_factory.get_event_handler.call_count)
         self.assertEqual(1, mock_handler.handle_event.call_count)
+
+    def test_get_event_handler_returns_properly(self):
+        handler = EventHandlerFactory.get_event_handler(EventTypes.RemoteNotification.value)
+        self.assertTrue(isinstance(handler, RemoteNotificationHandler))
