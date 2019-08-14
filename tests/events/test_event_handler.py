@@ -132,3 +132,7 @@ class TestEventHandler(TestCase):
 
         self.assertEqual(1, handler_factory.get_event_handler.call_count)
         self.assertEqual(1, mock_handler.handle_event.call_count)
+
+    def test_get_event_handler_returns_properly(self):
+        handler = EventHandlerFactory.get_event_handler(EventTypes.RemoteNotification)
+        self.assertTrue(isinstance(handler, RemoteNotificationHandler))
