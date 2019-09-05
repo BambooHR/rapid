@@ -38,7 +38,7 @@ class EventHandlerFactory(object):
                 module = __import__(name, fromlist=[modname])
                 class_name = ''.join([x.title() for x in modname.split('_')])
                 tmp = getattr(module, class_name)
-                if tmp.get_event_type().value == in_type:
+                if in_type in [tmp.get_event_type().value, tmp.get_event_type()]:
                     return tmp()
             except Exception:
                 pass
