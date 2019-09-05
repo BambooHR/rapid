@@ -136,3 +136,7 @@ class TestEventHandler(TestCase):
     def test_get_event_handler_returns_properly(self):
         handler = EventHandlerFactory.get_event_handler(EventTypes.RemoteNotification.value)
         self.assertTrue(isinstance(handler, RemoteNotificationHandler))
+
+    def test_get_event_handler_by_type_id(self):
+        handler = EventHandlerFactory.get_event_handler(1)
+        self.assertTrue(isinstance(handler, RemoteNotificationHandler))
