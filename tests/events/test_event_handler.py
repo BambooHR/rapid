@@ -121,11 +121,11 @@ class TestEventHandler(TestCase):
         key_string.assert_called_with('actionInstance', magicMock, '')
 
     @patch('rapid.workflow.events.event_dal.EventHandlerFactory')
-    def test_trigger_possible_event_utilizes_dict_structure(self, handler_factory):
+    def test_trigger_possible_event_utilizes_object_structure(self, handler_factory):
         mock_handler = MagicMock()
         handler_factory.get_event_handler.return_value = mock_handler
         mock_dal = MagicMock()
-        mock_dal.get_pipeline_events_by_pipeline_id.return_value = [{'event_type_id': 1}]
+        mock_dal.get_pipeline_events_by_pipeline_id.return_value = [MagicMock(event_type_id=1)]
 
         handler = EventDal(mock_dal)
         handler.trigger_possible_event(MagicMock(), None, None)
