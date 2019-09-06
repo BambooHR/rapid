@@ -68,8 +68,6 @@ class RemoteNotificationHandler(EventHandler):
             config_dict = {}
             try:
                 config_dict = json.loads(event.config)
-                for key, item in config_dict.items():
-                    config_dict[key] = str(item)
             except Exception:
                 pass
             config = self.prepare(config_dict, pipeline_instance, action_instance)
