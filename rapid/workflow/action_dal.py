@@ -14,6 +14,7 @@
  limitations under the License.
 """
 # pylint: disable=singleton-comparison,broad-except
+import logging
 import datetime
 import random
 
@@ -37,6 +38,7 @@ from rapid.workflow.data.models import ActionInstance, PipelineInstance, Pipelin
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.event_service import EventService
 
+logger = logging.getLogger('rapid')
 
 class ActionDal(GeneralDal, Injectable):
     __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None, 'status_dal': StatusDal}
@@ -180,23 +182,10 @@ class ActionDal(GeneralDal, Injectable):
             action_instance.end_date = datetime.datetime.utcnow()
 
             self.store_service.set_completing(_id)
-            
-            check = '{}__{}'.format(action_instance.pipeline_instance_id, action_instance.action_id)
-            if self.store_service.is_completing(check):
-                time.sleep(random.randint(3, 10) * 0.01)
-            self.store_service.set_completing(check)
-            try:
-                self._save_status(action_instance, session, post_data)
-                self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
-                self._save_stats(action_instance.pipeline_instance_id, session, post_data)
-                if self.qa_module is not None:
-                    self.qa_module.save_results(action_instance, session, post_data)
-            except Exception:
-                import traceback
-                traceback.print_exc()
-            finally:
-                self.store_service.clear_completing(_id)
-                self.store_service.clear_completing(check)
+            self._save_statistics(action_instance, session, post_data)
+            self._save_status_information(action_instance, session, post_data)
+            self.store_service.clear_completing(_id)
+
             session.commit()
 
         return True
@@ -289,6 +278,27 @@ class ActionDal(GeneralDal, Injectable):
             session.commit()
 
             self.event_service.trigger_possible_event(pipeline_instance, action_instance, session)
+
+    def _save_statistics(self, action_instance, session, post_data):
+        try:
+            self._save_parameters(action_instance.pipeline_instance_id, session, post_data)
+            self._save_stats(action_instance.pipeline_instance_id, session, post_data)
+            if self.qa_module is not None:
+                self.qa_module.save_results(action_instance, session, post_data)
+        except Exception as exception:
+            logger.error(exception)
+
+    def _save_status_information(self, action_instance, session, post_data):
+        check = '{}__{}'.format(action_instance.pipeline_instance_id, action_instance.action_id)
+        if self.store_service.is_completing(check):
+            time.sleep(random.randint(3, 10) * 0.01)
+
+        self.store_service.set_completing(check)
+        try:
+            self._save_status(action_instance, session, post_data)
+        except Exception as exception:
+            logger.error(exception)
+        self.store_service.clear_completing(check)
 
     def _save_parameters(self, pipeline_instance_id, session, post_data):
         if 'parameters' in post_data:
