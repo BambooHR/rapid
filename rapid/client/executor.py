@@ -309,7 +309,7 @@ class Executor(object):
         try:
             if isinstance(message, bytes):
                 message = message.decode('utf-8')
-            logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+            logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
         except AttributeError:
             #  Thread race condition on windows os will occasionally be None
             pass
