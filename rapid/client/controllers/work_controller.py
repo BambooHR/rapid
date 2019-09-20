@@ -195,7 +195,7 @@ class WorkController(BaseController):
         return Response(json.dumps({"message": "Cannot execute work at this time."}), status=423, content_type='application/json')
 
     def start_work(self):
-        executor = Executor(WorkRequest(json.loads(request.get_json())),
+        executor = Executor(WorkRequest(request.get_json()),
                             self.app.rapid_config.master_uri,
                             workspace=self.app.rapid_config.workspace,
                             quarantine=self.app.rapid_config.quarantine_directory,
