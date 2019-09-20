@@ -123,4 +123,4 @@ class TestClientObject(TestCase):
 
         client.send_work(work_request)
         eq_(1, requests.post.call_count)
-        requests.post.assert_called_with(client.get_work_uri(), json=json.dumps(work_request.__dict__), headers=client.get_headers(), verify=True, timeout=4)
+        requests.post.assert_called_with(client.get_work_uri(), json=work_request.__dict__, headers=client.get_headers(), verify=True, timeout=4)
