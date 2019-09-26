@@ -23,100 +23,61 @@ from rapid.lib.store_service import StoreService
 from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.communicator.master_communicator import MasterCommunicator
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
+from rapid.workflow.queue_handlers import QueueHandler
+from rapid.workflow.queue_handlers.docker_queue_handler import DockerQueueHandler
+from rapid.workflow.queue_handlers.standard_queue_handler import StandardQueueHandler
 from rapid.workflow.queue_service import QueueService
 
 logger = logging.getLogger("rapid")
 
 
 class Queue(Injectable):
-    __injectables__ = {'queue_service': QueueService, 'action_instance_service': ActionInstanceService}
+    __injectables__ = {'queue_service': QueueService, 'action_instance_service': ActionInstanceService, 'rapid_config': MasterConfiguration}
 
-    def __init__(self, queue_service, action_instance_service, flask_app):
+    def __init__(self, queue_service, action_instance_service, rapid_config, flask_app):
         """
         :param queue_service:
         :type queue_service:
         :param action_instance_service:
-        :type action_instance_service:ActionInstanceService
+        :type action_instance_service: rapid.workflow.action_instances_service.ActionInstanceService
         :param flask_app:
         :type flask_app:
+        :type rapid_config: rapid.master.master_configuration.MasterConfiguration
         """
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
         self.flask_app = flask_app
+        self.rapid_config = rapid_config
+        self.queue_handlers = []  # type: list[QueueHandler]
+        self.setup_queue_handlers()
+
+    def setup_queue_handlers(self):
+        # type: () -> None
+        self.queue_handlers.append(StandardQueueHandler(self.rapid_config, self.action_instance_service))
+        self.queue_handlers.append(DockerQueueHandler(self.rapid_config, self.action_instance_service))
 
     def process_queue(self, clients):
-        """
-        1. Find a client that can do the work based off the label
-          1a. If no label, any client that takes something that is not restricted to only its type
-          1b. If label, only clients that that have at least that label, or only restricted to that type
-          1c. First client to respond
-        2. Save who was assigned the work
-          2a. Store IP and set status to INPROGRESS
-        3. Send the work to the client
-          3a. If the client fails, unassign the work
-        """
-
-        if clients:
-            for work_request in self.queue_service.get_current_work():
-                clients_array = clients.values()
-                random.shuffle(clients_array)
-                pages = MasterCommunicator.find_available_clients(clients_array, work_request.grain, self.flask_app.rapid_config.verify_certs)
-                for client in pages:
-                    if client:
-                        if hasattr(client, 'sleep') and client.sleep:
-                            continue
-                        try:
-                            self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.INPROGRESS,
-                                                                                                                "start_date": datetime.datetime.utcnow(),
-                                                                                                                "assigned_to": "{}:{}".format(client.ip_address, client.port)})
-                            try:
-                                response = client.send_work(work_request, self.flask_app.rapid_config.verify_certs)
-                                if response.status_code == 423:
-                                    client.sleep = True
-                                    raise Exception("Client was busy, can't take work.")
-                                if response.status_code == 201:
-                                    if 'X-Exclude-Resource'.lower() in response.headers:
-                                        client.sleep = True
-                                else:
-                                    logger.info("Client didn't respond right: {} returned {}".format(client.ip_address, response.status_code))
-
-                                break  # Break, we sent work to the other client
-                            except Exception as exception:
-                                logger.error("Could not send work to worker: [{}]".format(str(exception)))
-                                self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
-                                                                                                                    "start_date": None,
-                                                                                                                    "assigned_to": None})
-                        except ConnectTimeout:
-                            # Should reset, this is a problem, server not there.
-                            self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
-                                                                                                                "start_date": None,
-                                                                                                                "assigned_to": None})
-                        except ReadTimeout as read_timeout:
-                            logger.error(read_timeout)
-                            logger.error(client.get_work_uri())
-                        except ConnectionError as error:
-                            logger.error(error)
-                            logger.error(client.get_work_uri())
-                        except Exception as exception:
-                            logger.error(exception)
-                            logger.error(client.get_work_uri())
+        for work_request in self.queue_service.get_current_work():
+            for queue_handler in self.queue_handlers:
+                if queue_handler.can_process_work_request(work_request):
+                    try:
+                        queue_handler.process_work_request(work_request, clients)
+                    except:
+                        # TODO - Still to implement
+                        import traceback
+                        traceback.print_exc()
+                    break
 
     def verify_still_working(self, clients):
-        if clients:
-            for action_instance in self.queue_service.get_verify_working(self.flask_app.rapid_config.queue_consider_late_time):
-                reset_action_instance = False
-                if ':' not in action_instance['assigned_to']:
-                    logger.info("Action Instance {} assigned without port: {}".format(action_instance['id'], action_instance['assigned_to']))
-                    reset_action_instance = True
-                else:
-                    ip_address, port = action_instance['assigned_to'].split(':')  # pylint: disable=unused-variable
-                    if ip_address in clients:
-                        client = clients[ip_address]
-                        reset_action_instance = MasterCommunicator.is_still_working_on(action_instance['id'], client,
-                                                                                       self.flask_app.rapid_config.verify_certs) is False
-
-                if reset_action_instance and not StoreService.is_completing(action_instance['id']):
-                    if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
-                        logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance.id, action_instance['assigned_to']))
-
+        for action_instance in self.queue_service.get_verify_working(self.rapid_config.queue_consider_late_time):
+            for queue_handler in self.queue_handlers:
+                if queue_handler.can_process_action_instance(action_instance):
+                    try:
+                        queue_handler.process_action_instance(action_instance, clients)
+                    except:
+                        # TODO - Still to implement
+                        import traceback
+                        traceback.print_exc()
+                    break
