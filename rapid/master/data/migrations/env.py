@@ -24,7 +24,7 @@ import sys
 sys.path.append(os.getcwd())
 
 # get the app
-from rapid.lib import db
+from rapid.lib import get_declarative_base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -38,8 +38,9 @@ config = context.config
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = db.Model.metadata
-
+target_metadata = get_declarative_base().metadata
+# print(target_metadata)
+# exit(1)
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")

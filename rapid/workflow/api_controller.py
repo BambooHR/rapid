@@ -79,6 +79,7 @@ class APIRouter(Injectable):
         flask_app.add_url_rule('/api/action_instances/<int:_id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
+        flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/work_request', 'action_instance_work_request', api_key_required(self.action_instance_work_request), methods=['GET']),
 
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/is_completing', 'action_instance_is_completing', api_key_required(self.action_instance_is_completing), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/clear_completing', 'action_instance_clear_completing', api_key_required(self.action_instance_clear_completing), methods=['GET'])
@@ -157,6 +158,10 @@ class APIRouter(Injectable):
     @json_response()
     def cancel_action_instance(self, action_instance_id):
         return self.workflow_service.cancel_action_instance(action_instance_id)
+
+    @json_response()
+    def action_instance_work_request(self, action_instance_id):
+        return self.workflow_service.get_work_request_by_action_instance_id(action_instance_id)
 
     def _get_clazz(self, endpoint):
         return self.class_map[endpoint]
