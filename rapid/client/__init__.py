@@ -50,11 +50,11 @@ def setup_logger(flask_app):
 
 def configure_application(flask_app, args):
     setup_status_route(flask_app)
-    setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
+    setup_logger(flask_app)
     load_parsers()
     register_controllers(flask_app)
-    if is_primary_worker():
+    if is_primary_worker() and not args.run:
         setup_client_register_thread()
         clean_workspace()
 
@@ -88,3 +88,19 @@ def setup_client_register_thread():
     thread.start()
 
 
+def run_action_instance(action_instance_id):
+    # type: (int) -> None
+    from rapid.client.executor import Executor
+    from rapid.lib.work_request import WorkRequest
+
+    communicator = ClientCommunicator(app.rapid_config.master_uri, app.rapid_config.quarantine_directory, app, app.rapid_config.verify_certs)  # pylint: dissable=no-member
+    communicator.register(app.rapid_config)
+    request_json = communicator.get_work_request_by_action_instance_id(action_instance_id)
+    executor = Executor(WorkRequest(request_json),
+                        app.rapid_config.master_uri,
+                        workspace=app.rapid_config.workspace,
+                        quarantine=app.rapid_config.quarantine_directory,
+                        verify_certs=app.rapid_config.verify_certs,
+                        rapid_config=app.rapid_config)
+    executor.verify_work_request()
+    executor.start(False)
