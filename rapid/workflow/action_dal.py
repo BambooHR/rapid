@@ -33,7 +33,7 @@ from rapid.lib import get_db_session
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
-    PipelineStatistics, Statistics, StageInstance, WorkflowInstance, ActionInstanceConfig
+    PipelineStatistics, Statistics, StageInstance, WorkflowInstance
 
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.event_service import EventService
@@ -72,7 +72,6 @@ class ActionDal(GeneralDal, Injectable):
         """
         for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
                 .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
-                .outerjoin(ActionInstanceConfig, ActionInstanceConfig.action_instance_id == ActionInstance.id) \
                 .filter(ActionInstance.status_id == StatusConstants.READY) \
                 .filter(ActionInstance.manual == 0) \
                 .filter(ActionInstance.pipeline_instance_id == PipelineInstance.id) \
@@ -102,11 +101,10 @@ class ActionDal(GeneralDal, Injectable):
             .where(action_alias.end_date == None)\
             .correlate(ActionInstance) \
             .correlate(WorkflowInstance)
-        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters, ActionInstanceConfig) \
+        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
                 .join(PipelineInstance, PipelineInstance.id == ActionInstance.pipeline_instance_id) \
                 .join(WorkflowInstance, WorkflowInstance.id == ActionInstance.workflow_instance_id) \
                 .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
-                .outerjoin(ActionInstanceConfig, ActionInstanceConfig.action_instance_id == ActionInstance.id) \
                 .filter(ActionInstance.status_id == StatusConstants.NEW) \
                 .filter(ActionInstance.manual == 0) \
                 .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
@@ -118,7 +116,7 @@ class ActionDal(GeneralDal, Injectable):
                           ActionInstance.slice.asc()).all():
             self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
 
-    def configure_work_request(self, action_instance, pipeline_parameters, work_requests, results, include_configuration=True):
+    def configure_work_request(self, action_instance, pipeline_parameters, work_requests, results):
         """
         :param action_instance:
         :type action_instance: ActionInstance
@@ -143,12 +141,6 @@ class ActionDal(GeneralDal, Injectable):
 
         if pipeline_parameters:
             work_request.environment[pipeline_parameters.parameter] = pipeline_parameters.value
-
-        if include_configuration:
-            try:
-                work_request.configuration = action_instance.configuration.configuration
-            except (TypeError, AttributeError):
-                pass
 
     def get_workable_work_requests(self):
         results = []
