@@ -33,7 +33,6 @@ class WorkRequest(object):
         self.pipeline_instance_id = None
         self.workflow_instance_id = None
         self.slice = None
-        self.configuration = None
 
         if data:
             self.prepare_to_send(data)
@@ -71,7 +70,7 @@ class WorkRequest(object):
                     if attr == '_grain':
                         for g_attr in ['_grain', 'grain']:
                             if hasattr(data_in, g_attr):
-                                setattr(self, attr, getattr(data_in, g_attr))
+                                setattr(self, '_grain', getattr(data_in, g_attr))
                     else:
                         setattr(self, attr, getattr(data_in, attr))
                 except (TypeError, AttributeError, KeyError):
