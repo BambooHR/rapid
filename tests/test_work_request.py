@@ -58,7 +58,7 @@ class TestWorkRequest(TestCase):
     def test_jsonify(self):
         work_request = WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2})
 
-        eq_(json.loads('{"executable": null, "environment": {}, "headers": {"content-type": "application/json"}, "cmd": null, "args": null, "slice": null, "workflow_instance_id": null, "action_instance_id": 1, "pipeline_instance_id": 2, "grain": null}'), json.loads(json.dumps(work_request, cls=WorkRequestEncoder)))
+        eq_(json.loads('{"executable": null, "environment": {}, "headers": {"content-type": "application/json"}, "cmd": null, "args": null, "slice": null, "workflow_instance_id": null, "action_instance_id": 1, "pipeline_instance_id": 2, "grain": null, "configuration": null}'), json.loads(json.dumps(work_request, cls=WorkRequestEncoder)))
 
     def test_get_state_is_not_the_same_object(self):
         work_request = WorkRequest({'action_instance_id': 1})
