@@ -43,11 +43,13 @@ class MasterConfiguration(Configuration):
 
         super(MasterConfiguration, self).__init__(file_name)
 
-        self.set_basic_auth(self.basic_auth)
-
     def set_basic_auth(self, basic_auth):
         if basic_auth:
             (self.basic_auth_user, self.basic_auth_pass) = basic_auth.split(':')
+
+    def _set_values(self, parser):
+        super(MasterConfiguration, self)._set_values(parser)
+        self.set_basic_auth(self.basic_auth)
 
     @property
     def section_mapping(self):
