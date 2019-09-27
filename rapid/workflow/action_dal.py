@@ -170,7 +170,7 @@ class ActionDal(GeneralDal, Injectable):
             for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
                     .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id)\
                     .filter(ActionInstance.id == action_instance_id).all():
-                self.configure_work_request(action_instance, pipeline_parameters, work_requests, results, include_configuration=False)
+                self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
             return results[0].__dict__
         return None
 
