@@ -24,7 +24,7 @@ from sqlalchemy import Boolean
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.constants import StatusConstants
 from rapid.workflow.action_dal import ActionDal
-from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance
+from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig
 
 
 class TestActionDal(TestCase):
@@ -42,7 +42,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_([ActionInstance, PipelineParameters, ActionInstance, PipelineParameters], session.query_args)
+        eq_([ActionInstance, PipelineParameters, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
