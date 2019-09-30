@@ -45,7 +45,6 @@ class ECSQueueHandler(ContainerHandler):
             if response_dict['failures'] or not response_dict['tasks']:
                 status_id = Constants.STATUS_FAILED
             elif response_dict['tasks']:
-                task_arn = None
                 for task in response_dict['tasks']:
                     assigned_to = '--ecs--{}'.format(task['taskArn'])
         except KeyError:
@@ -98,5 +97,4 @@ class ECSQueueHandler(ContainerHandler):
 
     def _load_aws_config(self):
         self._ecs_configuration = ECSConfiguration(self.rapid_config.ecs_config_file)
-        self._ecs_configuration.region_name = 'us-east-1'
         return boto3.client('ecs', **self._ecs_configuration.aws_credentials)
