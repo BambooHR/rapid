@@ -64,3 +64,6 @@ class ActionService(Injectable):
 
     def cancel_action_instance(self, action_instance_id):
         return self.action_dal.cancel_action_instance(action_instance_id)
+
+    def get_work_request_by_action_instance_id(self, action_instance_id):
+        return self.action_dal.get_work_request_by_action_instance_id(action_instance_id)

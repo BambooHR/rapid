@@ -37,6 +37,7 @@ logger = logging.getLogger("rapid")
 class ClientCommunicator(Communicator):
     DOWNLOAD_URI = '/get_file/{}'
     REGISTRATION_URI = "/client/register"
+    WORK_REQUEST_URI = "/api/action_instances/{}/work_request"
 
     def __init__(self, server_uri, quarantine_directory=None, flask_app=None, verify_certs=True, get_files_auth=None):
         """
@@ -52,6 +53,9 @@ class ClientCommunicator(Communicator):
         self.quarantine_directory = quarantine_directory
         self.verify_certs = verify_certs if not flask_app else flask_app.rapid_config.verify_certs
         self.get_files_auth = get_files_auth
+
+    def get_work_request_by_action_instance_id(self, action_instance_id):
+        return self._default_get(self.get_uri(self.WORK_REQUEST_URI.format(action_instance_id))).json()
 
     def get_file(self, directory, file_name, logger_in):
         """
@@ -174,6 +178,16 @@ class ClientCommunicator(Communicator):
         except (TypeError, AttributeError):
             pass
         return _headers
+
+    def _default_get(self, uri):
+        headers = {}
+        master_key = StoreService.get_master_key(self.flask_app)
+        headers = self._string_header_values(headers)
+
+        if master_key is not None:
+            headers['X-Rapidci-Api-Key'] = master_key
+
+        return requests.get(uri, headers=headers)
 
     def _default_send(self, uri, data, in_type='put', headers=None, in_json=None):
         master_key = StoreService.get_master_key(self.flask_app)

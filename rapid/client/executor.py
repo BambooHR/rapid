@@ -95,14 +95,17 @@ class Executor(object):
         logger.setLevel(logging.INFO)
         return logger
 
-    def start(self):
+    def start(self, threaded=True):
         """
         Spin off a process that will execute and run the given work request.
         :return:
         """
-        self.thread = threading.Thread(target=self._start_child_process)
-        self.thread.daemon = True
-        self.thread.start()
+        if threaded:
+            self.thread = threading.Thread(target=self._start_child_process)
+            self.thread.daemon = True
+            self.thread.start()
+        else:
+            self._start_child_process()
 
     def _start_child_process(self):
         """

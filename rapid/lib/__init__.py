@@ -87,6 +87,19 @@ def api_key_required(func):
     return decorated_view
 
 
+def basic_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        config = current_app.rapid_config
+        try:
+            if config.basic_auth_user == request.authorization['username'] and config.basic_auth_pass == request.authorization['password']:
+                return func(*args, **kwargs)
+        except (KeyError, TypeError):
+            pass
+        return Response("Invalid Authorization", status=401)
+    return wrapper
+
+
 def json_response(exception_class=None, message=None):
     """
     :param exception_class: str
@@ -113,6 +126,8 @@ def json_response(exception_class=None, message=None):
 
 def setup_logging(flask_app):
     handler = logging.StreamHandler()
+    if flask_app.rapid_config.log_file:
+        handler = logging.FileHandler(flask_app.rapid_config.log_file)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     # flask_app.logger.addHandler(handler)
