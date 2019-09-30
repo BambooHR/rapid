@@ -27,6 +27,17 @@ import logging
 logger = logging.getLogger("rapid")
 
 
+class ConfigurationDefaults(object):
+    def __init__(self, default=None, type_cast=str, delim=','):
+        self._default = default
+        self._type_cast = type_cast
+        self._delim = delim
+
+    @property
+    def defaults(self):
+        return [self._default, self._type_cast, self._delim]
+
+
 class Configuration(object):
     __metaclass__ = ABCMeta
 
@@ -40,7 +51,7 @@ class Configuration(object):
             if file_name:
                 if os.path.exists(file_name):
                     parser.read(file_name)
-        except Exception:  # pylint: disable=broad-except
+        except Exception as exception:  # pylint: disable=broad-except
             logger.info("Using defaults")
 
         self._set_values(parser)
@@ -49,7 +60,12 @@ class Configuration(object):
     @property
     @abstractmethod
     def section_mapping(self):
-        """type: () -> dict of string"""
+        """
+        Returns
+        -------
+        dict
+            dict of key, dict of key value mappings.
+        """
         yield
 
     def get_section(self, key):
@@ -61,7 +77,13 @@ class Configuration(object):
     def _set_values(self, parser):
         for section, map in self.section_mapping.items():
             for key, value in map.items():
-                self._set_parser_value(parser, section, key, *value)
+                try:
+                    self._set_parser_value(parser, section, key, *value.defaults)
+                except AttributeError:
+                    self._set_parser_value(parser, section, key, *value)
+
+    def _handle_normal_value(self, parser, key, section, type_cast):
+        setattr(self, key, type_cast(parser.get(section, key)))
 
     def _set_parser_value(self, parser, section, key, default=None, type_cast=str, delim=','):
         try:
@@ -70,6 +92,6 @@ class Configuration(object):
             elif type_cast == list:
                 setattr(self, key, parser.get(section, key).split(delim))
             else:
-                setattr(self, key, type_cast(parser.get(section, key)))
+                self._handle_normal_value(parser, key, section, type_cast)
         except Exception:  # pylint: disable=broad-except
             setattr(self, key, default)

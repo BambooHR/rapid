@@ -6,6 +6,11 @@ class QueueHandler(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, rapid_config):
+        """
+        Parameters
+        ----------
+        rapid_config: rapid.master.master_configuration.MasterConfiguration
+        """
         self.rapid_config = rapid_config
 
     @abstractmethod
