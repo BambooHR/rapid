@@ -14,8 +14,6 @@
  limitations under the License.
 """
 
-from rapid.lib.framework.ioc import IOC
-
 
 def register_controllers(app):
     from rapid.master.controllers.api.utility_controller import UtilityRouter
@@ -24,3 +22,6 @@ def register_controllers(app):
 
     from rapid.master.controllers.api.upgrade_controller import UpgradeController
     UpgradeController(app).configure_routing()
+
+    from rapid.master.controllers.api.files_controller import FilesController
+    FilesController(app).configure_routing()
