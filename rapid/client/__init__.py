@@ -50,11 +50,11 @@ def setup_logger(flask_app):
 
 def configure_application(flask_app, args):
     setup_status_route(flask_app)
-    setup_logger(flask_app)
     setup_config_from_file(flask_app, args)
+    setup_logger(flask_app)
     load_parsers()
     register_controllers(flask_app)
-    if is_primary_worker():
+    if is_primary_worker() and not args.run:
         setup_client_register_thread()
         clean_workspace()
 
@@ -88,3 +88,8 @@ def setup_client_register_thread():
     thread.start()
 
 
+def run_action_instance(action_instance_id):
+    # type: (int) -> None
+    from rapid.client.action_instance_runner import ActionInstanceRunner
+    runner = ActionInstanceRunner(app.rapid_config)
+    runner.run_action_instance(app, action_instance_id)

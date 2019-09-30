@@ -65,7 +65,7 @@ def _to_dict(exception):
     return _rv
 
 
-def configure_application(flask_app, args):
+def configure_application(flask_app, args, manual_db_upgrade=False):
     IOC.register_global('flask_app', flask_app)
     setup_config_from_file(flask_app, args)
     configure_db()
@@ -73,7 +73,14 @@ def configure_application(flask_app, args):
     configure_data_layer(flask_app)
     register_controllers(flask_app)
     setup_status_route(flask_app)
-    if is_primary_worker():
+
+    if args.static_file_dir:
+        flask_app.rapid_config.static_file_directory = args.static_file_dir
+
+    if args.basic_auth:
+        flask_app.rapid_config.set_basic_auth(args.basic_auth)
+
+    if is_primary_worker() and not manual_db_upgrade:
         if args.db_downgrade:
             run_db_downgrade(flask_app, args.db_downgrade)
         else:

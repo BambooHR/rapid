@@ -28,13 +28,16 @@ parser.add_argument('-l', '--logging', dest='mode_logging', help='Logging mode',
 parser.add_argument('-d', '--log_dir', dest='log_dir', help='Logging directory')
 parser.add_argument('-q', '--qa_dir', dest="qa_dir", help="QA Dir")
 parser.add_argument('-w', '--waitress', dest='waitress', action='store_true', help='Run under waitress')
+parser.add_argument('-r', '--run', dest='run', help='Run action_instance_id')
+parser.add_argument('--static_file_dir', dest='static_file_dir', help='Static File directory, default is current')
+parser.add_argument('--static_basic_auth', dest='basic_auth', help="Basic Auth for static file directory")
 parser.add_argument('--downgrade', dest='db_downgrade', help="Downgrade db for alembic")
 parser.add_argument('--create_db', action='store_true', dest='createdb', help="Create initial db")
 parser.add_argument('--create_migration', dest='migrate', help="Create Migration for alembic")
 parser.add_argument('--generate-config', dest='generate_config', help='Generate a default configuration', choices=['master', 'client'])
 args = parser.parse_args()
 
-if args.mode_client:
+if args.mode_client or args.run:
     from .client import app, configure_application
 elif args.mode_logging:
     from .log_server import app, configure_application
@@ -58,7 +61,8 @@ def setup():
     configure_application(app, args)
 
 
-setup()
+if not args.migrate:
+    setup()
 
 
 def main():
@@ -67,6 +71,7 @@ def main():
             app.db.create_all()  # pylint: disable=no-member
     if args.migrate:
         from .master import create_migration_script
+        configure_application(app, args, manual_db_upgrade=True)
         create_migration_script(app, args.migrate)
     elif args.db_downgrade:
         print("Downgraded.")
@@ -76,6 +81,9 @@ def main():
             serve(app, port=(int(args.port or app.rapid_config.port)))  # pylint: disable=no-member
         except ImportError:
             print("Failed to start up the server.")
+    elif args.run:
+        from rapid.client import run_action_instance
+        run_action_instance(args.run)
     else:
         app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))  # pylint: disable=no-member
 

@@ -163,6 +163,17 @@ class ActionDal(GeneralDal, Injectable):
                 results.append(action_instance.serialize())
         return results
 
+    def get_work_request_by_action_instance_id(self, action_instance_id):
+        for session in get_db_session():
+            work_requests = {}
+            results = []
+            for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+                    .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id)\
+                    .filter(ActionInstance.id == action_instance_id).all():
+                self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
+            return results[0].__dict__
+        return None
+
     def get_action_instance_by_id(self, _id, session=None):
         """
         Get ActionInstance by ID

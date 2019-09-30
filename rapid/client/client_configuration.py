@@ -42,6 +42,7 @@ class ClientConfiguration(Configuration):
         self.get_files_basic_auth = None
         self.use_ssl = None
         self.verify_certs = None
+        self.log_file = None
 
         super(ClientConfiguration, self).__init__(file_name)
         self.executors = []
@@ -66,7 +67,8 @@ class ClientConfiguration(Configuration):
             },
             'general': {
                 'use_ssl': [False, bool],
-                'verify_certs': [True, bool]
+                'verify_certs': [True, bool],
+                'log_file': [None]
             }
         }
 
