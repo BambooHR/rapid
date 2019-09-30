@@ -39,7 +39,6 @@ config = context.config
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = get_declarative_base().metadata
-# print(target_metadata)
 # exit(1)
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
