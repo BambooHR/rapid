@@ -42,6 +42,8 @@ class Action(BaseModel, Base):
     workflow_id = Column(Integer, ForeignKey('workflows.id'), nullable=False, index=True)
     pipeline_id = Column(Integer, ForeignKey("pipelines.id"), nullable=False, index=True)
 
+    configuration = relationship('ActionConfig', lazy='select', uselist=False, backref="parent")
+
     def convert_to_instance(self):
         action_instance = ActionInstance()
         action_instance.status_id = StatusConstants.NEW
@@ -54,6 +56,11 @@ class Action(BaseModel, Base):
                                                                        'manual',
                                                                        'callback_required',
                                                                        'grain'])
+
+
+class ActionConfig(BaseModel, Base):
+    action_id = Column(Integer, ForeignKey('actions.id'), nullable=False, index=True)
+    configuration = Column(Text, nullable=False)
 
 
 class ActionInstance(DateModel, BaseModel, Base):
@@ -73,9 +80,15 @@ class ActionInstance(DateModel, BaseModel, Base):
     workflow_instance_id = Column(Integer, ForeignKey('workflow_instances.id'), nullable=False, index=True)
     pipeline_instance_id = Column(Integer, ForeignKey("pipeline_instances.id"), nullable=False, index=True)
 
+    configuration = relationship('ActionInstanceConfig', lazy='select', uselist=False, backref="parent")
     status = relationship('Status')
     pipeline_instance = relationship('PipelineInstance')
     action = relationship('Action')
+
+
+class ActionInstanceConfig(BaseModel, Base):
+    action_instance_id = Column(Integer, ForeignKey('action_instances.id'), nullable=False, index=True)
+    configuration = Column(Text, nullable=False)
 
 
 class IntegrationType(BaseModel, Base):
