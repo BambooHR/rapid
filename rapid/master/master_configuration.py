@@ -36,6 +36,7 @@ class MasterConfiguration(Configuration):
         self.install_options = None
         self.verify_certs = None
         self.custom_reports_dir = None
+        self.aws_config_file = None
 
         super(MasterConfiguration, self).__init__(file_name)
 
@@ -61,5 +62,8 @@ class MasterConfiguration(Configuration):
                 'install_uri': ['https://pypi.python.org/pypi/'],
                 'install_options': [''],
                 'verify_certs': [True, bool]
+            },
+            'aws': {
+                'aws_config_file': [None]
             }
         }

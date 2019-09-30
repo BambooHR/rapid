@@ -1,33 +1,7 @@
-from abc import ABCMeta, abstractmethod
-
-from rapid.lib.work_request import WorkRequest
-
-
-class QueueHandler(object):
-    _GRAIN_SPLIT = '://'
-    __metaclass__ = ABCMeta
-
-    def __init__(self, rapid_config):
-        self.rapid_config = rapid_config
-
-    @abstractmethod
-    def process_work_request(self, work_request, clients):
-        yield
-
-    @abstractmethod
-    def can_process_work_request(self, work_request):
-        # type: (WorkRequest) -> bool
-        yield
-
-    @abstractmethod
-    def process_action_instance(self, action_instance, clients):
-        # type: (dict, list) -> bool
-        yield
-
-    @abstractmethod
-    def can_process_action_instance(self, action_instance):
-        # type: (dict) -> bool
-        yield
-
-    def _get_grain_type_split(self, grain):
-        return grain.split(self._GRAIN_SPLIT)
+def setup_queue_handlers():
+    from rapid.workflow.queue_handlers.docker_queue_handler import DockerQueueHandler
+    from rapid.workflow.queue_handlers.standard_queue_handler import StandardQueueHandler
+    try:
+        from rapid.workflow.queue_handlers.ecs_queue_handler import ECSQueueHandler
+    except ImportError:
+        pass

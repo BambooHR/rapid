@@ -10,11 +10,16 @@ from rapid.lib.features import Features
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
-from rapid.workflow.queue_handlers import QueueHandler
+from rapid.workflow.queue_handlers.container_handlers.container_handler import ContainerHandler
+from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.queue_handlers.docker_configuration import DockerConfiguration
 
 
-class DockerQueueHandler(QueueHandler):
+class DockerQueueHandler(ContainerHandler):
+    @property
+    def container_identifier(self):
+        return 'docker'
+
     def __init__(self, rapid_config, action_instance_service):
         # type: (MasterConfiguration, ActionInstanceService) -> None
         super(DockerQueueHandler, self).__init__(rapid_config)
@@ -23,14 +28,6 @@ class DockerQueueHandler(QueueHandler):
     def process_action_instance(self, action_instance, clients):
         # TODO - Still don't know how to verify this is working.
         pass
-
-    def can_process_action_instance(self, action_instance):
-        (grain_type, image) = self._get_grain_type_split(action_instance['grain'])
-        return grain_type == 'docker'
-
-    def can_process_work_request(self, work_request):
-        (grain_type, image) = self._get_grain_type_split(work_request.grain)
-        return grain_type == 'docker'
 
     def process_work_request(self, work_request, clients):
         # type: (WorkRequest, list) -> bool
@@ -48,7 +45,6 @@ class DockerQueueHandler(QueueHandler):
             'status_id': StatusConstants.INPROGRESS
         }
         try:
-            print(command)
             child_process = subprocess.Popen(command.split(' '), stderr=stderr, stdout=stdout)
             if child_process.poll():
                 raise OSError('Something went wrong')

@@ -13,21 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-# pylint: disable=broad-except
-import datetime
 import logging
-import random
-from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout  # pylint: disable=redefined-builtin
 
-from rapid.lib.store_service import StoreService
-from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
-from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
-from rapid.workflow.queue_handlers import QueueHandler
-from rapid.workflow.queue_handlers.docker_queue_handler import DockerQueueHandler
-from rapid.workflow.queue_handlers.standard_queue_handler import StandardQueueHandler
+from rapid.workflow.queue_handlers.queue_handler import QueueHandler
+from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
 from rapid.workflow.queue_service import QueueService
 
 logger = logging.getLogger("rapid")
@@ -55,8 +47,8 @@ class Queue(Injectable):
 
     def setup_queue_handlers(self):
         # type: () -> None
-        self.queue_handlers.append(StandardQueueHandler(self.rapid_config, self.action_instance_service))
-        self.queue_handlers.append(DockerQueueHandler(self.rapid_config, self.action_instance_service))
+        for handler in QueueHandlerConstants.queue_handler_classes:
+            self.queue_handlers.append(handler(self.rapid_config, self.action_instance_service))
 
     def process_queue(self, clients):
         for work_request in self.queue_service.get_current_work():

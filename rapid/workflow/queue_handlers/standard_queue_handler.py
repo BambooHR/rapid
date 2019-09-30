@@ -7,7 +7,8 @@ from requests import ConnectTimeout, ReadTimeout, ConnectionError
 from rapid.lib.constants import StatusConstants
 from rapid.lib.store_service import StoreService
 from rapid.master.communicator.master_communicator import MasterCommunicator
-from rapid.workflow.queue_handlers import QueueHandler
+from rapid.workflow.queue_handlers.queue_handler import QueueHandler
+
 logger = logging.getLogger('rapid')
 
 
