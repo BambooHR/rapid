@@ -79,3 +79,13 @@ class TestMasterConfiguration(TestCase):
 
         config._set_values(parser)
         eq_("repository:repository.clone_url\nssh_url:respository.ssh_url", config.github_default_parameters)
+
+    def test_basic_auth_consumption_and_setting(self):
+        config = MasterConfiguration()
+        parser = SafeConfigParser({'master': {'basic_auth': 'foo:bar'}})
+        parser.add_section('master')
+        parser.set('master', 'basic_auth', 'foo:bar')
+
+        config._set_values(parser)
+        eq_('foo', config.basic_auth_user)
+        eq_('bar', config.basic_auth_pass)

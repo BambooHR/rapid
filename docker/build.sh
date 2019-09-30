@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 type=${1:-'rapid-client'}
 

@@ -31,29 +31,63 @@ class TestWorkRequest(TestCase):
 
     def test_prepare_to_send_with_hash(self):
         work_request = WorkRequest()
-        work_request.prepare_to_send({'action_instance_id': 1, 'pipeline_instance_id': 2})
+        work_request.prepare_to_send({'action_instance_id': 1, 'pipeline_instance_id': 2, 'grain': 'foobar'})
 
         eq_(1, work_request.action_instance_id)
         eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar', work_request.grain)
+
+    def test_prepare_to_send_with_hash_with__grain(self):
+        work_request = WorkRequest()
+        work_request.prepare_to_send({'action_instance_id': 1, 'pipeline_instance_id': 2, '_grain': 'foobar'})
+
+        eq_(1, work_request.action_instance_id)
+        eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar', work_request.grain)
 
     def test_prepare_to_send_with_obj(self):
-        mock_obj = MagicMock(action_instance_id=1, pipeline_instance_id=2)
+        mock_obj = MagicMock(action_instance_id=1, pipeline_instance_id=2, grain='foobar1')
+        del mock_obj._grain
 
         work_request = WorkRequest()
         work_request.prepare_to_send(mock_obj)
 
         eq_(1, work_request.action_instance_id)
         eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar1', work_request.grain)
+
+    def test_prepare_to_send_with_obj_with__grain(self):
+        mock_obj = MagicMock(action_instance_id=1, pipeline_instance_id=2, _grain='foobar')
+        del mock_obj.grain
+
+        work_request = WorkRequest()
+        work_request.prepare_to_send(mock_obj)
+
+        eq_(1, work_request.action_instance_id)
+        eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar', work_request.grain)
 
     def test_generate_from_request(self):
         mock_obj = MagicMock()
-        mock_obj.json = {'action_instance_id': 1, 'pipeline_instance_id': 2}
+        mock_obj.json = {'action_instance_id': 1, 'pipeline_instance_id': 2, '_grain': 'foobar'}
 
         work_request = WorkRequest()
         work_request.generate_from_request(mock_obj)
 
         eq_(1, work_request.action_instance_id)
         eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar', work_request.grain)
+
+    def test_generate_from_request_with_grain(self):
+        mock_obj = MagicMock()
+        mock_obj.json = {'action_instance_id': 1, 'pipeline_instance_id': 2, 'grain': 'foobar'}
+
+        work_request = WorkRequest()
+        work_request.generate_from_request(mock_obj)
+
+        eq_(1, work_request.action_instance_id)
+        eq_(2, work_request.pipeline_instance_id)
+        eq_('foobar', work_request.grain)
 
     def test_jsonify(self):
         work_request = WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2})

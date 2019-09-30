@@ -293,6 +293,15 @@ class TestExecutor(TestCase):
 
         threading.Thread.assert_called_with(target=executor._start_child_process)
 
+    @patch('rapid.client.executor.threading')
+    @patch('rapid.client.executor.Executor._start_child_process')
+    def test_start_non_threaded(self, child_process, threading):
+        # rapid-unit: Rapid Client:Run Action Instance:Can run an action instance from command line.
+        executor = Executor(Mock(), 'bogus')
+        executor.start(False)
+        self.assertEqual(0, threading.Thread.call_count)
+        child_process.assert_called_with()
+
     def test_get_parameters_no_parameter_files(self):
         """
         rapid-unit: Rapid Client:Remote Execution:Parameters can be recorded and passed via pipeline_instance

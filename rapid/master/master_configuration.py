@@ -36,8 +36,20 @@ class MasterConfiguration(Configuration):
         self.install_options = None
         self.verify_certs = None
         self.custom_reports_dir = None
+        self.static_file_directory = None
+        self.basic_auth_user = None
+        self.basic_auth_pass = None
+        self.basic_auth = None
 
         super(MasterConfiguration, self).__init__(file_name)
+
+    def set_basic_auth(self, basic_auth):
+        if basic_auth:
+            (self.basic_auth_user, self.basic_auth_pass) = basic_auth.split(':')
+
+    def _set_values(self, parser):
+        super(MasterConfiguration, self)._set_values(parser)
+        self.set_basic_auth(self.basic_auth)
 
     @property
     def section_mapping(self):
@@ -49,17 +61,20 @@ class MasterConfiguration(Configuration):
                 'data_type': ['inmemory'],
                 'queue_manager': [True, bool],
                 'queue_consider_late_time': [10, float],
-                'register_api_key': [None],
+                'register_api_key': [str(uuid.uuid3(uuid.NAMESPACE_OID, 'RegisterApiKey!')).replace('-', '')],
                 'api_key': [str(uuid.uuid3(uuid.NAMESPACE_OID, 'MasterApiKey!')).replace('-', '')],
                 'github_user': [None],
                 'github_pass': [None],
                 'github_webhooks_key': [None],
                 'github_default_parameters': [None],
-                'custom_reports_dir': [None]
+                'custom_reports_dir': [None],
+                'static_file_directory': [None],
+                'basic_auth': [None]
             },
             'general': {
                 'install_uri': ['https://pypi.python.org/pypi/'],
                 'install_options': [''],
-                'verify_certs': [True, bool]
+                'verify_certs': [True, bool],
+                'log_file': [None]
             }
         }
