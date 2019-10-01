@@ -70,7 +70,7 @@ class ActionDal(GeneralDal, Injectable):
         :return:
         :rtype:
         """
-        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters) \
+        for action_instance, pipeline_parameters, action_instance_config in session.query(ActionInstance, PipelineParameters, ActionInstanceConfig) \
                 .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
                 .outerjoin(ActionInstanceConfig, ActionInstanceConfig.action_instance_id == ActionInstance.id) \
                 .filter(ActionInstance.status_id == StatusConstants.READY) \
