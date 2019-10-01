@@ -13,10 +13,18 @@ class ContainerHandler(QueueHandler):
 
     def can_process_work_request(self, work_request):
         # type: (WorkRequest) -> bool
-        (grain_type, image) = self._get_grain_type_split(work_request.grain)
-        return grain_type == self.container_identifier
+        try:
+            (grain_type, image) = self._get_grain_type_split(work_request.grain)
+            return grain_type == self.container_identifier
+        except ValueError:
+            pass
+        return False
 
     def can_process_action_instance(self, action_instance):
         # type: (dict) -> bool
-        (grain_type, image) = self._get_grain_type_split(action_instance['grain'])
-        return grain_type == self.container_identifier
+        try:
+            (grain_type, image) = self._get_grain_type_split(action_instance['grain'])
+            return grain_type == self.container_identifier
+        except (ValueError, KeyError):
+            pass
+        return False
