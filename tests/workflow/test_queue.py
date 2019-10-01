@@ -56,6 +56,47 @@ class TestQueue(TestCase):
         check.assert_called_with(bad_mock)
         mock_action_service.edit_action_instance.assert_called_with('1234', {'status_id': Constants.STATUS_FAILED})
 
+    @patch('rapid.workflow.queue.QueueHandlerConstants')
+    def test_verify_still_working_processes_appropriately(self, constants):
+        constants.queue_handler_classes = [TestQueueHandler]
+        mock_queue_service = Mock()
+        good_mock = {'foo': 'good'}
+        mock_queue_service.get_verify_working.return_value = [{'foo': 'bad'}, good_mock]
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock())
+
+        check = Mock()
+        check.side_effect = [False, True]
+
+        mock_handler = Mock()
+        queue.queue_handlers[0].check = check
+        queue.queue_handlers[0].process = mock_handler.mock
+
+        queue.verify_still_working([])
+        mock_handler.mock.assert_called_with(good_mock)
+
+    @patch('rapid.workflow.queue.QueueHandlerConstants')
+    @patch('rapid.workflow.queue.logger')
+    def test_verify_still_workign_when_exception_raises(self, logger, constants):
+        constants.queue_handler_classes = [TestQueueHandler]
+        mock_queue_service = Mock()
+        good_mock = {'foo': 'good', 'action_instance_id': '1234', 'id': '4321'}
+        bad_mock = {'foo': 'bad', 'id': 'foo_id'}
+        mock_queue_service.get_verify_working.return_value = [good_mock, bad_mock]
+        mock_action_service = Mock()
+        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock())
+
+        check = Mock()
+        check.side_effect = [True, False]
+
+        mock_handler = Mock()
+        mock_handler.mock.side_effect = Exception()
+
+        queue.queue_handlers[0].check = check
+        queue.queue_handlers[0].process = mock_handler.mock
+
+        queue.verify_still_working([])
+        check.assert_called_with(bad_mock)
+        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': Constants.STATUS_FAILED})
 
 class TestQueueHandler(QueueHandler):
     def __init__(self, rapid_config, action_instance_service):
@@ -71,7 +112,7 @@ class TestQueueHandler(QueueHandler):
         return self.check(work_request)
 
     def process_action_instance(self, action_instance, clients):
-        pass
+        self.process(action_instance)
 
     def can_process_action_instance(self, action_instance):
-        pass
+        return self.check(action_instance)
