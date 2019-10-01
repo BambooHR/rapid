@@ -8,10 +8,12 @@ from rapid.lib.constants import StatusConstants
 from rapid.lib.store_service import StoreService
 from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
+from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
 
 logger = logging.getLogger('rapid')
 
 
+@register_queue_handler
 class StandardQueueHandler(QueueHandler):
 
     def process_work_request(self, work_request, clients):

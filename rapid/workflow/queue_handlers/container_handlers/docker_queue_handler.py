@@ -13,8 +13,10 @@ from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.container_handlers.container_handler import ContainerHandler
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.queue_handlers.docker_configuration import DockerConfiguration
+from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
 
 
+@register_queue_handler
 class DockerQueueHandler(ContainerHandler):
     @property
     def container_identifier(self):

@@ -89,3 +89,14 @@ class TestMasterConfiguration(TestCase):
         config._set_values(parser)
         eq_('foo', config.basic_auth_user)
         eq_('bar', config.basic_auth_pass)
+
+    def test_ecs_config_file_parsing(self):
+        config = MasterConfiguration()
+        parser = SafeConfigParser()
+        parser.add_section('ecs')
+        parser.set('ecs', 'ecs_config_file', 'foobar')
+
+        config._set_values(parser)
+        self.assertEqual('foobar', config.ecs_config_file)
+
+

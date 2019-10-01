@@ -15,6 +15,7 @@
 """
 import logging
 
+from rapid.lib.constants import Constants
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
@@ -56,10 +57,9 @@ class Queue(Injectable):
                 if queue_handler.can_process_work_request(work_request):
                     try:
                         queue_handler.process_work_request(work_request, clients)
-                    except:
-                        # TODO - Still to implement
-                        import traceback
-                        traceback.print_exc()
+                    except Exception as exception:
+                        logger.exception(exception)
+                        self.action_instance_service.edit_action_instance(work_request.action_instance_id, {'status_id': Constants.STATUS_FAILED})
                     break
 
     def verify_still_working(self, clients):
@@ -68,8 +68,7 @@ class Queue(Injectable):
                 if queue_handler.can_process_action_instance(action_instance):
                     try:
                         queue_handler.process_action_instance(action_instance, clients)
-                    except:
-                        # TODO - Still to implement
-                        import traceback
-                        traceback.print_exc()
+                    except Exception as exception:
+                        logger.exception(exception)
+                        self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': Constants.STATUS_FAILED})
                     break
