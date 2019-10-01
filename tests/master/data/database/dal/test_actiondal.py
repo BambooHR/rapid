@@ -38,11 +38,12 @@ class TestActionDal(TestCase):
 
         action_instance = ActionInstance()
         pipeline_parameters = PipelineParameters()
-        session.results.append((action_instance, pipeline_parameters))
+        action_instance_config = ActionInstanceConfig()
+        session.results.append((action_instance, pipeline_parameters, action_instance_config))
 
         action_dal.get_workable_work_requests()
 
-        eq_([ActionInstance, PipelineParameters, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
+        eq_([ActionInstance, PipelineParameters, ActionInstanceConfig, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
@@ -53,7 +54,8 @@ class TestActionDal(TestCase):
 
         action_instance = ActionInstance()
         pipeline_parameters = PipelineParameters()
-        session.results.append((action_instance, pipeline_parameters))
+        action_instance_config = ActionInstanceConfig()
+        session.results.append((action_instance, pipeline_parameters, action_instance_config))
 
         action_dal.get_workable_work_requests()
 
@@ -71,7 +73,8 @@ class TestActionDal(TestCase):
         action_instance = Mock()
         action_instance.serialize.return_value = {}
         pipeline_parameters = Mock()
-        session.results.append((action_instance, pipeline_parameters))
+        action_configs = Mock()
+        session.results.append((action_instance, pipeline_parameters, action_configs))
 
         action_dal.get_workable_work_requests()
 
@@ -107,7 +110,8 @@ class TestActionDal(TestCase):
 
         action_instance = ActionInstance()
         pipeline_parameters = PipelineParameters()
-        session.results.append((action_instance, pipeline_parameters))
+        action_instance_config = ActionInstanceConfig()
+        session.results.append((action_instance, pipeline_parameters, action_instance_config))
 
         action_dal.get_workable_work_requests()
 
@@ -126,9 +130,11 @@ class TestActionDal(TestCase):
 
         action_instance = ActionInstance(id=1, pipeline_instance_id=1, workflow_instance_id=1)
         pipeline_parameters = PipelineParameters(parameter="foo", value="bar")
+        action_instance_config = ActionInstanceConfig()
         pipeline_parameters_2 = PipelineParameters(parameter="foo2", value="bar2")
-        session.results.append((action_instance, pipeline_parameters))
-        session.results.append((action_instance, pipeline_parameters_2))
+        action_instance_config2 = ActionInstanceConfig()
+        session.results.append((action_instance, pipeline_parameters, action_instance_config))
+        session.results.append((action_instance, pipeline_parameters_2, action_instance_config2))
 
         work_requests = action_dal.get_workable_work_requests()
         work_request = work_requests[0]
