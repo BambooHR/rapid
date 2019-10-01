@@ -102,7 +102,7 @@ class ActionDal(GeneralDal, Injectable):
             .where(action_alias.end_date == None)\
             .correlate(ActionInstance) \
             .correlate(WorkflowInstance)
-        for action_instance, pipeline_parameters in session.query(ActionInstance, PipelineParameters, ActionInstanceConfig) \
+        for action_instance, pipeline_parameters, action_instance_config in session.query(ActionInstance, PipelineParameters, ActionInstanceConfig) \
                 .join(PipelineInstance, PipelineInstance.id == ActionInstance.pipeline_instance_id) \
                 .join(WorkflowInstance, WorkflowInstance.id == ActionInstance.workflow_instance_id) \
                 .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
@@ -116,6 +116,7 @@ class ActionDal(GeneralDal, Injectable):
                           PipelineInstance.id.asc(),
                           ActionInstance.order.asc(),
                           ActionInstance.slice.asc()).all():
+            action_instance.configuration = action_instance_config
             self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
 
     def configure_work_request(self, action_instance, pipeline_parameters, work_requests, results, include_configuration=True):
