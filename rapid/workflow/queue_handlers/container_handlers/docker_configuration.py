@@ -16,7 +16,10 @@ class DockerConfiguration(object):
     def get_string_rep(self, work_request):
         # type: (WorkRequest) -> str
         string_list = []
-        for key, value in self.__dict__.items():
+        keys = self.__dict__.keys()
+        keys.sort()
+        for key in keys:
+            value = getattr(self, key)
             if isinstance(value, list):
                 string_list.extend(['--{}={}'.format(key, self._get_substituted_value(work_request, tmp_value)) for tmp_value in value])
             else:
