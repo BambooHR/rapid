@@ -6,6 +6,7 @@ import re
 import boto3
 
 from rapid.lib.constants import Constants
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
@@ -17,7 +18,8 @@ logger = logging.getLogger('rapid')
 
 
 @register_queue_handler
-class ECSQueueHandler(ContainerHandler):
+class ECSQueueHandler(ContainerHandler, Injectable):
+    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
     @property
     def container_identifier(self):
         return 'ecs'

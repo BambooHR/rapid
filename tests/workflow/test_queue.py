@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import patch, Mock
 
 from rapid.lib.constants import Constants
+from rapid.lib.framework.injectable import Injectable
 from rapid.workflow.queue import Queue
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 
@@ -11,7 +12,7 @@ class TestQueue(TestCase):
     @patch('rapid.workflow.queue.QueueHandlerConstants')
     def test_setup_queue_handlers_fires_correctly(self, constants):
         constants.queue_handler_classes = [TestQueueHandler]
-        test_queue = Queue(Mock(), Mock(), Mock(), Mock())
+        test_queue = Queue(Mock(), Mock(), Mock())
         self.assertTrue(isinstance(test_queue.queue_handlers[0], TestQueueHandler))
 
     @patch('rapid.workflow.queue.QueueHandlerConstants')
@@ -20,7 +21,7 @@ class TestQueue(TestCase):
         mock_queue_service = Mock()
         good_mock = Mock(foo='good')
         mock_queue_service.get_current_work.return_value = [Mock(foo='bad'), good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock(), Mock())
+        queue = Queue(mock_queue_service, Mock(), Mock())
 
         check = Mock()
         check.side_effect = [False, True]
@@ -41,7 +42,7 @@ class TestQueue(TestCase):
         bad_mock = Mock(foo='bad')
         mock_queue_service.get_current_work.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock())
+        queue = Queue(mock_queue_service, mock_action_service, Mock())
 
         check = Mock()
         check.side_effect = [True, False]
@@ -62,7 +63,7 @@ class TestQueue(TestCase):
         mock_queue_service = Mock()
         good_mock = {'foo': 'good'}
         mock_queue_service.get_verify_working.return_value = [{'foo': 'bad'}, good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock(), Mock())
+        queue = Queue(mock_queue_service, Mock(), Mock())
 
         check = Mock()
         check.side_effect = [False, True]
@@ -83,7 +84,7 @@ class TestQueue(TestCase):
         bad_mock = {'foo': 'bad', 'id': 'foo_id'}
         mock_queue_service.get_verify_working.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock())
+        queue = Queue(mock_queue_service, mock_action_service, Mock())
 
         check = Mock()
         check.side_effect = [True, False]
@@ -98,7 +99,10 @@ class TestQueue(TestCase):
         check.assert_called_with(bad_mock)
         mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': Constants.STATUS_FAILED})
 
-class TestQueueHandler(QueueHandler):
+
+class TestQueueHandler(QueueHandler, Injectable):
+    __injectables__ = {'rapid_config': Mock, 'action_instance_service': Mock}
+
     def __init__(self, rapid_config, action_instance_service):
         super(TestQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service

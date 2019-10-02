@@ -7,6 +7,7 @@ from yaml.scanner import ScannerError
 
 from rapid.lib.constants import StatusConstants
 from rapid.lib.features import Features
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
@@ -16,7 +17,9 @@ from rapid.workflow.queue_handlers.queue_handler_constants import register_queue
 
 
 @register_queue_handler
-class DockerQueueHandler(ContainerHandler):
+class DockerQueueHandler(ContainerHandler, Injectable):
+    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
+    
     @property
     def container_identifier(self):
         return 'docker'

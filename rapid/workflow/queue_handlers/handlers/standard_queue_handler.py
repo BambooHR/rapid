@@ -5,8 +5,10 @@ import random
 from requests import ConnectTimeout, ReadTimeout, ConnectionError
 
 from rapid.lib.constants import StatusConstants
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.store_service import StoreService
 from rapid.master.communicator.master_communicator import MasterCommunicator
+from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
 
@@ -14,7 +16,8 @@ logger = logging.getLogger('rapid')
 
 
 @register_queue_handler
-class StandardQueueHandler(QueueHandler):
+class StandardQueueHandler(QueueHandler, Injectable):
+    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
 
     def process_work_request(self, work_request, clients):
         """
@@ -69,6 +72,8 @@ class StandardQueueHandler(QueueHandler):
                 except Exception as exception:
                     logger.error(exception)
                     logger.error(client.get_work_uri())
+        pages = None
+        clients_array = None
 
     def __init__(self, rapid_config, action_instance_service):
         """

@@ -15,6 +15,7 @@
 """
 import logging
 
+from rapid.lib import IOC
 from rapid.lib.constants import Constants
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.master_configuration import MasterConfiguration
@@ -29,19 +30,16 @@ logger = logging.getLogger("rapid")
 class Queue(Injectable):
     __injectables__ = {'queue_service': QueueService, 'action_instance_service': ActionInstanceService, 'rapid_config': MasterConfiguration}
 
-    def __init__(self, queue_service, action_instance_service, rapid_config, flask_app):
+    def __init__(self, queue_service, action_instance_service, rapid_config):
         """
         :param queue_service:
         :type queue_service:
         :param action_instance_service:
         :type action_instance_service: rapid.workflow.action_instances_service.ActionInstanceService
-        :param flask_app:
-        :type flask_app:
         :type rapid_config: rapid.master.master_configuration.MasterConfiguration
         """
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
-        self.flask_app = flask_app
         self.rapid_config = rapid_config
         self.queue_handlers = []  # type: list[QueueHandler]
         self.setup_queue_handlers()
@@ -49,7 +47,7 @@ class Queue(Injectable):
     def setup_queue_handlers(self):
         # type: () -> None
         for handler in QueueHandlerConstants.queue_handler_classes:
-            self.queue_handlers.append(handler(self.rapid_config, self.action_instance_service))
+            self.queue_handlers.append(IOC.get_class_instance(handler))
 
     def process_queue(self, clients):
         for work_request in self.queue_service.get_current_work():

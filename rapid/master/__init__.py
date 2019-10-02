@@ -132,7 +132,7 @@ def run_queue(flask_app):
     from rapid.lib.store_service import StoreService
     from rapid.workflow.queue import Queue
     with flask_app.app_context():
-        queue = IOC.get_class_instance(Queue, flask_app)
+        queue = IOC.get_class_instance(Queue)
         while True:
             clients = []
             try:
