@@ -1,3 +1,4 @@
+import datetime
 import logging
 import json
 import re
@@ -39,7 +40,7 @@ class ECSQueueHandler(ContainerHandler):
         task_definition = self._get_task_definition(work_request)
 
         # 2. Set the status to INProgress
-        self._set_task_status(work_request.action_instance_id, Constants.STATUS_INPROGRESS)
+        self._set_task_status(work_request.action_instance_id, Constants.STATUS_INPROGRESS, start_date=datetime.datetime.utcnow())
 
         # 3. Run the task
         (status_id, assigned_to) = self._run_task(task_definition)
@@ -111,10 +112,13 @@ class ECSQueueHandler(ContainerHandler):
                 pass
         return current_pointer
 
-    def _set_task_status(self, action_instance_id, status_id, assigned_to=''):
-        # type: (int, int, str) -> None
+    def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None):
+        # type: (int, int, str, datetime.datetime or None) -> None
         assigned_to = '--ecs--{}'.format(assigned_to)
-        self.action_instance_service.edit_action_instance(action_instance_id, {'status_id': status_id, 'assigned_to': assigned_to})
+        changes = {'status_id': status_id, 'assigned_to': assigned_to}
+        if start_date:
+            changes['start_date'] = start_date
+        self.action_instance_service.edit_action_instance(action_instance_id, changes)
         
     def _run_task(self, task_definition):
         ecs_client = self._get_ecs_client()
