@@ -25,6 +25,4 @@ class TestStandardQueueHandler(TestCase):
         self.assertTrue(self.handler.can_process_action_instance({'grain': 'another'}))
 
     def test_can_process_action_instance_fails_with_split(self):
-        self.assertFalse(self.handler.can_process_work_request({'grain': 'a{}b'.format(self.handler._GRAIN_SPLIT)}))
-
-    
+        self.assertFalse(self.handler.can_process_action_instance({'grain': 'a{}b'.format(self.handler._GRAIN_SPLIT)}))

@@ -41,10 +41,12 @@ class TestECSQueueHandler(TestCase):
         testing = {'foo': {'bar': [1, 2, 3]}}
         self.assertEqual([1, 2, 3], self.handler._get_task_definition_key(testing, 'foo:dict.bar:list'))
 
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.datetime')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._set_task_status')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._run_task')
-    def test_process_work_request(self, run_task, set_task, get_task):
+    def test_process_work_request(self, run_task, set_task, get_task, mock_datetime):
+        mock_datetime.datetime.utcnow.return_value = 'foo'
         mock_work_request = Mock(action_instance_id=1, grain='foo')
         task_def = {'foo': 'bar'}
         run_task.return_value = (1, '--ecs--foo')
@@ -52,7 +54,7 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_work_request(mock_work_request, [])
         get_task.assert_called_with(mock_work_request)
         run_task.assert_called_with(task_def)
-        set_task.assert_has_calls([call(1, Constants.STATUS_INPROGRESS), call(1, 1, '--ecs--foo')])
+        set_task.assert_has_calls([call(1, Constants.STATUS_INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo')])
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_overridden_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._inject_work_request_parameters')

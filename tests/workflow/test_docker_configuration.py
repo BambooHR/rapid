@@ -21,7 +21,7 @@ class TestDockerConfiguration(TestCase):
         sub_value.side_effect = req_value
 
         config = DockerConfiguration(**{'add-host': 'host', 'env': ['environ', 'environ2'], 'volume': 'volu'})
-        self.assertEqual('--volume=volu --add-host=host --env=environ --env=environ2', config.get_string_rep(Mock()))
+        self.assertEqual('--volume=volu --add-host=host --env=environ --env=environ2'.split(' '), config.get_string_rep(Mock()).split(' '))
 
     def test_get_substituted_value(self):
         config = DockerConfiguration()
