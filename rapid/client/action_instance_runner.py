@@ -15,6 +15,8 @@ class ActionInstanceRunner(object):
     def run_action_instance(self, app, action_instance_id):
         # type: (Flask, int) -> None
         communicator = ClientCommunicator(self.client_config.master_uri, self.client_config.quarantine_directory, app, self.client_config.verify_certs)
+        self.client_config.is_single_use = True
+        
         communicator.register(self.client_config)
         request_json = communicator.get_work_request_by_action_instance_id(action_instance_id)
         executor = Executor(WorkRequest(request_json),
