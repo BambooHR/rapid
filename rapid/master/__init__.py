@@ -149,6 +149,11 @@ def run_queue(flask_app):
                 queue.verify_still_working(clients)
             except Exception as exception:
                 logger.error(exception)
+
+            filtered_clients = {name: client for name, client in clients.items() if not hasattr(client, 'no-longer-active')}
+
+            if filtered_clients != clients:
+                StoreService.save_clients(filtered_clients, flask_app)
             time.sleep(flask_app.rapid_config.queue_time)
 
 
