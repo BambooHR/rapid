@@ -30,4 +30,7 @@ def configure_module(flask_app):
     router = IOC.get_class_instance(APIRouter)
     router.register_url_rules(flask_app)
 
+    from rapid.workflow.queue_handlers import setup_queue_handlers
+    setup_queue_handlers()
+
 

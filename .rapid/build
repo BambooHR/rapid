@@ -138,6 +138,7 @@ function release_build() {
 
 function run_build() {
     export args=${1}
+    set_log_uri ''
     pending_status "Running CI..."
     setup
     run_tox_tests

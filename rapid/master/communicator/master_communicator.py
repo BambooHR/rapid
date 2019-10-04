@@ -50,7 +50,7 @@ class MasterCommunicator(Communicator):
     def filter_clients(clients, grain):
         tmp = []
         for client in clients:
-            if client.can_handle(grain):
+            if client.can_handle(grain) and not hasattr(client, 'no-longer-active'):
                 tmp.append(client)
         return tmp
 
@@ -65,6 +65,8 @@ class MasterCommunicator(Communicator):
             if response.status_code == 423:
                 client.sleep = True
                 return client
+        except ConnectionError:
+            setattr(client, 'no-longer-active', True)
         except Exception:
             import traceback
             traceback.print_exc()

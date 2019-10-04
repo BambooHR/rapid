@@ -40,6 +40,7 @@ class MasterConfiguration(Configuration):
         self.basic_auth_user = None
         self.basic_auth_pass = None
         self.basic_auth = None
+        self.ecs_config_file = None
 
         super(MasterConfiguration, self).__init__(file_name)
 
@@ -76,5 +77,8 @@ class MasterConfiguration(Configuration):
                 'install_options': [''],
                 'verify_certs': [True, bool],
                 'log_file': [None]
+            },
+            'ecs': {
+                'ecs_config_file': [None]
             }
         }
