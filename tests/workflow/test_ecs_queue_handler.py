@@ -48,7 +48,7 @@ class TestECSQueueHandler(TestCase):
     def test_process_work_request(self, run_task, set_task, get_task, mock_datetime):
         mock_datetime.datetime.utcnow.return_value = 'foo'
         mock_work_request = Mock(action_instance_id=1, grain='foo')
-        task_def = {'foo': 'bar'}
+        task_def = {'foo': 'bar', 'taskDefinition': 'fake'}
         run_task.return_value = (1, '--ecs--foo')
         get_task.return_value = task_def
         self.handler.process_work_request(mock_work_request, [])
