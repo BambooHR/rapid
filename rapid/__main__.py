@@ -29,6 +29,7 @@ parser.add_argument('-d', '--log_dir', dest='log_dir', help='Logging directory')
 parser.add_argument('-q', '--qa_dir', dest="qa_dir", help="QA Dir")
 parser.add_argument('-w', '--waitress', dest='waitress', action='store_true', help='Run under waitress')
 parser.add_argument('-r', '--run', dest='run', help='Run action_instance_id')
+parser.add_argument('-u', '--upgrade', dest='upgrade', action='store_true', help="Upgrade to master's version")
 parser.add_argument('--static_file_dir', dest='static_file_dir', help='Static File directory, default is current')
 parser.add_argument('--static_basic_auth', dest='basic_auth', help="Basic Auth for static file directory")
 parser.add_argument('--downgrade', dest='db_downgrade', help="Downgrade db for alembic")
@@ -37,7 +38,7 @@ parser.add_argument('--create_migration', dest='migrate', help="Create Migration
 parser.add_argument('--generate-config', dest='generate_config', help='Generate a default configuration', choices=['master', 'client'])
 args = parser.parse_args()
 
-if args.mode_client or args.run:
+if args.mode_client or args.run or args.upgrade:
     from .client import app, configure_application
 elif args.mode_logging:
     from .log_server import app, configure_application
@@ -84,6 +85,9 @@ def main():
     elif args.run:
         from rapid.client import run_action_instance
         run_action_instance(args.run)
+    elif args.upgrade:
+        from rapid.client import upgrade_rapid
+        upgrade_rapid()
     else:
         app.run('0.0.0.0', port=int(args.port or app.rapid_config.port))  # pylint: disable=no-member
 

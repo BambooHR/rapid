@@ -17,7 +17,7 @@ class TestClientModule(TestCase):
     def test_configure_application_register_thread(self, cw, scrt, ipw, rc, lp, sl, scff, ssr):
         ipw.return_value = True
         mock_app = Mock()
-        args = Mock(run=False)
+        args = Mock(run=False, upgrade=False)
         configure_application(mock_app, args)
         cw.assert_called_with()
         scrt.assert_called_with()
