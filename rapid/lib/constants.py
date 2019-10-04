@@ -39,6 +39,10 @@ class Constants(object):
         return "{}{}".format(Constants.API_PREFIX, uri)
 
 
+class HeaderConstants(object):
+    SINGLE_USE = 'X-Single-Use'
+
+
 class ModuleConstants(object):
     QA_MODULE = "qa_module"
     WORKFLOW_MODULE = "workflow_module"

@@ -44,6 +44,8 @@ class ClientConfiguration(Configuration):
         self.verify_certs = None
         self.log_file = None
 
+        self.is_single_use = False
+
         super(ClientConfiguration, self).__init__(file_name)
         self.executors = []
 
