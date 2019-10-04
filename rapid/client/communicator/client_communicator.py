@@ -24,6 +24,8 @@ from requests.exceptions import ConnectionError  # pylint: disable=redefined-bui
 from rapid.client.client_configuration import ClientConfiguration
 from rapid.lib.constants import HeaderConstants
 
+from rapid.lib.version import Version
+
 try:
     import simplejson as json
 except ImportError:
@@ -165,11 +167,11 @@ class ClientCommunicator(Communicator):
                 headers[HeaderConstants.SINGLE_USE] = 'true'
         except (AttributeError, TypeError):
             pass
-        
+
         return headers
 
     def register(self, client_config):
-        # type: (ClientConfiguration) -> None
+        # type: (ClientConfiguration) -> dict
         try:
             response = self._default_send(self.get_uri(self.REGISTRATION_URI),
                                           self._get_register_post_data(client_config),
@@ -178,6 +180,7 @@ class ClientCommunicator(Communicator):
 
             if response.status_code == 200 and 'X-Rapidci-Master-Key' in response.headers:
                 StoreService.save_master_key(self.flask_app, response.headers['X-Rapidci-Master-Key'])
+            return {'master_version': response.headers[Version.HEADER]}
         except Exception as exception:
             logger.error(exception)
 

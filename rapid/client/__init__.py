@@ -54,7 +54,7 @@ def configure_application(flask_app, args):
     setup_logger(flask_app)
     load_parsers()
     register_controllers(flask_app)
-    if is_primary_worker() and not args.run:
+    if is_primary_worker() and not args.run and not args.upgrade:
         setup_client_register_thread()
         clean_workspace()
 
@@ -93,3 +93,9 @@ def run_action_instance(action_instance_id):
     from rapid.client.action_instance_runner import ActionInstanceRunner
     runner = ActionInstanceRunner(app.rapid_config)
     runner.run_action_instance(app, action_instance_id)
+
+
+def upgrade_rapid():
+    from rapid.client.client_upgrader import ClientUpgrader
+    upgrader = ClientUpgrader(app.rapid_config)
+    upgrader.upgrade(app)

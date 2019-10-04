@@ -21,6 +21,7 @@ from rapid.lib import api_key_required, json_response
 from rapid.lib.constants import HeaderConstants
 from rapid.lib.exceptions import HttpException, VcsNotFoundException
 from rapid.lib.store_service import StoreService
+from rapid.lib.version import Version
 from rapid.master.communicator.client import Client
 from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.action_dal import ActionDal
@@ -112,7 +113,9 @@ class UtilityRouter(object):
                     self.store_client(remote_addr, client)
 
                 return Response(jsonpickle.encode(client),
-                                content_type='application/json', headers={'Content-Type': 'application/json', 'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key})
+                                content_type='application/json', headers={'Content-Type': 'application/json',
+                                                                          'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key,
+                                                                          Version.HEADER: Version.get_version()})
         raise Exception('Not Allowed')
 
     def store_client(self, remote_addr, definition):
