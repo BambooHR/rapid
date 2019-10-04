@@ -41,14 +41,19 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         # 1. Get the Task Definition
         task_definition = self._get_task_definition(work_request)
 
-        # 2. Set the status to INProgress
-        self._set_task_status(work_request.action_instance_id, Constants.STATUS_INPROGRESS, start_date=datetime.datetime.utcnow())
+        if 'taskDefinition' not in task_definition:
+            self._set_task_status(work_request.action_instance_id, Constants.STATUS_FAILED,
+                                  start_date=datetime.datetime.utcnow(),
+                                  end_date=datetime.datetime.utcnow())
+        else:
+            # 2. Set the status to INProgress
+            self._set_task_status(work_request.action_instance_id, Constants.STATUS_INPROGRESS, start_date=datetime.datetime.utcnow())
 
-        # 3. Run the task
-        (status_id, assigned_to) = self._run_task(task_definition)
+            # 3. Run the task
+            (status_id, assigned_to) = self._run_task(task_definition)
 
-        # 4. Report the status
-        self._set_task_status(work_request.action_instance_id, status_id, assigned_to)
+            # 4. Report the status
+            self._set_task_status(work_request.action_instance_id, status_id, assigned_to)
         return True
 
     def process_action_instance(self, action_instance, clients):
@@ -114,12 +119,14 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 pass
         return current_pointer
 
-    def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None):
-        # type: (int, int, str, datetime.datetime or None) -> None
+    def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None, end_date=None):
+        # type: (int, int, str, datetime.datetime or None, datetime.datetime or None) -> None
         assigned_to = '--ecs--{}'.format(assigned_to)
         changes = {'status_id': status_id, 'assigned_to': assigned_to}
         if start_date:
             changes['start_date'] = start_date
+        if end_date:
+            changes['end_date'] = end_date
         self.action_instance_service.edit_action_instance(action_instance_id, changes)
         
     def _run_task(self, task_definition):
