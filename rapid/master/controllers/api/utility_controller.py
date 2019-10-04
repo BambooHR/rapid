@@ -18,6 +18,7 @@ import jsonpickle
 from flask import request, Response
 
 from rapid.lib import api_key_required, json_response
+from rapid.lib.constants import HeaderConstants
 from rapid.lib.exceptions import HttpException, VcsNotFoundException
 from rapid.lib.store_service import StoreService
 from rapid.master.communicator.client import Client
@@ -106,7 +107,9 @@ class UtilityRouter(object):
                 if not api_key:
                     raise Exception("NO API KEY!")
                 client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
-                self.store_client(remote_addr, client)
+
+                if HeaderConstants.SINGLE_USE not in in_request.headers:
+                    self.store_client(remote_addr, client)
 
                 return Response(jsonpickle.encode(client),
                                 content_type='application/json', headers={'Content-Type': 'application/json', 'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key})

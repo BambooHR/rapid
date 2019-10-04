@@ -23,6 +23,7 @@ class Constants(object):
     STATUS_OVERRIDE = "__RAPIDCI_STATUSES__:"
     STATUS_FAILED = 'FAILED'
     STATUS_SUCCESS = 'SUCCESS'
+    STATUS_INPROGRESS = 'INPROGRESS'
     STATUS_SKIPPED = 'SKIPPED'
     PARAMETERS = "__RAPIDCI_PARAMETERS__:"
     STATS = "__RAPIDCI_STATS__:"
@@ -37,6 +38,10 @@ class Constants(object):
     @staticmethod
     def get_api_url(uri):
         return "{}{}".format(Constants.API_PREFIX, uri)
+
+
+class HeaderConstants(object):
+    SINGLE_USE = 'X-Single-Use'
 
 
 class ModuleConstants(object):

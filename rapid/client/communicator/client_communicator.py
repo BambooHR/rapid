@@ -21,6 +21,9 @@ import logging
 import requests
 from requests.exceptions import ConnectionError  # pylint: disable=redefined-builtin
 
+from rapid.client.client_configuration import ClientConfiguration
+from rapid.lib.constants import HeaderConstants
+
 try:
     import simplejson as json
 except ImportError:
@@ -156,9 +159,17 @@ class ClientCommunicator(Communicator):
                    'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else ''}
         if hasattr(client_config, 'use_ssl') and client_config.use_ssl:
             headers['X-Is-Ssl'] = 'true'
+
+        try:
+            if client_config.is_single_use:
+                headers[HeaderConstants.SINGLE_USE] = 'true'
+        except (AttributeError, TypeError):
+            pass
+        
         return headers
 
     def register(self, client_config):
+        # type: (ClientConfiguration) -> None
         try:
             response = self._default_send(self.get_uri(self.REGISTRATION_URI),
                                           self._get_register_post_data(client_config),
