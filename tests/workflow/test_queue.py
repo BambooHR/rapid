@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import patch, Mock
 
-from rapid.lib.constants import Constants
+from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.workflow.queue import Queue
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
@@ -55,7 +55,7 @@ class TestQueue(TestCase):
 
         queue.process_queue([])
         check.assert_called_with(bad_mock)
-        mock_action_service.edit_action_instance.assert_called_with('1234', {'status_id': Constants.STATUS_FAILED})
+        mock_action_service.edit_action_instance.assert_called_with('1234', {'status_id': StatusConstants.FAILED})
 
     @patch('rapid.workflow.queue.QueueHandlerConstants')
     def test_verify_still_working_processes_appropriately(self, constants):
@@ -97,7 +97,7 @@ class TestQueue(TestCase):
 
         queue.verify_still_working([])
         check.assert_called_with(bad_mock)
-        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': Constants.STATUS_FAILED})
+        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': StatusConstants.FAILED})
 
 
 class TestQueueHandler(QueueHandler, Injectable):
