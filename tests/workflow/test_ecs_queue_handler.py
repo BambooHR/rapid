@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from mock import Mock, patch, call
 
-from rapid.lib.constants import Constants
+from rapid.lib.constants import Constants, StatusConstants
 from rapid.workflow.queue_handlers.handlers.ecs_queue_handler import ECSQueueHandler
 from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
 
@@ -45,7 +45,8 @@ class TestECSQueueHandler(TestCase):
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._set_task_status')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._run_task')
-    def test_process_work_request(self, run_task, set_task, get_task, mock_datetime):
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
+    def test_process_work_request(self, client, run_task, set_task, get_task, mock_datetime):
         mock_datetime.datetime.utcnow.return_value = 'foo'
         mock_work_request = Mock(action_instance_id=1, grain='foo')
         task_def = {'foo': 'bar', 'taskDefinition': 'fake'}
@@ -54,7 +55,7 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_work_request(mock_work_request, [])
         get_task.assert_called_with(mock_work_request)
         run_task.assert_called_with(task_def)
-        set_task.assert_has_calls([call(1, Constants.STATUS_INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo')])
+        set_task.assert_has_calls([call(1, StatusConstants.INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo')])
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_overridden_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._inject_work_request_parameters')
@@ -111,7 +112,7 @@ class TestECSQueueHandler(TestCase):
         (status_id, assigned_to) = self.handler._run_task({'some': 'thing'})
 
         mock.run_task.assert_called_with(some='thing')
-        self.assertEqual(Constants.STATUS_FAILED, status_id)
+        self.assertEqual(StatusConstants.FAILED, status_id)
         self.assertEqual('', assigned_to)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
@@ -121,7 +122,7 @@ class TestECSQueueHandler(TestCase):
         mock.run_task.return_value = {'failures': [], 'tasks': []}
         (status_id, assigned_to) = self.handler._run_task({'some': 'thing'})
 
-        self.assertEqual(Constants.STATUS_FAILED, status_id)
+        self.assertEqual(StatusConstants.FAILED, status_id)
         self.assertEqual('', assigned_to)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
@@ -131,7 +132,7 @@ class TestECSQueueHandler(TestCase):
         mock.run_task.return_value = {'failures': [], 'tasks': [{'taskArn': '12345'}]}
         (status_id, assigned_to) = self.handler._run_task({'some': 'thing'})
 
-        self.assertEqual(Constants.STATUS_INPROGRESS, status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, status_id)
         self.assertEqual('--ecs--12345', assigned_to)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.re')

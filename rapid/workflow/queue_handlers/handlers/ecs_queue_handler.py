@@ -5,7 +5,7 @@ import re
 
 import boto3
 
-from rapid.lib.constants import Constants
+from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
@@ -39,15 +39,17 @@ class ECSQueueHandler(ContainerHandler, Injectable):
     def process_work_request(self, work_request, clients):
         # type: (WorkRequest, list) -> bool
         # 1. Get the Task Definition
+        self._get_ecs_client()  # load the client and get ready to use the taskDefinition
+
         task_definition = self._get_task_definition(work_request)
 
         if 'taskDefinition' not in task_definition:
-            self._set_task_status(work_request.action_instance_id, Constants.STATUS_FAILED,
+            self._set_task_status(work_request.action_instance_id, StatusConstants.FAILED,
                                   start_date=datetime.datetime.utcnow(),
                                   end_date=datetime.datetime.utcnow())
         else:
             # 2. Set the status to INProgress
-            self._set_task_status(work_request.action_instance_id, Constants.STATUS_INPROGRESS, start_date=datetime.datetime.utcnow())
+            self._set_task_status(work_request.action_instance_id, StatusConstants.INPROGRESS, start_date=datetime.datetime.utcnow())
 
             # 3. Run the task
             (status_id, assigned_to) = self._run_task(task_definition)
@@ -132,16 +134,16 @@ class ECSQueueHandler(ContainerHandler, Injectable):
     def _run_task(self, task_definition):
         ecs_client = self._get_ecs_client()
         response_dict = ecs_client.run_task(**task_definition)
-        status_id = Constants.STATUS_INPROGRESS
+        status_id = StatusConstants.INPROGRESS
         assigned_to = ''
         try:
             if response_dict['failures'] or not response_dict['tasks']:
-                status_id = Constants.STATUS_FAILED
+                status_id = StatusConstants.FAILED
             elif response_dict['tasks']:
                 for task in response_dict['tasks']:
                     assigned_to = '--ecs--{}'.format(task['taskArn'])
         except KeyError:
-            status_id = Constants.STATUS_FAILED
+            status_id = StatusConstants.FAILED
         return status_id, assigned_to
 
     @staticmethod
