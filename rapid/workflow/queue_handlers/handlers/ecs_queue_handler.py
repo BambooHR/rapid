@@ -78,9 +78,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         # type: (str) -> dict
         task_definition = self._ecs_configuration.default_task_definition
         try:
-            for key, value in json.loads(configuration).items():
-                task_definition[key] = value
-        except ValueError as exception:
+            if configuration:
+                for key, value in json.loads(configuration).items():
+                    task_definition[key] = value
+        except (ValueError, TypeError) as exception:
             logger.exception(exception)
 
         return task_definition
