@@ -88,14 +88,15 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _inject_work_request_parameters(self, task_definition, work_request):
         # type:(dict, WorkRequest) -> None
-        environment_default = [{'name': 'action_instance_id', 'value': work_request.action_instance_id},
-                               {'name': 'workflow_instance_id', 'value': work_request.workflow_instance_id},
-                               {'name': 'pipeline_instance_id', 'value': work_request.pipeline_instance_id}]
-
-        container_overrides = self._get_task_definition_key(task_definition, 'overrides:dict.containerOverrides:[]')
-        container_overrides.append({"environment": environment_default})
+        environment_default = [{'name': 'action_instance_id', 'value': str(work_request.action_instance_id)},
+                               {'name': 'workflow_instance_id', 'value': str(work_request.workflow_instance_id)},
+                               {'name': 'pipeline_instance_id', 'value': str(work_request.pipeline_instance_id)}]
 
         (grain_type, image) = self._get_grain_type_split(work_request.grain)
+        container_overrides = self._get_task_definition_key(task_definition, 'overrides:dict.containerOverrides:list')
+        container_overrides.append({"name": image.split(':')[0],
+                                    "environment": environment_default})
+
         task_definition['taskDefinition'] = self._get_substituted_value(work_request, image.strip())
         task_definition['count'] = 1
 
