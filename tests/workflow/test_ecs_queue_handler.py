@@ -2,7 +2,9 @@ from unittest import TestCase
 
 from mock import Mock, patch, call
 
-from rapid.lib.constants import Constants, StatusConstants
+from rapid.lib.constants import StatusConstants
+from rapid.lib.work_request import WorkRequest
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.queue_handlers.handlers.ecs_queue_handler import ECSQueueHandler
 from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
 
@@ -88,10 +90,10 @@ class TestECSQueueHandler(TestCase):
         get_sub_value.return_value = 'sub_value'
 
         self.handler._inject_work_request_parameters(task_definition, work_request)
-        self.assertEqual([{'environment': [{'name': 'action_instance_id', 'value': 1},
-                                           {'name': 'workflow_instance_id', 'value': 2},
-                                           {'name': 'pipeline_instance_id', 'value': 3}]}], mock_check)
-        task_definition_key.assert_called_with(task_definition, 'overrides:dict.containerOverrides:[]')
+        self.assertEqual([{'name': 'bar\n', 'environment': [{'name': 'action_instance_id', 'value': '1'},
+                                                            {'name': 'workflow_instance_id', 'value': '2'},
+                                                            {'name': 'pipeline_instance_id', 'value': '3'}]}], mock_check)
+        task_definition_key.assert_called_with(task_definition, 'overrides:dict.containerOverrides:list')
         get_grain_split.assert_called_with('foo')
         get_sub_value.assert_called_with(work_request, 'bar')
         self.assertEqual('sub_value', task_definition['taskDefinition'])

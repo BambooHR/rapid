@@ -33,4 +33,4 @@ class QueueHandler(object):
         yield
 
     def _get_grain_type_split(self, grain):
-        return grain.split(self._GRAIN_SPLIT)
+        return grain.split(self._GRAIN_SPLIT, 1)
