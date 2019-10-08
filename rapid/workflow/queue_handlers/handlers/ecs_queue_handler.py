@@ -125,7 +125,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None, end_date=None):
         # type: (int, int, str, datetime.datetime or None, datetime.datetime or None) -> None
-        assigned_to = '--ecs--{}'.format(assigned_to)
+        assigned_to = '--ecs--{}'.format(assigned_to) if '--ecs--' not in assigned_to else assigned_to
         changes = {'status_id': status_id, 'assigned_to': assigned_to}
         if start_date:
             changes['start_date'] = start_date

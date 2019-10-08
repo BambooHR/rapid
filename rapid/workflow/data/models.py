@@ -71,7 +71,7 @@ class ActionInstance(DateModel, BaseModel, Base):
     manual = Column(Boolean, nullable=False, default=False)
     callback_required = Column(Boolean, nullable=False, default=False)
     grain = Column(String(100))
-    assigned_to = Column(String(75), nullable=True)
+    assigned_to = Column(String(150), nullable=True)
     slice = Column(String(25), default='')
 
     status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
