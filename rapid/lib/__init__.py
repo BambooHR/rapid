@@ -126,7 +126,7 @@ def json_response(exception_class=None, message=None):
 
 def setup_logging(flask_app):
     handler = logging.StreamHandler()
-    if flask_app.rapid_config.log_file:
+    if hasattr(flask_app.rapid_config, 'log_file') and flask_app.rapid_config.log_file:
         handler = logging.FileHandler(flask_app.rapid_config.log_file)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
