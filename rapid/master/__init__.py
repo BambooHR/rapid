@@ -38,6 +38,7 @@ logger = logging.getLogger("rapid")
 logger.addHandler(handler)  # pylint: disable=no-member
 logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
+
 # pylint: disable=broad-except
 
 # Debug Code for sniffing out nplus one code!
@@ -92,7 +93,7 @@ def create_migration_script(flask_app, migration):
     create_revision(flask_app, migration)
 
 
-def configure_sub_modules(flask_app, args): # pylint: disable=unused-argument
+def configure_sub_modules(flask_app, args):  # pylint: disable=unused-argument
     logger.info("------- Searching for and starting modules --------")
     modules = {}
     logger.info("-- Registering IOC Globals")
@@ -132,12 +133,12 @@ def run_queue(flask_app):
     from rapid.lib.store_service import StoreService
     from rapid.workflow.queue import Queue
     with flask_app.app_context():
-        queue = IOC.get_class_instance(Queue)
+        queue = IOC.get_class_instance(Queue)  # type: Queue
         while True:
             clients = []
             try:
                 clients = StoreService.get_clients(flask_app)
-            except Exception:
+            except:
                 pass
 
             try:
@@ -150,11 +151,13 @@ def run_queue(flask_app):
             except Exception as exception:
                 logger.error(exception)
 
+            try:
+                queue.reconcile_pipeline_instances()
+            except Exception as exception:
+                logger.error(exception)
+
             filtered_clients = {name: client for name, client in clients.items() if not hasattr(client, 'no-longer-active')}
 
             if filtered_clients != clients:
                 StoreService.save_clients(filtered_clients, flask_app)
             time.sleep(flask_app.rapid_config.queue_time)
-
-
-
