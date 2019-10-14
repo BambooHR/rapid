@@ -70,3 +70,6 @@ class Queue(Injectable):
                         logger.exception(exception)
                         self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': StatusConstants.FAILED})
                     break
+
+    def reconcile_pipeline_instances(self):
+        self.action_instance_service.reconcile_pipeline_instances()

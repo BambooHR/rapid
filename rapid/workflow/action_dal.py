@@ -19,7 +19,8 @@ import datetime
 import random
 
 import time
-from sqlalchemy import func
+
+from sqlalchemy import func, and_, asc
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql.expression import exists
 
@@ -266,6 +267,60 @@ class ActionDal(GeneralDal, Injectable):
             else:
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
+
+    def reconcile_pipeline_instances(self):
+        for session in get_db_session():
+            action_query = session.query(ActionInstance).filter(ActionInstance.status_id <= StatusConstants.INPROGRESS).subquery('ai')
+            pipeline_instances = session.query(PipelineInstance).filter(PipelineInstance.status_id == StatusConstants.INPROGRESS)\
+                .filter(~exists().where(PipelineInstance.id == action_query.c.pipeline_instance_id))
+            
+            for pipeline_instance in pipeline_instances.all():
+                query = session.query(StageInstance, WorkflowInstance, ActionInstance).filter(and_(
+                    StageInstance.pipeline_instance_id == pipeline_instance.id,
+                    WorkflowInstance.stage_instance_id == StageInstance.id,
+                    ActionInstance.workflow_instance_id == WorkflowInstance.id
+                )).order_by(asc(StageInstance.id), asc(WorkflowInstance.id), asc(ActionInstance.id))
+
+                highest_status_id = None
+                highest_end_date = None
+                mappings = {}
+                for stage_instance, workflow_instance, action_instance in query.all():
+                    if stage_instance.end_date is None:
+                        work_name = 'workflow_{}'.format(workflow_instance.id)
+                        if work_name not in mappings:
+                            mappings[work_name] = {'obj': workflow_instance,
+                                                   'highest_status_id': workflow_instance.status_id,
+                                                   'highest_end_date': workflow_instance.end_date,
+                                                   'stage_obj': stage_instance}
+
+                        if workflow_instance.end_date is None:
+                            workflow_check = mappings[work_name]
+                            if workflow_check['highest_status_id'] < action_instance.status_id:
+                                workflow_check['highest_status_id'] = action_instance.status_id
+
+                            if workflow_check['highest_end_date'] is None or workflow_check['highest_end_date'] < action_instance.end_date:
+                                workflow_check['highest_end_date'] = action_instance.end_date
+
+                for mapping in mappings.values():
+                    workflow = mapping['obj']
+                    stage = mapping['stage_obj']
+
+                    workflow.status_id = mapping['highest_status_id']
+                    workflow.end_date = mapping['highest_end_date']
+                    
+                    if stage.status_id < workflow.status_id:
+                        stage.status_id = workflow.status_id
+                        highest_status_id = stage.status_id
+
+                    if stage.end_date is None or stage.end_date < workflow.end_date:
+                        stage.end_date = workflow.end_date
+                        highest_end_date = stage.end_date
+
+                logger.info("Reconciling PipelineInstance: {}".format(pipeline_instance.id))
+                pipeline_instance.status_id = highest_status_id
+                pipeline_instance.end_date = highest_end_date
+
+            session.commit()
 
     def _wait_for_parallel_calculations(self, action_instance):
         is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)

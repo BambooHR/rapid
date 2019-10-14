@@ -45,3 +45,6 @@ class ActionInstanceService(Injectable):
 
     def callback(self, _id, post_data):
         return self.action_dal.callback_action_instance(_id, post_data)
+
+    def reconcile_pipeline_instances(self):
+        return self.action_dal.reconcile_pipeline_instances()
