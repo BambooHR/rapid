@@ -14,6 +14,7 @@
  limitations under the License.
 """
 import logging
+from datetime import datetime
 
 from rapid.lib import IOC
 from rapid.lib.constants import Constants, StatusConstants
@@ -56,8 +57,10 @@ class Queue(Injectable):
                     try:
                         queue_handler.process_work_request(work_request, clients)
                     except Exception as exception:
-                        logger.exception(exception)
-                        self.action_instance_service.edit_action_instance(work_request.action_instance_id, {'status_id': StatusConstants.FAILED})
+                        logger.error(exception)
+                        self.action_instance_service.edit_action_instance(work_request.action_instance_id, {'status_id': StatusConstants.FAILED,
+                                                                                                            'start_date': datetime.utcnow(),
+                                                                                                            'end_date': datetime.utcnow()})
                     break
 
     def verify_still_working(self, clients):
@@ -67,8 +70,10 @@ class Queue(Injectable):
                     try:
                         queue_handler.process_action_instance(action_instance, clients)
                     except Exception as exception:
-                        logger.exception(exception)
-                        self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': StatusConstants.FAILED})
+                        logger.error(exception)
+                        self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': StatusConstants.FAILED,
+                                                                                                  'start_date': datetime.utcnow(),
+                                                                                                  'end_date': datetime.utcnow()})
                     break
 
     def reconcile_pipeline_instances(self):

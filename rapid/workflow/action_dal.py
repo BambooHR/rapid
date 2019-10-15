@@ -298,7 +298,8 @@ class ActionDal(GeneralDal, Injectable):
                             if workflow_check['highest_status_id'] < action_instance.status_id:
                                 workflow_check['highest_status_id'] = action_instance.status_id
 
-                            if workflow_check['highest_end_date'] is None or workflow_check['highest_end_date'] < action_instance.end_date:
+                            if (workflow_check['highest_end_date'] is None and action_instance.end_date) or \
+                               (action_instance.end_date and workflow_check['highest_end_date'] < action_instance.end_date):
                                 workflow_check['highest_end_date'] = action_instance.end_date
 
                 for mapping in mappings.values():
@@ -312,7 +313,7 @@ class ActionDal(GeneralDal, Injectable):
                         stage.status_id = workflow.status_id
                         highest_status_id = stage.status_id
 
-                    if stage.end_date is None or stage.end_date < workflow.end_date:
+                    if (stage.end_date is None and workflow.end_date) or (workflow.end_date and stage.end_date < workflow.end_date):
                         stage.end_date = workflow.end_date
                         highest_end_date = stage.end_date
 
