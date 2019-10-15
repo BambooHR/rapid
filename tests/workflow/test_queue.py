@@ -35,7 +35,8 @@ class TestQueue(TestCase):
 
     @patch('rapid.workflow.queue.QueueHandlerConstants')
     @patch('rapid.workflow.queue.logger')
-    def test_process_queue_will_process_when_exception_raises(self, logger, constants):
+    @patch('rapid.workflow.queue.datetime')
+    def test_process_queue_will_process_when_exception_raises(self, datetime, logger, constants):
         constants.queue_handler_classes = [TestQueueHandler]
         mock_queue_service = Mock()
         good_mock = Mock(foo='good', action_instance_id='1234')
@@ -53,9 +54,13 @@ class TestQueue(TestCase):
         queue.queue_handlers[0].check = check
         queue.queue_handlers[0].process = mock_handler.mock
 
+        datetime.utcnow.return_value = 'something_wicked_this_way_comes'
+
         queue.process_queue([])
         check.assert_called_with(bad_mock)
-        mock_action_service.edit_action_instance.assert_called_with('1234', {'status_id': StatusConstants.FAILED})
+        mock_action_service.edit_action_instance.assert_called_with('1234', {'status_id': StatusConstants.FAILED,
+                                                                             'start_date': 'something_wicked_this_way_comes',
+                                                                             'end_date': 'something_wicked_this_way_comes'})
 
     @patch('rapid.workflow.queue.QueueHandlerConstants')
     def test_verify_still_working_processes_appropriately(self, constants):
@@ -77,7 +82,8 @@ class TestQueue(TestCase):
 
     @patch('rapid.workflow.queue.QueueHandlerConstants')
     @patch('rapid.workflow.queue.logger')
-    def test_verify_still_workign_when_exception_raises(self, logger, constants):
+    @patch('rapid.workflow.queue.datetime')
+    def test_verify_still_workign_when_exception_raises(self, datetime, logger, constants):
         constants.queue_handler_classes = [TestQueueHandler]
         mock_queue_service = Mock()
         good_mock = {'foo': 'good', 'action_instance_id': '1234', 'id': '4321'}
@@ -95,9 +101,13 @@ class TestQueue(TestCase):
         queue.queue_handlers[0].check = check
         queue.queue_handlers[0].process = mock_handler.mock
 
+        datetime.utcnow.return_value = 'you_did_what?'
+
         queue.verify_still_working([])
         check.assert_called_with(bad_mock)
-        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': StatusConstants.FAILED})
+        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': StatusConstants.FAILED,
+                                                                             'start_date': 'you_did_what?',
+                                                                             'end_date': 'you_did_what?'})
 
 
 class TestQueueHandler(QueueHandler, Injectable):
