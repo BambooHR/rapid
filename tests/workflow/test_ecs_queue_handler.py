@@ -57,7 +57,7 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_work_request(mock_work_request, [])
         get_task.assert_called_with(mock_work_request)
         run_task.assert_called_with(task_def)
-        set_task.assert_has_calls([call(1, StatusConstants.INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo')])
+        set_task.assert_has_calls([call(1, StatusConstants.INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo', end_date=None)])
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_overridden_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._inject_work_request_parameters')
@@ -107,7 +107,8 @@ class TestECSQueueHandler(TestCase):
         self.action_instance_service.edit_action_instance.assert_called_with(1, {'status_id': 12345, 'assigned_to': '--ecs--'})
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
-    def test_run_task_failed_when_ecs_run_task_fails_with_failures(self, ecs_client):
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_run_task_failed_when_ecs_run_task_fails_with_failures(self, logger, ecs_client):
         mock = Mock()
         ecs_client.return_value = mock
         mock.run_task.return_value = {'failures': [1], 'tasks': [1]}
@@ -118,13 +119,15 @@ class TestECSQueueHandler(TestCase):
         self.assertEqual('', assigned_to)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
-    def test_run_task_failed_when_ecs_run_task_fails_with_empty_tasks(self, ecs_client):
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_run_task_reset_when_ecs_run_task_no_failures_with_empty_tasks(self, logger, ecs_client):
         mock = Mock()
         ecs_client.return_value = mock
         mock.run_task.return_value = {'failures': [], 'tasks': []}
         (status_id, assigned_to) = self.handler._run_task({'some': 'thing'})
 
-        self.assertEqual(StatusConstants.FAILED, status_id)
+        self.assertEqual(1, logger.error.call_count)
+        self.assertEqual(StatusConstants.READY, status_id)
         self.assertEqual('', assigned_to)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
