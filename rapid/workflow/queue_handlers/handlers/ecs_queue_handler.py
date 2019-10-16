@@ -4,6 +4,7 @@ import json
 import re
 
 import boto3
+from botocore.exceptions import ClientError
 
 from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
@@ -55,15 +56,26 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             (status_id, assigned_to) = self._run_task(task_definition)
 
             # 4. Report the status
-            self._set_task_status(work_request.action_instance_id, status_id, assigned_to)
+            end_date = None
+            if status_id > StatusConstants.INPROGRESS:
+                end_date = datetime.datetime.utcnow()
+
+            if status_id == StatusConstants.READY:
+                self.action_instance_service.reset_action_instance(work_request.action_instance_id)
+            else:
+                self._set_task_status(work_request.action_instance_id, status_id, assigned_to, end_date=end_date)
         return True
 
     def process_action_instance(self, action_instance, clients):
-        # TODO - Still to do for handling long running requests.
         # 1. Look at the assigned_to for the specific ARN
+        arn = action_instance['assigned_to'].split('--ecs--')[1]
+        task = self._get_ecs_client().list_tasks(cluster=self._ecs_configuration.default_task_definition['cluster'],
+                                                 desiredStatus='RUNNING')
+
         # 2. Verify that the assigned_to ARN is running.
-        # 3. Introduce a time limit?
-        pass
+        if arn in task['taskArns']:
+            return True
+        self.action_instance_service.reset_action_instance(action_instance['id'])
 
     ########################
     # Private Methods
@@ -135,17 +147,23 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         
     def _run_task(self, task_definition):
         ecs_client = self._get_ecs_client()
-        response_dict = ecs_client.run_task(**task_definition)
         status_id = StatusConstants.INPROGRESS
         assigned_to = ''
         try:
-            if response_dict['failures'] or not response_dict['tasks']:
+            response_dict = ecs_client.run_task(**task_definition)
+            if response_dict['failures']:
+                logger.error("Failures were found: [{}]".format(response_dict['failures']))
                 status_id = StatusConstants.FAILED
+            elif not response_dict['tasks']:
+                logger.error("No tasks were returned")
+                status_id = StatusConstants.READY
             elif response_dict['tasks']:
                 for task in response_dict['tasks']:
                     assigned_to = '--ecs--{}'.format(task['taskArn'])
-        except KeyError:
+        except (KeyError, ClientError) as exception:
+            logger.error(exception)
             status_id = StatusConstants.FAILED
+        
         return status_id, assigned_to
 
     @staticmethod
