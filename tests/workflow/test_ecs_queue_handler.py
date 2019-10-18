@@ -112,7 +112,7 @@ class TestECSQueueHandler(TestCase):
     def test_run_task_failed_when_ecs_run_task_fails_with_failures(self, logger, ecs_client):
         mock = Mock()
         ecs_client.return_value = mock
-        mock.run_task.return_value = {'failures': [1], 'tasks': [1]}
+        mock.run_task.return_value = {'failures': [{}], 'tasks': [1]}
         (status_id, assigned_to) = self.handler._run_task({'some': 'thing'})
 
         mock.run_task.assert_called_with(some='thing')
