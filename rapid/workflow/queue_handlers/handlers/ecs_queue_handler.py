@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from rapid.lib.constants import StatusConstants
+from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
@@ -53,7 +54,11 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             self._set_task_status(work_request.action_instance_id, StatusConstants.INPROGRESS, start_date=datetime.datetime.utcnow())
 
             # 3. Run the task
-            (status_id, assigned_to) = self._run_task(task_definition)
+            try:
+                (status_id, assigned_to) = self._run_task(task_definition)
+            except ECSLimitReached:
+                self.action_instance_service.reset_action_instance(work_request.action_instance_id)
+                raise QueueHandlerShouldSleep('ECS Limit was reached.')
 
             # 4. Report the status
             end_date = None
@@ -153,7 +158,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             response_dict = ecs_client.run_task(**task_definition)
             if response_dict['failures']:
                 logger.error("Failures were found: [{}]".format(response_dict['failures']))
-                status_id = StatusConstants.FAILED
+                if 'limit' in response_dict['failures'][0]['reason']:
+                    raise ECSLimitReached(response_dict['failures'][0]['reason'])
+                else:
+                    status_id = StatusConstants.FAILED
             elif not response_dict['tasks']:
                 logger.error("No tasks were returned")
                 status_id = StatusConstants.READY

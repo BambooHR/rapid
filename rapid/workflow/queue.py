@@ -18,6 +18,7 @@ from datetime import datetime
 
 from rapid.lib import IOC
 from rapid.lib.constants import Constants, StatusConstants
+from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
@@ -51,11 +52,17 @@ class Queue(Injectable):
             self.queue_handlers.append(IOC.get_class_instance(handler))
 
     def process_queue(self, clients):
+        sleeping_queue_handlers = []
         for work_request in self.queue_service.get_current_work():
             for queue_handler in self.queue_handlers:
+                if queue_handler in sleeping_queue_handlers:
+                    continue
+
                 if queue_handler.can_process_work_request(work_request):
                     try:
                         queue_handler.process_work_request(work_request, clients)
+                    except QueueHandlerShouldSleep:
+                        sleeping_queue_handlers.append(queue_handler)
                     except Exception as exception:
                         logger.error(exception)
                         self.action_instance_service.edit_action_instance(work_request.action_instance_id, {'status_id': StatusConstants.FAILED,
