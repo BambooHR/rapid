@@ -168,7 +168,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             elif response_dict['tasks']:
                 for task in response_dict['tasks']:
                     assigned_to = '--ecs--{}'.format(task['taskArn'])
-        except (KeyError, ClientError) as exception:
+        except (KeyError, ClientError, IndexError) as exception:
             logger.error(exception)
             status_id = StatusConstants.FAILED
         

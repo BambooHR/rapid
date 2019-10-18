@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import Mock, patch, call
 
 from rapid.lib.constants import StatusConstants
+from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.queue_handlers.handlers.ecs_queue_handler import ECSQueueHandler
@@ -175,3 +176,38 @@ class TestECSQueueHandler(TestCase):
         config.return_value = Mock(aws_credentials={'some': 'BOO!'})
         self.handler._load_aws_config()
         boto3.client.assert_called_with('ecs', some='BOO!')
+
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_task_definition')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._set_task_status')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._run_task')
+    def test_process_work_handles_sleep_exception(self, run_task, set_task_status, task_definition, ecs_client):
+        task_definition.return_value = {'taskDefinition': Mock()}
+        run_task.side_effect = ECSLimitReached
+
+        with self.assertRaises(QueueHandlerShouldSleep):
+            self.handler.process_work_request(Mock(action_instance_id=1), [])
+
+        self.action_instance_service.reset_action_instance.assert_called_with(1)
+
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_run_task_handles_limit_failures_right(self, logger, client):
+        mock_client = Mock()
+        mock_client.run_task.return_value = {'failures': [{'reason': "You've reached the limit on the number of tasks you can run concurrently"}]}
+
+        client.return_value = mock_client
+
+        with self.assertRaises(ECSLimitReached):
+            self.handler._run_task({})
+
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_run_task_fails_if_reason_not_given(self, logger, client):
+        mock_client = Mock()
+        mock_client.run_task.return_value = {'failures': [{}]}
+
+        client.return_value = mock_client
+
+        (status_id, assigned_to) = self.handler._run_task({})
+        self.assertEqual(StatusConstants.FAILED, status_id)

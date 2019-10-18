@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import patch, Mock
 
 from rapid.lib.constants import StatusConstants
+from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
 from rapid.workflow.queue import Queue
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
@@ -108,6 +109,22 @@ class TestQueue(TestCase):
         mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': StatusConstants.FAILED,
                                                                              'start_date': 'you_did_what?',
                                                                              'end_date': 'you_did_what?'})
+
+    @patch('rapid.workflow.queue.QueueHandlerConstants')
+    def test_queue_handlers_can_be_slept(self, constants):
+        mock_handler = Mock(handler=1)
+        mock_handler.can_process_work_request.return_value = True
+        mock_handler.process_work_request.side_effect = QueueHandlerShouldSleep
+
+        mock_queue_service = Mock()
+        mock_queue_service.get_current_work.return_value = [1, 2]
+
+        queue = Queue(mock_queue_service, Mock(), Mock())
+        queue.queue_handlers = [mock_handler]
+        queue.process_queue([])
+
+        self.assertEqual(1, mock_handler.can_process_work_request.call_count)
+        mock_handler.can_process_work_request.assert_called_with(1)
 
 
 class TestQueueHandler(QueueHandler, Injectable):
