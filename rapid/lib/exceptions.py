@@ -73,3 +73,11 @@ class InvalidObjectException(HttpException):
 
 class InvalidReportException(HttpException):
     pass
+
+
+class ECSLimitReached(Exception):
+    pass
+
+
+class QueueHandlerShouldSleep(Exception):
+    pass
