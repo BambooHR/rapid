@@ -17,7 +17,9 @@ logger = logging.getLogger('rapid')
 
 @register_queue_handler
 class StandardQueueHandler(QueueHandler, Injectable):
-    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
+    __injectables__ = {'rapid_config': None,
+                       'action_instance_service': ActionInstanceService,
+                       'flask_app': None}
 
     def process_work_request(self, work_request, clients):
         """
@@ -75,15 +77,17 @@ class StandardQueueHandler(QueueHandler, Injectable):
         pages = None
         clients_array = None
 
-    def __init__(self, rapid_config, action_instance_service):
+    def __init__(self, rapid_config, action_instance_service, flask_app):
         """
         :param rapid_config:
         :type rapid_config: rapid.master.master_configuration.MasterConfiguration
         :param action_instance_service:
         :type action_instance_service: rapid.workflow.action_instance_service.ActionInstanceService
+        :type flask_app: Flask
         """
         super(StandardQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service
+        self.flask_app = flask_app
 
     def can_process_work_request(self, work_request):
         return len(self._get_grain_type_split(work_request.grain)) < 2
@@ -106,4 +110,11 @@ class StandardQueueHandler(QueueHandler, Injectable):
         if reset_action_instance and not StoreService.is_completing(action_instance['id']):
             if self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True):
                 logger.info("Resetting Action Instance:{} was assigned to: {}".format(action_instance['id'], action_instance['assigned_to']))
+        return True
+
+    def cancel_worker(self, action_instance):  # type: (dict) -> bool
+        for client in StoreService.get_clients(self.flask_app).values():
+            if client.get_uri() == action_instance['assigned_to']:
+                client.cancel_work(action_instance['id'], self.flask_app.rapid_config.verify_certs)
+                break
         return True

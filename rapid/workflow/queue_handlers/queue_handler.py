@@ -32,5 +32,10 @@ class QueueHandler(object):
         # type: (dict) -> bool
         yield
 
+    @abstractmethod
+    def cancel_worker(self, action_instance):
+        # type: (dict) -> bool
+        yield
+
     def _get_grain_type_split(self, grain):
         return grain.split(self._GRAIN_SPLIT, 1)

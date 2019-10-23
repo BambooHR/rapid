@@ -86,3 +86,6 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         environment['WORKSPACE'] = self.rapid_config.workspace
 
         return environment
+
+    def cancel_worker(self, action_instance):  # type: (dict) -> bool
+        return True

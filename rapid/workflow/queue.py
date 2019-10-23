@@ -85,3 +85,10 @@ class Queue(Injectable):
 
     def reconcile_pipeline_instances(self):
         self.action_instance_service.reconcile_pipeline_instances()
+
+    def cancel_worker(self, action_instance):
+        # type: (dict) -> bool
+        for handler in self.queue_handlers:
+            if handler.can_process_action_instance(action_instance):
+                return handler.cancel_worker(action_instance)
+        return False

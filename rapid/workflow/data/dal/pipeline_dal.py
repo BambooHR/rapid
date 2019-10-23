@@ -16,6 +16,9 @@
 # pylint: disable=broad-except
 import logging
 import datetime
+
+from rapid.workflow.queue import Queue
+
 try:
     import simplejson as out_json
 except ImportError:
@@ -43,18 +46,20 @@ logger = logging.getLogger("rapid")
 
 
 class PipelineDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.CI_MODULE: CiModule, 'flask_app': None}
+    __injectables__ = {ModuleConstants.CI_MODULE: CiModule, 'flask_app': None, 'queue': Queue}
 
-    def __init__(self, ci_module, flask_app=None):
+    def __init__(self, ci_module, queue, flask_app=None):
         """
 
         :type ci_module: :class:`rapid.lib.modules.modules.CiModule`
+        :type queue: Queue
         :param app:
         :return:
         """
         super(PipelineDal, self).__init__()
         self.app = flask_app
         self.ci_module = ci_module
+        self.queue = queue
 
     def is_serviceable(self, model):
         return model == Pipeline
@@ -254,10 +259,7 @@ class PipelineDal(GeneralDal, Injectable):
                 for action_instance in pipeline_instance.action_instances:
                     for client in StoreService.get_clients(self.app).values():
                         if action_instance.status_id <= StatusConstants.SUCCESS and client.get_uri() == action_instance.assigned_to:
-                            client.cancel_work(action_instance.id, self.app.rapid_config.verify_certs)
-                            action_instance.status_id = StatusConstants.CANCELED
-                            action_instance.end_date = datetime.datetime.utcnow()
-
+                            self.queue.cancel_worker(action_instance.serialize())
                 pipeline_instance.status_id = StatusConstants.CANCELED
                 pipeline_instance.end_date = datetime.datetime.utcnow()
                 session.commit()

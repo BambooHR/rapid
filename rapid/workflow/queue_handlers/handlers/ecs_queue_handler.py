@@ -82,6 +82,21 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             return True
         self.action_instance_service.reset_action_instance(action_instance['id'])
 
+    def cancel_worker(self, action_instance):  # type: (dict) -> bool
+        try:
+            arn = action_instance['assigned_to'].split('--ecs--')[1]
+            task = self._get_ecs_client().stop_task(cluster=self._ecs_configuration.default_task_definition['cluster'],
+                                                    task=arn,
+                                                    reason='Rapid canceled.')
+            if 'task' in task and task['task']:
+                return True
+
+            logger.info("Failed to cancel ECS arn: {}".format(arn))
+        except Exception as exception:
+            logger.exception(exception)
+        return False
+
+
     ########################
     # Private Methods
     ########################
