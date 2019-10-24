@@ -10,7 +10,7 @@ from rapid.lib.store_service import StoreService
 from rapid.master.communicator.master_communicator import MasterCommunicator
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
-from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
+from rapid.workflow.queue_handlers.queue_handler_register import register_queue_handler
 
 logger = logging.getLogger('rapid')
 

@@ -14,7 +14,7 @@ from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.container_handlers.container_handler import ContainerHandler
 from rapid.workflow.queue_handlers.container_handlers.ecs_configuration import ECSConfiguration
-from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
+from rapid.workflow.queue_handlers.queue_handler_register import register_queue_handler
 
 logger = logging.getLogger('rapid')
 

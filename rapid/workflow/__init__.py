@@ -33,4 +33,7 @@ def configure_module(flask_app):
     from rapid.workflow.queue_handlers import setup_queue_handlers
     setup_queue_handlers()
 
+    from rapid.lib.queue_handler_constants import QueueHandlerConstants
+    IOC.register_global('queue_constants', IOC.get_class_instance(QueueHandlerConstants))
+
 

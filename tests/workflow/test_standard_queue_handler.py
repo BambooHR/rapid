@@ -3,14 +3,15 @@ from unittest import TestCase
 from mock import Mock
 
 from rapid.workflow.queue_handlers.handlers.standard_queue_handler import StandardQueueHandler
-from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
+from rapid.lib.queue_handler_constants import QueueHandlerConstants
 
 
 class TestStandardQueueHandler(TestCase):
     def setUp(self):
         self.mock_config = Mock()
         self.mock_service = Mock()
-        self.handler = StandardQueueHandler(self.mock_config, self.mock_service)
+        self.mock_flask = Mock()
+        self.handler = StandardQueueHandler(self.mock_config, self.mock_service, self.mock_flask)
 
     def test_standard_queue_handler_auto_registers(self):
         self.assertTrue(StandardQueueHandler in QueueHandlerConstants.queue_handler_classes)

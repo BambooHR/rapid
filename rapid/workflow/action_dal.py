@@ -31,12 +31,10 @@ from rapid.lib.work_request import WorkRequest
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules import QaModule
 from rapid.lib import get_db_session
-from rapid.workflow.queue import Queue
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
     PipelineStatistics, Statistics, StageInstance, WorkflowInstance, ActionInstanceConfig
-
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.event_service import EventService
 
@@ -49,10 +47,10 @@ class ActionDal(GeneralDal, Injectable):
                        'event_service': EventService,
                        'flask_app': None,
                        'status_dal': StatusDal,
-                       'queue': Queue}
+                       'queue_constants': None}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None, queue=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None, queue_constants=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
@@ -66,7 +64,7 @@ class ActionDal(GeneralDal, Injectable):
         self.event_service = event_service
         self.flask_app = flask_app
         self.status_dal = status_dal
-        self.queue = queue
+        self.queue_constants = queue_constants
 
     def _get_ready_work_requests(self, session, work_requests, results):
         """
@@ -267,8 +265,8 @@ class ActionDal(GeneralDal, Injectable):
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
             if action_instance:
                 instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance)
-                instance_workflow_engine.complete_an_action(action_instance.id, StatusConstants.CANCELED)
-                self.queue.cancel_worker(action_instance.serialize())
+                instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
+                self.queue_constants.cancel_worker(action_instance.serialize())
                 session.commit()
             else:
                 raise InvalidObjectException("Action Instance not found", 404)

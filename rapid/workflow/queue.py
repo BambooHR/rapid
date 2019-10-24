@@ -16,40 +16,40 @@
 import logging
 from datetime import datetime
 
-from rapid.lib import IOC
-from rapid.lib.constants import Constants, StatusConstants
+from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
-from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
 from rapid.workflow.queue_service import QueueService
 
 logger = logging.getLogger("rapid")
 
 
 class Queue(Injectable):
-    __injectables__ = {'queue_service': QueueService, 'action_instance_service': ActionInstanceService, 'rapid_config': MasterConfiguration}
+    __injectables__ = {'queue_service': QueueService,
+                       'action_instance_service': ActionInstanceService,
+                       'rapid_config': MasterConfiguration,
+                       'queue_constants': None}
 
-    def __init__(self, queue_service, action_instance_service, rapid_config):
+    def __init__(self, queue_service, action_instance_service, rapid_config, queue_constants):
         """
         :param queue_service:
         :type queue_service:
         :param action_instance_service:
         :type action_instance_service: rapid.workflow.action_instances_service.ActionInstanceService
         :type rapid_config: rapid.master.master_configuration.MasterConfiguration
+        :type handler_constants: QueueHandlerConstants
         """
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
         self.rapid_config = rapid_config
-        self.queue_handlers = []  # type: list[QueueHandler]
-        self.setup_queue_handlers()
+        self.handler_constants = queue_constants
 
-    def setup_queue_handlers(self):
-        # type: () -> None
-        for handler in QueueHandlerConstants.queue_handler_classes:
-            self.queue_handlers.append(IOC.get_class_instance(handler))
+    @property
+    def queue_handlers(self): # type: () -> list[QueueHandler]
+        return self.handler_constants.queue_handlers
 
     def process_queue(self, clients):
         sleeping_queue_handlers = []
