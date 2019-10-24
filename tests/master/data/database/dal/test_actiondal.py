@@ -231,7 +231,8 @@ class TestActionDal(TestCase):
     @patch('rapid.workflow.action_dal.StoreService')
     @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
     @patch('rapid.workflow.action_dal.get_db_session')
-    def test_action_instance_cancels_current_running_clients(self, db_session, get_action_instance, store_service):
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_action_instance_cancels_current_running_clients(self, workflow_engine, db_session, get_action_instance, store_service):
         """
         @rapid-unit Workflow:Cancel Action Instance:Should cancel active client
         :param db_session:
@@ -244,20 +245,18 @@ class TestActionDal(TestCase):
         :rtype:
         """
         db_session.return_value = [Mock()]
+        mock_workflow = Mock()
+        workflow_engine.return_value = mock_workflow
         get_action_instance.return_value = Mock(assigned_to='12345', status_id=StatusConstants.INPROGRESS)
+        setattr(get_action_instance, 'id', '54321')
 
-        client1 = Mock()
-        client1.get_uri.return_value = '12345'
-
-        client2 = Mock()
-        store_service.get_clients.return_value = {"12345": client1, "54321": client2}
-
-        action_dal = ActionDal(flask_app=Mock())
+        mock_constants = Mock()
+        action_dal = ActionDal(flask_app=Mock(), queue_constants=mock_constants)
 
         eq_("Action Instance has been canceled.", action_dal.cancel_action_instance(123455)['message'])
 
-        eq_(1, client1.cancel_work.call_count)
-        eq_(0, client2.cancel_work.call_count)
+        mock_workflow.complete_an_action.assert_called_with(123455, StatusConstants.CANCELED)
+        mock_constants.cancel_worker.assert_called_with(get_action_instance().serialize())
 
 
 class WrapperHelper(object):

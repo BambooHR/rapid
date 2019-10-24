@@ -20,7 +20,12 @@ from rapid.lib.framework.ioc import IOC
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
     from rapid.workflow.action_service import ActionService
     from rapid.workflow.workflow_service import WorkflowService
+    from rapid.lib.queue_handler_constants import QueueHandlerConstants
+    from rapid.workflow.queue_handlers import setup_queue_handlers
 
+    setup_queue_handlers()
+
+    IOC.register_global('queue_constants', IOC.get_class_instance(QueueHandlerConstants))
     IOC.register_global('workflow_module', IOC.get_class_instance(WorkflowService))
     IOC.register_global('action_module', IOC.get_class_instance(ActionService))
 
@@ -29,8 +34,5 @@ def configure_module(flask_app):
     from rapid.workflow.api_controller import APIRouter
     router = IOC.get_class_instance(APIRouter)
     router.register_url_rules(flask_app)
-
-    from rapid.workflow.queue_handlers import setup_queue_handlers
-    setup_queue_handlers()
 
 

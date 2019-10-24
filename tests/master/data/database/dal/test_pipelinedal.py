@@ -32,7 +32,8 @@ from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 class TestPipelineDal(TestCase):
 
     def setUp(self):
-        self.dal = PipelineDal(Mock())
+        self.mock_constants = Mock()
+        self.dal = PipelineDal(Mock(), self.mock_constants)
 
     def test_get_actions_empty(self):
         eq_([], self.dal.get_actions({}, None, None, Mock()))
@@ -154,7 +155,7 @@ class TestPipelineDal(TestCase):
         self.dal.app = Mock(rapid_config=Mock(verify_certs=False))
 
         eq_("Running clients have been canceled and pipeline canceled.", self.dal.cancel_pipeline_instance(12345)['message'])
+
+        self.mock_constants.cancel_worker.assert_called_with(mock_pipeline_instance.action_instances[0].serialize())
         
-        eq_(1, client1.cancel_work.call_count)
-        eq_(0, client2.cancel_work.call_count)
 

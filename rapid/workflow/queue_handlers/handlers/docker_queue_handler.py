@@ -13,7 +13,7 @@ from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.container_handlers.container_handler import ContainerHandler
 from rapid.workflow.queue_handlers.container_handlers.docker_configuration import DockerConfiguration
-from rapid.workflow.queue_handlers.queue_handler_constants import register_queue_handler
+from rapid.workflow.queue_handlers.queue_handler_register import register_queue_handler
 
 
 @register_queue_handler
@@ -86,3 +86,6 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         environment['WORKSPACE'] = self.rapid_config.workspace
 
         return environment
+
+    def cancel_worker(self, action_instance):  # type: (dict) -> bool
+        return True

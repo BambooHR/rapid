@@ -22,17 +22,18 @@ class IOC(object):
     global_registers = {}
 
     def get_instance_of(self, clzz, *args):
-        if issubclass(clzz, Injectable):
-            real_args = []
-            for param in clzz.__init__.__code__.co_varnames:
-                if param in clzz.__injectables__:
-                    if param in self.global_registers:
-                        real_args.append(self.global_registers[param])
-                    else:
-                        real_args.append(self.get_instance_of(clzz.__injectables__[param]))
-            real_args.extend(args)
-            return clzz(*real_args)
-        return clzz(*args)
+        if clzz is not None:
+            if issubclass(clzz, Injectable):
+                real_args = []
+                for param in clzz.__init__.__code__.co_varnames:
+                    if param in clzz.__injectables__:
+                        if param in self.global_registers:
+                            real_args.append(self.global_registers[param])
+                        else:
+                            real_args.append(self.get_instance_of(clzz.__injectables__[param]))
+                real_args.extend(args)
+                return clzz(*real_args)
+            return clzz(*args)
 
     @staticmethod
     def get_instance():

@@ -35,17 +35,22 @@ from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
     PipelineStatistics, Statistics, StageInstance, WorkflowInstance, ActionInstanceConfig
-
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.event_service import EventService
 
 logger = logging.getLogger('rapid')
 
+
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule, 'store_service': StoreService, 'event_service': EventService, 'flask_app': None, 'status_dal': StatusDal}
+    __injectables__ = {ModuleConstants.QA_MODULE: QaModule,
+                       'store_service': StoreService,
+                       'event_service': EventService,
+                       'flask_app': None,
+                       'status_dal': StatusDal,
+                       'queue_constants': None}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None):
+    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None, queue_constants=None):
         """
 
         :param qa_module: rapid.master.modules.modules.QaModule
@@ -59,6 +64,7 @@ class ActionDal(GeneralDal, Injectable):
         self.event_service = event_service
         self.flask_app = flask_app
         self.status_dal = status_dal
+        self.queue_constants = queue_constants
 
     def _get_ready_work_requests(self, session, work_requests, results):
         """
@@ -257,12 +263,12 @@ class ActionDal(GeneralDal, Injectable):
     def cancel_action_instance(self, action_instance_id):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
+
             if action_instance:
-                for client in StoreService.get_clients(self.flask_app).values():
-                    if client.get_uri() == action_instance.assigned_to:
-                        client.cancel_work(action_instance.id, self.flask_app.rapid_config.verify_certs)
-                        break
-                action_instance.status_id = StatusConstants.CANCELED
+                serialized = action_instance.serialize()
+                instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
+                instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
+                self.queue_constants.cancel_worker(serialized)
                 session.commit()
             else:
                 raise InvalidObjectException("Action Instance not found", 404)

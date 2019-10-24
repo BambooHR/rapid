@@ -29,6 +29,9 @@ class TestContainerHandler(TestCase):
 
 
 class TestingContainerHandler(ContainerHandler):
+    def cancel_worker(self, action_instance):
+        pass
+
     def process_work_request(self, work_request, clients):
         pass
 

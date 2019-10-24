@@ -4,10 +4,8 @@ from mock import Mock, patch, call
 
 from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep
-from rapid.lib.work_request import WorkRequest
-from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.queue_handlers.handlers.ecs_queue_handler import ECSQueueHandler
-from rapid.workflow.queue_handlers.queue_handler_constants import QueueHandlerConstants
+from rapid.lib.queue_handler_constants import QueueHandlerConstants
 
 
 class TestECSQueueHandler(TestCase):
