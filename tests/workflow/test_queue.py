@@ -10,19 +10,15 @@ from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 
 
 class TestQueue(TestCase):
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
-    def test_setup_queue_handlers_fires_correctly(self, constants):
-        constants.queue_handler_classes = [TestQueueHandler]
-        test_queue = Queue(Mock(), Mock(), Mock())
+    def test_setup_queue_handlers_fires_correctly(self):
+        test_queue = Queue(Mock(), Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
         self.assertTrue(isinstance(test_queue.queue_handlers[0], TestQueueHandler))
 
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
-    def test_process_queue_will_process_appropriately(self, constants):
-        constants.queue_handler_classes = [TestQueueHandler]
+    def test_process_queue_will_process_appropriately(self):
         mock_queue_service = Mock()
         good_mock = Mock(foo='good')
         mock_queue_service.get_current_work.return_value = [Mock(foo='bad'), good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock())
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
 
         check = Mock()
         check.side_effect = [False, True]
@@ -34,17 +30,15 @@ class TestQueue(TestCase):
         queue.process_queue([])
         mock_handler.mock.assert_called_with(good_mock)
 
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
     @patch('rapid.workflow.queue.logger')
     @patch('rapid.workflow.queue.datetime')
-    def test_process_queue_will_process_when_exception_raises(self, datetime, logger, constants):
-        constants.queue_handler_classes = [TestQueueHandler]
+    def test_process_queue_will_process_when_exception_raises(self, datetime, logger):
         mock_queue_service = Mock()
         good_mock = Mock(foo='good', action_instance_id='1234')
         bad_mock = Mock(foo='bad')
         mock_queue_service.get_current_work.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock())
+        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
 
         check = Mock()
         check.side_effect = [True, False]
@@ -63,13 +57,11 @@ class TestQueue(TestCase):
                                                                              'start_date': 'something_wicked_this_way_comes',
                                                                              'end_date': 'something_wicked_this_way_comes'})
 
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
-    def test_verify_still_working_processes_appropriately(self, constants):
-        constants.queue_handler_classes = [TestQueueHandler]
+    def test_verify_still_working_processes_appropriately(self):
         mock_queue_service = Mock()
         good_mock = {'foo': 'good'}
         mock_queue_service.get_verify_working.return_value = [{'foo': 'bad'}, good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock())
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
 
         check = Mock()
         check.side_effect = [False, True]
@@ -81,17 +73,15 @@ class TestQueue(TestCase):
         queue.verify_still_working([])
         mock_handler.mock.assert_called_with(good_mock)
 
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
     @patch('rapid.workflow.queue.logger')
     @patch('rapid.workflow.queue.datetime')
-    def test_verify_still_workign_when_exception_raises(self, datetime, logger, constants):
-        constants.queue_handler_classes = [TestQueueHandler]
+    def test_verify_still_workign_when_exception_raises(self, datetime, logger):
         mock_queue_service = Mock()
         good_mock = {'foo': 'good', 'action_instance_id': '1234', 'id': '4321'}
         bad_mock = {'foo': 'bad', 'id': 'foo_id'}
         mock_queue_service.get_verify_working.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock())
+        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
 
         check = Mock()
         check.side_effect = [True, False]
@@ -110,8 +100,7 @@ class TestQueue(TestCase):
                                                                              'start_date': 'you_did_what?',
                                                                              'end_date': 'you_did_what?'})
 
-    @patch('rapid.workflow.queue.QueueHandlerConstants')
-    def test_queue_handlers_can_be_slept(self, constants):
+    def test_queue_handlers_can_be_slept(self):
         mock_handler = Mock(handler=1)
         mock_handler.can_process_work_request.return_value = True
         mock_handler.process_work_request.side_effect = QueueHandlerShouldSleep
@@ -119,8 +108,7 @@ class TestQueue(TestCase):
         mock_queue_service = Mock()
         mock_queue_service.get_current_work.return_value = [1, 2]
 
-        queue = Queue(mock_queue_service, Mock(), Mock())
-        queue.queue_handlers = [mock_handler]
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[mock_handler]))
         queue.process_queue([])
 
         self.assertEqual(1, mock_handler.can_process_work_request.call_count)
@@ -128,6 +116,9 @@ class TestQueue(TestCase):
 
 
 class TestQueueHandler(QueueHandler, Injectable):
+    def cancel_worker(self, action_instance):
+        pass
+
     __injectables__ = {'rapid_config': Mock, 'action_instance_service': Mock}
 
     def __init__(self, rapid_config, action_instance_service):
