@@ -263,10 +263,12 @@ class ActionDal(GeneralDal, Injectable):
     def cancel_action_instance(self, action_instance_id):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
+
             if action_instance:
-                instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance)
+                serialized = action_instance.serialize()
+                instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
                 instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
-                self.queue_constants.cancel_worker(action_instance.serialize())
+                self.queue_constants.cancel_worker(serialized)
                 session.commit()
             else:
                 raise InvalidObjectException("Action Instance not found", 404)

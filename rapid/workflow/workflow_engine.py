@@ -114,7 +114,8 @@ class InstanceWorkflowEngine(WorkflowEngine):
         :param status_id:
         :param action_instance_id:
         """
-        StoreService.set_calculating_workflow(self.pipeline.id)
+        pipeline_id = self.pipeline.id
+        StoreService.set_calculating_workflow(pipeline_id)
 
         try:
             action_instance = self._get_action(action_instance_id)
@@ -132,7 +133,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
 
                 self.complete_a_workflow(action_instance.workflow_instance_id, status)
         finally:
-            StoreService.clear_calculating_workflow(self.pipeline.id)
+            StoreService.clear_calculating_workflow(pipeline_id)
 
     def complete_a_workflow(self, workflow_instance_id, status_id):
         workflow_instance = self._get_workflow(workflow_instance_id)
@@ -275,7 +276,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 or StatusConstants.INPROGRESS in sliced_statuses:
             return True
 
-        return highest_severity < status_type_severity_mapping[StatusTypes.FAILED]
+        return highest_severity < status_type_severity_mapping[StatusTypes.CANCELED]
 
     def _activate_next_action_all_complete(self, action_instances):
         order_check = None
