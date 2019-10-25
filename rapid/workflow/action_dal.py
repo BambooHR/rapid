@@ -173,6 +173,7 @@ class ActionDal(GeneralDal, Injectable):
             for action_instance in session.query(ActionInstance).join(PipelineInstance) \
                     .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
                     .filter(ActionInstance.status_id == StatusConstants.INPROGRESS) \
+                    .filter(ActionInstance.assigned_to != '') \
                     .filter(ActionInstance.start_date <= datetime.datetime.utcnow() - datetime.timedelta(minutes=time_difference)) \
                     .filter(ActionInstance.end_date.is_(None)) \
                     .filter(ActionInstance.manual == 0).all():
