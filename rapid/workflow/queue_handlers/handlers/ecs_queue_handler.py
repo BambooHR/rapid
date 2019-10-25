@@ -50,25 +50,22 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                                   start_date=datetime.datetime.utcnow(),
                                   end_date=datetime.datetime.utcnow())
         else:
-            # 2. Set the status to INProgress
-            self._set_task_status(work_request.action_instance_id, StatusConstants.INPROGRESS, start_date=datetime.datetime.utcnow())
-
-            # 3. Run the task
             try:
+                # 2. Run the Task
                 (status_id, assigned_to) = self._run_task(task_definition)
+
+                # 3. Verify the status in case it failed.
+                end_date = None
+                if status_id > StatusConstants.INPROGRESS:
+                    end_date = datetime.datetime.utcnow()
+
+                # 3. Report the status
+                if end_date:
+                    self._set_task_status(work_request.action_instance_id, status_id, assigned_to, end_date=end_date)
+                elif status_id != StatusConstants.READY:
+                    self._set_task_status(work_request.action_instance_id, status_id, start_date=datetime.datetime.utcnow())
             except ECSLimitReached:
-                self.action_instance_service.reset_action_instance(work_request.action_instance_id)
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
-
-            # 4. Report the status
-            end_date = None
-            if status_id > StatusConstants.INPROGRESS:
-                end_date = datetime.datetime.utcnow()
-
-            if status_id == StatusConstants.READY:
-                self.action_instance_service.reset_action_instance(work_request.action_instance_id)
-            else:
-                self._set_task_status(work_request.action_instance_id, status_id, assigned_to, end_date=end_date)
         return True
 
     def process_action_instance(self, action_instance, clients):

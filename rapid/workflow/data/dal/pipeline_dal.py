@@ -198,9 +198,8 @@ class PipelineDal(GeneralDal, Injectable):
         return AlchemyEncoder
 
     def get_actions_query(self, session, pipeline_id):
-        return session.query(Stage, Workflow, Action).filter(
-            Pipeline.id == pipeline_id) \
-            .filter(Pipeline.id == Stage.pipeline_id) \
+        return session.query(Stage, Workflow, Action) \
+            .filter(Stage.pipeline_id == pipeline_id) \
             .filter(Stage.id == Workflow.stage_id) \
             .filter(Workflow.id == Action.workflow_id) \
             .order_by(asc(Stage.order)) \
