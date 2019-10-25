@@ -78,9 +78,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                                                  desiredStatus='RUNNING')
 
         # 2. Verify that the assigned_to ARN is running.
-        if arn in task['taskArns']:
-            return True
-        self.action_instance_service.reset_action_instance(action_instance['id'])
+        if task and 'taskArns' in task:
+            if arn in task['taskArns']:
+                return True
+            self.action_instance_service.reset_action_instance(action_instance['id'])
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         try:
