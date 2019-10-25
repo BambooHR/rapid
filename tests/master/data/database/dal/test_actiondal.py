@@ -170,13 +170,14 @@ class TestActionDal(TestCase):
 
         action_dal.get_verify_working(10)
 
-        eq_(5, len(session.filter_args))
+        eq_(6, len(session.filter_args))
 
         filter_1 = session.filter_args[0]
         filter_2 = session.filter_args[1]
         filter_3 = session.filter_args[2]
         filter_4 = session.filter_args[3]
         filter_5 = session.filter_args[4]
+        filter_6 = session.filter_args[5]
 
         eq_(PipelineInstance.__table__.columns['status_id'], filter_1.left)
         eq_(StatusConstants.INPROGRESS, filter_1.right.value)
@@ -184,17 +185,20 @@ class TestActionDal(TestCase):
         eq_(ActionInstance.__table__.columns['status_id'], filter_2.left)
         eq_(StatusConstants.INPROGRESS, filter_2.right.value)
 
-        eq_(ActionInstance.__table__.columns['start_date'], filter_3.left)
-        eq_(diff.minute, filter_3.right.value.minute)
-        eq_(diff.day, filter_3.right.value.day)
-        eq_(diff.year, filter_3.right.value.year)
-        eq_(diff.hour, filter_3.right.value.hour)
+        eq_(ActionInstance.__table__.columns['assigned_to'], filter_3.left)
+        eq_('', filter_3.right.value)
 
-        eq_(ActionInstance.__table__.columns['end_date'], filter_4.left)
-        eq_(Boolean, type(filter_4.type))
+        eq_(ActionInstance.__table__.columns['start_date'], filter_4.left)
+        eq_(diff.minute, filter_4.right.value.minute)
+        eq_(diff.day, filter_4.right.value.day)
+        eq_(diff.year, filter_4.right.value.year)
+        eq_(diff.hour, filter_4.right.value.hour)
 
-        eq_(ActionInstance.__table__.columns['manual'], filter_5.left)
-        eq_(0, filter_5.right.value)
+        eq_(ActionInstance.__table__.columns['end_date'], filter_5.left)
+        eq_(Boolean, type(filter_5.type))
+
+        eq_(ActionInstance.__table__.columns['manual'], filter_6.left)
+        eq_(0, filter_6.right.value)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_verify_working_verify_results(self, get_db_session):

@@ -51,12 +51,12 @@ class TestECSQueueHandler(TestCase):
         mock_datetime.datetime.utcnow.return_value = 'foo'
         mock_work_request = Mock(action_instance_id=1, grain='foo')
         task_def = {'foo': 'bar', 'taskDefinition': 'fake'}
-        run_task.return_value = (1, '--ecs--foo')
+        run_task.return_value = (-101010, '--ecs--foo')
         get_task.return_value = task_def
         self.handler.process_work_request(mock_work_request, [])
         get_task.assert_called_with(mock_work_request)
         run_task.assert_called_with(task_def)
-        set_task.assert_has_calls([call(1, StatusConstants.INPROGRESS, start_date='foo'), call(1, 1, '--ecs--foo', end_date=None)])
+        set_task.assert_has_calls([call(1, -101010, start_date='foo')])
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_overridden_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._inject_work_request_parameters')
@@ -185,8 +185,6 @@ class TestECSQueueHandler(TestCase):
 
         with self.assertRaises(QueueHandlerShouldSleep):
             self.handler.process_work_request(Mock(action_instance_id=1), [])
-
-        self.action_instance_service.reset_action_instance.assert_called_with(1)
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
