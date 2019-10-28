@@ -56,7 +56,7 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_work_request(mock_work_request, [])
         get_task.assert_called_with(mock_work_request)
         run_task.assert_called_with(task_def)
-        set_task.assert_has_calls([call(1, -101010, start_date='foo')])
+        set_task.assert_has_calls([call(1, -101010, '--ecs--foo', start_date='foo')])
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_overridden_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._inject_work_request_parameters')
