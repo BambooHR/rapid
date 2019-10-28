@@ -63,7 +63,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 if end_date:
                     self._set_task_status(work_request.action_instance_id, status_id, assigned_to, end_date=end_date)
                 elif status_id != StatusConstants.READY:
-                    self._set_task_status(work_request.action_instance_id, status_id, start_date=datetime.datetime.utcnow())
+                    self._set_task_status(work_request.action_instance_id, status_id, assigned_to, start_date=datetime.datetime.utcnow())
             except ECSLimitReached:
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
         return True
