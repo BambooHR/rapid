@@ -6,6 +6,7 @@ class ECSConfiguration(Configuration):
     NOT_SET = "__NOT_SET__"
 
     def __init__(self, file_name=None):
+        self.maximum_task_time = 20
         self.aws_access_key_id = None
         self.aws_secret_access_key = None
         self.aws_session_token = None
@@ -31,6 +32,9 @@ class ECSConfiguration(Configuration):
     def section_mapping(self):
         default_config = ConfigurationDefaults(self.NOT_SET, str)
         return {
+            'general': {
+                'maximum_task_time': ConfigurationDefaults(20*60, int)  # 20 minutes
+            },
             'aws_credentials': {
                 'aws_access_key_id': default_config,
                 'aws_secret_access_key': default_config,

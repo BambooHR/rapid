@@ -7,7 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from rapid.lib.constants import StatusConstants
-from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep
+from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep, ECSConnectionError
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
@@ -66,6 +66,8 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                     self._set_task_status(work_request.action_instance_id, status_id, assigned_to, start_date=datetime.datetime.utcnow())
             except ECSLimitReached:
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
+            except ECSConnectionError:
+                raise QueueHandlerShouldSleep('ECS Connection issue detected.')
         return True
 
     def process_action_instance(self, action_instance, clients):
@@ -173,6 +175,8 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 logger.error("Failures were found: [{}]".format(response_dict['failures']))
                 if 'limit' in response_dict['failures'][0]['reason']:
                     raise ECSLimitReached(response_dict['failures'][0]['reason'])
+                elif 'connect timed out' in response_dict['failures'][0]['reason']:
+                    raise ECSConnectionError(response_dict['failures'][0]['reason'])
                 else:
                     status_id = StatusConstants.FAILED
             elif not response_dict['tasks']:

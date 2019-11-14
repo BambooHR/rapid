@@ -3,7 +3,7 @@ from unittest import TestCase
 from mock import Mock, patch, call
 
 from rapid.lib.constants import StatusConstants
-from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep
+from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep, ECSConnectionError
 from rapid.workflow.queue_handlers.handlers.ecs_queue_handler import ECSQueueHandler
 from rapid.lib.queue_handler_constants import QueueHandlerConstants
 
@@ -195,6 +195,17 @@ class TestECSQueueHandler(TestCase):
         client.return_value = mock_client
 
         with self.assertRaises(ECSLimitReached):
+            self.handler._run_task({})
+
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_run_task_handles_connect_failures_right(self, logger, client):
+        mock_client = Mock()
+        mock_client.run_task.return_value = {'failures': [{'reason': "Error retrieving security group information: com.amazonaws.SdkClientException: Unable to execute HTTP request: Connect to ec2.us-east-1.amazonaws.com:443 [ec2.us-east-1.amazonaws.com/54.239.31.174] failed: connect timed out"}]}
+
+        client.return_value = mock_client
+
+        with self.assertRaises(ECSConnectionError):
             self.handler._run_task({})
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
