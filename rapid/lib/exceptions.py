@@ -79,5 +79,9 @@ class ECSLimitReached(Exception):
     pass
 
 
+class ECSConnectionError(Exception):
+    pass
+
+
 class QueueHandlerShouldSleep(Exception):
     pass
