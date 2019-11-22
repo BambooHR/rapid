@@ -324,9 +324,10 @@ class ActionDal(GeneralDal, Injectable):
                         stage.end_date = workflow.end_date
                         highest_end_date = stage.end_date
 
-                logger.info("Reconciling PipelineInstance: {}".format(pipeline_instance.id))
-                pipeline_instance.status_id = highest_status_id
-                pipeline_instance.end_date = highest_end_date
+                if highest_status_id is not None and highest_end_date is not None:
+                    logger.info("Reconciling PipelineInstance: {}".format(pipeline_instance.id))
+                    pipeline_instance.status_id = highest_status_id
+                    pipeline_instance.end_date = highest_end_date
 
             session.commit()
 
