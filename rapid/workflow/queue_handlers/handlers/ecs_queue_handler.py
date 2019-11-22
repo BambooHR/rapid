@@ -80,7 +80,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         if task and 'taskArns' in task:
             if arn in task['taskArns']:
                 return True
-            self.action_instance_service.reset_action_instance(action_instance['id'])
+            self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         try:
