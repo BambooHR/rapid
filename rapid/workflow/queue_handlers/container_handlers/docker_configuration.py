@@ -16,8 +16,7 @@ class DockerConfiguration(object):
     def get_string_rep(self, work_request):
         # type: (WorkRequest) -> str
         string_list = []
-        keys = self.__dict__.keys()
-        keys.sort()
+        keys = sorted(self.__dict__.keys())
         for key in keys:
             value = getattr(self, key)
             if isinstance(value, list):
