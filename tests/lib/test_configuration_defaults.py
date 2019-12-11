@@ -1,4 +1,8 @@
-from ConfigParser import SafeConfigParser
+try:
+    from ConfigParser import SafeConfigParser as ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+
 from unittest import TestCase
 
 from rapid.lib.configuration import ConfigurationDefaults, Configuration
@@ -15,7 +19,7 @@ class TestConfigurationDefaults(TestCase):
 
     def test_defaults_work_with_configurations(self):
         config = TestingConfiguration()
-        parser = SafeConfigParser()
+        parser = ConfigParser()
         parser.add_section('test')
         parser.set('test', 'plain', 'Foo')
         parser.set('test', 'config_default', 'bar')
