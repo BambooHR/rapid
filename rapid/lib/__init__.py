@@ -22,7 +22,7 @@ except ImportError:
     import json
 
 from functools import wraps
-from flask import request, current_app, Response
+from flask import Response
 
 from rapid.lib.exceptions import HttpException
 from rapid.lib.utils import RoutingUtil
@@ -80,19 +80,29 @@ def setup_config_from_file(app, args):
 def api_key_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if 'X-Rapidci-Api-Key' in request.headers \
-                and RoutingUtil.is_valid_request(request.headers['X-Rapidci-Api-Key'], current_app.rapid_config.api_key):
+        if 'X-Rapidci-Api-Key' in get_current_request().headers \
+                and RoutingUtil.is_valid_request(get_current_request().headers['X-Rapidci-Api-Key'], get_current_app().rapid_config.api_key):
             return func(*args, **kwargs)
         return Response("Not authorized", status=401)
     return decorated_view
 
 
+def get_current_app():
+    from flask import current_app
+    return current_app
+
+
+def get_current_request():
+    from flask import request
+    return request
+
+
 def basic_auth(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        config = current_app.rapid_config
+        config = get_current_app().rapid_config
         try:
-            if config.basic_auth_user == request.authorization['username'] and config.basic_auth_pass == request.authorization['password']:
+            if config.basic_auth_user == get_current_request().authorization['username'] and config.basic_auth_pass == get_current_request().authorization['password']:
                 return func(*args, **kwargs)
         except (KeyError, TypeError):
             pass

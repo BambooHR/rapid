@@ -36,12 +36,18 @@ class ReleaseDal(Injectable):
         self.workflow_module = workflow_module
         self.ci_module = ci_module
 
-    def get_release_by_id(self, release_id, in_session=None):
+    def get_release_by_id(self, release_id, in_session=None, with_for_update=False):
         if in_session is None:
             for session in get_db_session():
-                return session.query(Release).fitler(Release.id == release_id).first().serialize()
+                if with_for_update:
+                    return session.query(Release).with_for_update().filter(Release.id == release_id).first().serialize()
+                else:
+                    return session.query(Release).with_for_update().filter(Release.id == release_id).first().serialize()
         else:
-            return in_session.query(Release).filter(Release.id == release_id).first()
+            if with_for_update:
+                return in_session.query(Release).with_for_update().filter(Release.id == release_id).first()
+            else:
+                return in_session.query(Release).with_for_update().filter(Release.id == release_id).first()
 
     def set_release_step(self, release_id, step_id, status, session=None):
         assert release_id is not None
@@ -50,7 +56,7 @@ class ReleaseDal(Injectable):
 
         if session is None:
             for db_session in get_db_session():
-                release = self.get_release_by_id(release_id, db_session)
+                release = self.get_release_by_id(release_id, db_session, with_for_update=True)
                 status_entry = self.workflow_module.get_status_by_name(status, db_session)
 
                 if status_entry and status_entry.id:
