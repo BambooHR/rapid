@@ -19,18 +19,18 @@ class TestLibrary(TestCase):
         setup_logging(mock_app)
         logging.FileHandler.assert_called_with('Something')
 
-    @patch('rapid.lib.current_app')
-    @patch('rapid.lib.request')
+    @patch('rapid.lib.get_current_app')
+    @patch('rapid.lib.get_current_request')
     def test_basic_auth_wrapper_calls_when_successful(self, request, current_app):
         to_call = self.__setup_basic_auth_test()
         mock = Mock(basic_auth_user='foo', basic_auth_pass='bar')
-        current_app.rapid_config = mock
-        request.authorization = {'username': 'foo', 'password': 'bar'}
+        current_app.return_value = Mock(rapid_config=mock)
+        request.return_value = Mock(authorization={'username': 'foo', 'password': 'bar'})
         with self.assertRaises(Exception) as exception:
             to_call()
 
-    @patch('rapid.lib.current_app')
-    @patch('rapid.lib.request')
+    @patch('rapid.lib.get_current_app')
+    @patch('rapid.lib.get_current_request')
     def test_basic_auth_wrapper_returns_when_doesnt_match(self, request, current_app):
         to_call = self.__setup_basic_auth_test()
         mock = Mock(basic_auth_user='foo', basic_auth_pass='bad_pass')
