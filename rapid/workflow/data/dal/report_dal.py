@@ -34,7 +34,7 @@ class ReportDal(Injectable):
         self._read_report_files()
 
     def get_canned_report_names(self):
-        return self._canned_reports.keys()
+        return list(self._canned_reports.keys())
 
     def get_canned_report(self, report_name):
         try:
