@@ -88,7 +88,7 @@ class VcsReleaseStep(BaseModel, Base):
     custom_id = Column(String(250), nullable=False)
     user_required = Column(Boolean, default=False, nullable=False)
     sort_order = Column(Integer, default=0)
-    type = Column(Enum(*list(map(lambda x: x.name, VcsReleaseStepType))), nullable=False, default='PRE')
+    type = Column(Enum(*list([x.name for x in VcsReleaseStepType])), nullable=False, default='PRE')
     vcs_release_id = Column(Integer, ForeignKey('vcs_releases.id'), nullable=False, index=True)
 
 

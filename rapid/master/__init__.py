@@ -108,7 +108,7 @@ def configure_sub_modules(flask_app, args):  # pylint: disable=unused-argument
             traceback.print_exc()
 
     logger.info("-- Configuring modules")
-    for name, item in modules.items():  # pylint: disable=unused-variable
+    for name, item in list(modules.items()):  # pylint: disable=unused-variable
         try:
             modules[name].configure_module(flask_app)
             logger.info("    Configured: {}".format(name))
@@ -156,7 +156,7 @@ def run_queue(flask_app):
             except Exception as exception:
                 logger.error(exception)
 
-            filtered_clients = {name: client for name, client in clients.items() if not hasattr(client, 'no-longer-active')}
+            filtered_clients = {name: client for name, client in list(clients.items()) if not hasattr(client, 'no-longer-active')}
 
             if filtered_clients != clients:
                 StoreService.save_clients(filtered_clients, flask_app)

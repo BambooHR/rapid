@@ -201,7 +201,7 @@ class Executor(object):
     def _get_name_map(self, results):
         name_map = {}
         if results:
-            for name in results.keys():
+            for name in list(results.keys()):
                 _sp = name.split('~')
                 last = _sp[-1]
                 name_map[last] = name
@@ -312,7 +312,10 @@ class Executor(object):
         try:
             if isinstance(message, bytes):
                 message = message.decode('utf-8')
-            logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+            try:
+                logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
+            except:
+                logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))  # Python 3 no unicode cast needed.
         except AttributeError:
             #  Thread race condition on windows os will occasionally be None
             pass

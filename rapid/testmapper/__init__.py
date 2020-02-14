@@ -169,9 +169,9 @@ class QaTestFile(object):
 
     def printout(self):
         if self._areas:
-            for area, area_map in self._areas.items():
-                for feature, feature_map in area_map.items():
-                    for _bp, tests in feature_map.items():
+            for area, area_map in list(self._areas.items()):
+                for feature, feature_map in list(area_map.items()):
+                    for _bp, tests in list(feature_map.items()):
                         print("{}:{}:{}".format(area, feature, _bp))
                         for test in tests:
                             print("      - ({}) {} -- [{}]".format(test['current_settings'].get('level'), test['name'],
@@ -257,12 +257,12 @@ def print_results(results):
 
 
 def __print_results(areas):
-    for area, area_map in areas.iteritems():
+    for area, area_map in areas.items():
         print(area)
-        for feature, feature_map in area_map.iteritems():
-            print("  {}".format(feature))
-            for _bp, tests in feature_map.iteritems():
-                print("   {}".format(_bp))
+        for feature, feature_map in area_map.items():
+            print(("  {}".format(feature)))
+            for _bp, tests in feature_map.items():
+                print(("   {}".format(_bp)))
                 # print "{}:{}:{}".format(area, feature, bp)
                 for test in tests:
                     print("      - ({}) {} -- [{}]".format(test['current_settings'].get('level'), test['name'],
