@@ -4,7 +4,9 @@ from rapid.lib.work_request import WorkRequest
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 
 
-class ContainerHandler(QueueHandler, metaclass=ABCMeta):
+class ContainerHandler(QueueHandler):
+    __metaclass__ = ABCMeta
+
     @abstractproperty
     def container_identifier(self):
         yield
