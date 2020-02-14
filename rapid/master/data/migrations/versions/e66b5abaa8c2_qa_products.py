@@ -55,33 +55,33 @@ def upgrade():
     op.create_index(op.f('ix_qa_products_name'), 'qa_products', ['name'], unique=False)
     op.create_index(op.f('ix_qa_products_vcs_id'), 'qa_products', ['vcs_id'], unique=False)
 
-    op.add_column(u'qa_areas', sa.Column('product_id', sa.Integer(), nullable=True))
+    op.add_column('qa_areas', sa.Column('product_id', sa.Integer(), nullable=True))
     op.create_index(op.f('ix_qa_areas_product_id'), 'qa_areas', ['product_id'], unique=False)
 
     if 'sqlite' != op.get_context().dialect.name:
         op.create_foreign_key(None, 'qa_areas', 'qa_products', ['product_id'], ['id'])
 
-    op.add_column(u'qa_behavior_points', sa.Column('product_id', sa.Integer(), nullable=True))
+    op.add_column('qa_behavior_points', sa.Column('product_id', sa.Integer(), nullable=True))
     op.create_index(op.f('ix_qa_behavior_points_product_id'), 'qa_behavior_points', ['product_id'], unique=False)
 
     if 'sqlite' != op.get_context().dialect.name:
         op.create_foreign_key(None, 'qa_behavior_points', 'qa_products', ['product_id'], ['id'])
 
-    op.add_column(u'qa_features', sa.Column('product_id', sa.Integer(), nullable=True))
+    op.add_column('qa_features', sa.Column('product_id', sa.Integer(), nullable=True))
     op.create_index(op.f('ix_qa_features_product_id'), 'qa_features', ['product_id'], unique=False)
 
     if 'sqlite' != op.get_context().dialect.name:
         op.create_foreign_key(None, 'qa_features', 'qa_products', ['product_id'], ['id'])
 
     if 'sqlite' != op.get_context().dialect.name:
-        op.alter_column(u'qa_test_mappings', 'feature_id',
+        op.alter_column('qa_test_mappings', 'feature_id',
                    existing_type=sa.INTEGER(),
                    nullable=True)
     op.create_index(op.f('ix_qa_test_mappings_area_id'), 'qa_test_mappings', ['area_id'], unique=False)
     op.create_index(op.f('ix_qa_test_mappings_behavior_id'), 'qa_test_mappings', ['behavior_id'], unique=False)
     op.create_index(op.f('ix_qa_test_mappings_feature_id'), 'qa_test_mappings', ['feature_id'], unique=False)
 
-    op.add_column(u'qa_tests', sa.Column('qa_test_type_id', sa.Integer(), nullable=True))
+    op.add_column('qa_tests', sa.Column('qa_test_type_id', sa.Integer(), nullable=True))
     op.create_index(op.f('ix_qa_tests_qa_test_type_id'), 'qa_tests', ['qa_test_type_id'], unique=False)
 
     if 'sqlite' != op.get_context().dialect.name:
@@ -116,28 +116,28 @@ def downgrade():
 
     op.drop_constraint(None, 'qa_tests', type_='foreignkey')
     op.drop_index(op.f('ix_qa_tests_qa_test_type_id'), table_name='qa_tests')
-    op.drop_column(u'qa_tests', 'qa_test_type_id')
+    op.drop_column('qa_tests', 'qa_test_type_id')
 
     op.drop_index(op.f('ix_qa_test_mappings_feature_id'), table_name='qa_test_mappings')
     op.drop_index(op.f('ix_qa_test_mappings_behavior_id'), table_name='qa_test_mappings')
     op.drop_index(op.f('ix_qa_test_mappings_area_id'), table_name='qa_test_mappings')
 
     if 'sqlite' != op.get_context().dialect.name:
-        op.alter_column(u'qa_test_mappings', 'feature_id',
+        op.alter_column('qa_test_mappings', 'feature_id',
                    existing_type=sa.INTEGER(),
                    nullable=False)
 
     op.drop_constraint(None, 'qa_features', type_='foreignkey')
     op.drop_index(op.f('ix_qa_features_product_id'), table_name='qa_features')
-    op.drop_column(u'qa_features', 'product_id')
+    op.drop_column('qa_features', 'product_id')
 
     op.drop_constraint(None, 'qa_behavior_points', type_='foreignkey')
     op.drop_index(op.f('ix_qa_behavior_points_product_id'), table_name='qa_behavior_points')
-    op.drop_column(u'qa_behavior_points', 'product_id')
+    op.drop_column('qa_behavior_points', 'product_id')
 
     op.drop_constraint(None, 'qa_areas', type_='foreignkey')
     op.drop_index(op.f('ix_qa_areas_product_id'), table_name='qa_areas')
-    op.drop_column(u'qa_areas', 'product_id')
+    op.drop_column('qa_areas', 'product_id')
 
     op.drop_index(op.f('ix_qa_products_vcs_id'), table_name='qa_products')
     op.drop_index(op.f('ix_qa_products_name'), table_name='qa_products')

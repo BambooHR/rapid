@@ -32,7 +32,7 @@ class StandardQueueHandler(QueueHandler, Injectable):
         3. Send the work to the client
           3a. If the client fails, unassign the work
         """
-        clients_array = clients.values()
+        clients_array = list(clients.values())
         random.shuffle(clients_array)
         pages = MasterCommunicator.find_available_clients(clients_array, work_request.grain, self.rapid_config.verify_certs)
         for client in pages:

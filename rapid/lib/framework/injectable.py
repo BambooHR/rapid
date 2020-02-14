@@ -17,8 +17,6 @@
 from abc import ABCMeta
 
 
-class Injectable(object):
-    __metaclass__ = ABCMeta
-
+class Injectable(object, metaclass=ABCMeta):
     __injected__ = []
     __injectables__ = {}

@@ -121,8 +121,8 @@ class QaDal(GeneralDal):
         feature_mapper = {}
         feature_keys = list()
 
-        for area, features in json.iteritems():
-            feature_keys.extend(features.keys())
+        for area, features in json.items():
+            feature_keys.extend(list(features.keys()))
 
         for feature in session.query(QaFeature).filter(QaFeature.in_(feature_keys)):
             feature_mapper[feature.name] = feature
@@ -259,7 +259,7 @@ class QaDal(GeneralDal):
 
                 if hasattr(summary, 'keys'):
                     statuses = {}
-                    for status in session.query(Status).filter(Status.name.in_(summary.keys())):
+                    for status in session.query(Status).filter(Status.name.in_(list(summary.keys()))):
                         statuses[status.name] = status
 
                     for (key, value) in summary.items():
@@ -285,7 +285,7 @@ class QaDal(GeneralDal):
 
                 should_create = dict(results)
                 test_cache = {}
-                for qa_test in session.query(QaTest).filter(QaTest.name.in_(results.keys())):
+                for qa_test in session.query(QaTest).filter(QaTest.name.in_(list(results.keys()))):
                     if qa_test.name in should_create:
                         del should_create[qa_test.name]
                         test_cache[qa_test.name] = qa_test
