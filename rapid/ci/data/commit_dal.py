@@ -88,7 +88,7 @@ class CommitDal(object):
         if commit_identifier:
             commit = self._get_or_create_commit(commit_identifier, session, vcs_id)
             if additional_info:
-                for key, value in additional_info.iteritems():
+                for key, value in additional_info.items():
                     parameter = CommitParameters(commit_id=commit.id, name=key, value=value)
                     session.add(parameter)
 

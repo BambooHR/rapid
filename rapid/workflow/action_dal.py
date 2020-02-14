@@ -309,7 +309,7 @@ class ActionDal(GeneralDal, Injectable):
                                (action_instance.end_date and workflow_check['highest_end_date'] < action_instance.end_date):
                                 workflow_check['highest_end_date'] = action_instance.end_date
 
-                for mapping in mappings.values():
+                for mapping in list(mappings.values()):
                     workflow = mapping['obj']
                     stage = mapping['stage_obj']
 
@@ -404,9 +404,9 @@ class ActionDal(GeneralDal, Injectable):
     def _save_stats(self, pipeline_instance_id, session, post_data):  # pylint: disable=too-many-locals
         if 'stats' in post_data:
             statistics_cache = {}
-            stats_needed = post_data['stats'].keys()
+            stats_needed = list(post_data['stats'].keys())
 
-            for stat in session.query(Statistics).filter(Statistics.name.in_(post_data['stats'].keys())):
+            for stat in session.query(Statistics).filter(Statistics.name.in_(list(post_data['stats'].keys()))):
                 try:
                     if stat.name in stats_needed:
                         clone_stats = list(stats_needed)

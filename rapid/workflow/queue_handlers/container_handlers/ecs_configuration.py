@@ -70,7 +70,7 @@ class ECSConfiguration(Configuration):
         return self._get_section_values('task_defaults')
 
     def _get_section_values(self, section):
-        return {key: getattr(self, key) for key in self.section_mapping[section].keys() if getattr(self, key) != self.NOT_SET}
+        return {key: getattr(self, key) for key in list(self.section_mapping[section].keys()) if getattr(self, key) != self.NOT_SET}
 
     def _handle_normal_value(self, parser, key, section, type_cast):
         new_value = parser.get(section, key)

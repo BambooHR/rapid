@@ -50,7 +50,7 @@ def upgrade():
                     sa.Column('custom_id', sa.String(length=250), nullable=False),
                     sa.Column('user_required', sa.Boolean(), nullable=False),
                     sa.Column('sort_order', sa.Integer(), nullable=True),
-                    sa.Column('type', sa.Enum(*list(map(lambda x: x.name, VcsReleaseStepType))), nullable=False),
+                    sa.Column('type', sa.Enum(*list([x.name for x in VcsReleaseStepType])), nullable=False),
                     sa.Column('vcs_release_id', sa.Integer(), nullable=False),
                     sa.ForeignKeyConstraint(['vcs_release_id'], ['vcs_releases.id'], ),
                     sa.PrimaryKeyConstraint('id'),
