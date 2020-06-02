@@ -12,3 +12,4 @@ docker/configs
 docker/logs
 docker/scripts
 nosetests.xml
+.DS_Store
