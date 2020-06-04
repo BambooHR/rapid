@@ -53,7 +53,7 @@ def set_db(_db):
 
 
 def is_primary_worker():
-    return uwsgi.worker_id() == 0 if UWSGI else not UWSGI
+    return uwsgi.worker_id() == 1 if UWSGI else not UWSGI
 
 
 def get_db_session():
