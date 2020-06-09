@@ -14,6 +14,7 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
+from rapid.release.release_service import ReleaseService
 
 try:
     import simplejson as json
@@ -44,11 +45,12 @@ class APIRouter(Injectable):
     __injectables__ = {'action_instance_service': ActionInstanceService,
                        'queue_service': QueueService,
                        ModuleConstants.QA_MODULE: None,
-                       'workflow_service': WorkflowService}
+                       'workflow_service': WorkflowService,
+                       'release_service': ReleaseService}
     classes, models, table_names = None, None, None
     class_map = {}
 
-    def __init__(self, action_instance_service, queue_service, qa_module, workflow_service):
+    def __init__(self, action_instance_service, queue_service, qa_module, workflow_service, release_service):
         """
 
         :param action_instance_service:
@@ -59,12 +61,14 @@ class APIRouter(Injectable):
         :type qa_module: rapid.lib.modules.modules.QaModule
         :param workflow_service:
         :type workflow_service: WorkflowService
+        :type release_service: ReleaseService
         """
         self.app = None
         self.action_instance_service = action_instance_service
         self.queue_service = queue_service
         self.qa_module = qa_module
         self.workflow_service = workflow_service
+        self.release_service = release_service
 
     def register_url_rules(self, flask_app):
         flask_app.add_url_rule('/api/<path:endpoint>', 'api_list', api_key_required(self.list), methods=['GET', 'POST'])
@@ -95,6 +99,8 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/print", "print_pipeline_instance", api_key_required(self.print_pipeline_instance), methods=['GET'])
 
+        flask_app.add_url_rule("/api/reconcile", "reconcile", self.reconcile_releases, methods=['GET'])
+
         self.app = flask_app
 
     def _get_args(self):
@@ -104,6 +110,9 @@ class APIRouter(Injectable):
         except Exception:
             pass
         return request.args
+
+    def reconcile_releases(self):
+        return Response(json.dumps(self.release_service.reconcile_releases()), content_type='application/json')
 
     def reset_pipeline_instance(self, _id):
         response = self.action_instance_service.reset_pipeline_instance(_id)

@@ -14,6 +14,9 @@
  limitations under the License.
 """
 import logging
+
+from sqlalchemy import and_, exists
+
 from rapid.ci.data.models import Commit
 from rapid.lib.constants import ModuleConstants, StatusConstants, status_type_severity_mapping
 from rapid.lib.framework.injectable import Injectable
@@ -135,3 +138,13 @@ class ReleaseDal(Injectable):
 
         logger.debug("Step is not the head of the release.")
         return None
+
+    def reconcile_releases(self):
+        releases = []
+        for session in get_db_session():
+            for release in session.query(Release).join(Step).filter(and_(Release.status_id < StatusConstants.SUCCESS,
+                                                                         ~exists().where(Step.status_id < StatusConstants.SUCCESS))).all():
+                release.status_id = StatusConstants.SUCCESS
+                releases.append(release.serialize())
+            session.commit()
+        return releases
