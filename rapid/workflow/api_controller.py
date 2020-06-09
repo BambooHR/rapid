@@ -99,8 +99,6 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/print", "print_pipeline_instance", api_key_required(self.print_pipeline_instance), methods=['GET'])
 
-        flask_app.add_url_rule("/api/reconcile", "reconcile", self.reconcile_releases, methods=['GET'])
-
         self.app = flask_app
 
     def _get_args(self):
@@ -110,9 +108,6 @@ class APIRouter(Injectable):
         except Exception:
             pass
         return request.args
-
-    def reconcile_releases(self):
-        return Response(json.dumps(self.release_service.reconcile_releases()), content_type='application/json')
 
     def reset_pipeline_instance(self, _id):
         response = self.action_instance_service.reset_pipeline_instance(_id)
