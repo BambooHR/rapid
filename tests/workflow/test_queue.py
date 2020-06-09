@@ -11,14 +11,14 @@ from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 
 class TestQueue(TestCase):
     def test_setup_queue_handlers_fires_correctly(self):
-        test_queue = Queue(Mock(), Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
+        test_queue = Queue(Mock(), Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]), Mock())
         self.assertTrue(isinstance(test_queue.queue_handlers[0], TestQueueHandler))
 
     def test_process_queue_will_process_appropriately(self):
         mock_queue_service = Mock()
         good_mock = Mock(foo='good')
         mock_queue_service.get_current_work.return_value = [Mock(foo='bad'), good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]), Mock())
 
         check = Mock()
         check.side_effect = [False, True]
@@ -38,7 +38,7 @@ class TestQueue(TestCase):
         bad_mock = Mock(foo='bad')
         mock_queue_service.get_current_work.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
+        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]), Mock())
 
         check = Mock()
         check.side_effect = [True, False]
@@ -61,7 +61,7 @@ class TestQueue(TestCase):
         mock_queue_service = Mock()
         good_mock = {'foo': 'good'}
         mock_queue_service.get_verify_working.return_value = [{'foo': 'bad'}, good_mock]
-        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]), Mock())
 
         check = Mock()
         check.side_effect = [False, True]
@@ -81,7 +81,7 @@ class TestQueue(TestCase):
         bad_mock = {'foo': 'bad', 'id': 'foo_id'}
         mock_queue_service.get_verify_working.return_value = [good_mock, bad_mock]
         mock_action_service = Mock()
-        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]))
+        queue = Queue(mock_queue_service, mock_action_service, Mock(), Mock(queue_handlers=[TestQueueHandler(Mock(), Mock())]), Mock())
 
         check = Mock()
         check.side_effect = [True, False]
@@ -108,7 +108,7 @@ class TestQueue(TestCase):
         mock_queue_service = Mock()
         mock_queue_service.get_current_work.return_value = [1, 2]
 
-        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[mock_handler]))
+        queue = Queue(mock_queue_service, Mock(), Mock(), Mock(queue_handlers=[mock_handler]), Mock())
         queue.process_queue([])
 
         self.assertEqual(1, mock_handler.can_process_work_request.call_count)
