@@ -26,3 +26,6 @@ class ReleaseService(Injectable):
 
     def set_release_step(self, release_id, step_id, status):
         return self.release_dal.set_release_step(release_id, step_id, status)
+
+    def reconcile_releases(self):
+        return self.release_dal.reconcile_releases()

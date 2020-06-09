@@ -156,6 +156,11 @@ def run_queue(flask_app):
             except Exception as exception:
                 logger.error(exception)
 
+            try:
+                queue.reconcile_releases()
+            except Exception as exception:
+                logger.exception(exception)
+
             filtered_clients = {name: client for name, client in list(clients.items()) if not hasattr(client, 'no-longer-active')}
 
             if filtered_clients != clients:

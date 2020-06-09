@@ -20,6 +20,7 @@ from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.master_configuration import MasterConfiguration
+from rapid.release.release_service import ReleaseService
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.queue_service import QueueService
@@ -31,9 +32,10 @@ class Queue(Injectable):
     __injectables__ = {'queue_service': QueueService,
                        'action_instance_service': ActionInstanceService,
                        'rapid_config': MasterConfiguration,
-                       'queue_constants': None}
+                       'queue_constants': None,
+                       'release_service': ReleaseService}
 
-    def __init__(self, queue_service, action_instance_service, rapid_config, queue_constants):
+    def __init__(self, queue_service, action_instance_service, rapid_config, queue_constants, release_service):
         """
         :param queue_service:
         :type queue_service:
@@ -41,11 +43,13 @@ class Queue(Injectable):
         :type action_instance_service: rapid.workflow.action_instances_service.ActionInstanceService
         :type rapid_config: rapid.master.master_configuration.MasterConfiguration
         :type handler_constants: QueueHandlerConstants
+        :type release_service: ReleaseService
         """
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
         self.rapid_config = rapid_config
         self.handler_constants = queue_constants
+        self.release_service = release_service
 
     @property
     def queue_handlers(self): # type: () -> list[QueueHandler]
@@ -85,6 +89,9 @@ class Queue(Injectable):
 
     def reconcile_pipeline_instances(self):
         self.action_instance_service.reconcile_pipeline_instances()
+
+    def reconcile_releases(self):
+        return self.release_service.reconcile_releases()
 
     def cancel_worker(self, action_instance):
         # type: (dict) -> bool
