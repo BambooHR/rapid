@@ -95,6 +95,7 @@ setup(
         extras_require={
             'test': ['coverage', 'nose', 'ddt', 'mock', 'MagicMock'],
             'master': ['alembic', 'SQLAlchemy>=1.0.6', 'Flask-SQLAlchemy>=2.3.0', 'mysqlclient', 'pygithub', 'simpleeval'],
+            'windows-client': ['waitress==1.4.4'],
             'client': []
         },
 
