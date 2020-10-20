@@ -335,7 +335,7 @@ class Executor(object):
 
                     env[key] = value
                 except (AttributeError, UnicodeEncodeError):
-                    print(f"Failed to encode: {key} => {value}")
+                    print("Failed to encode: {} => {}".format(key, value))
 
         env['PYTHONUNBUFFERED'] = "true"
         env['pipeline_instance_id'] = str(self.work_request.pipeline_instance_id)
