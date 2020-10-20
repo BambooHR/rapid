@@ -30,7 +30,8 @@ from rapid.lib.constants import Constants
 from rapid.lib.exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
 from rapid.lib.features import Features
 from rapid.lib.store_service import StoreService
-from rapid.lib.utils import deep_merge
+from rapid.lib.utils import deep_merge, OSUtil
+
 
 # pylint: disable=broad-except, too-many-instance-attributes
 
@@ -118,7 +119,7 @@ class Executor(object):
                                           get_files_auth=self.rapid_config.get_files_basic_auth)
 
         # Cleanup first
-        self.workspace = os.path.join(self.workspace, str(self.work_request.action_instance_id))
+        self.workspace = OSUtil.path_join(self.workspace, str(self.work_request.action_instance_id))
         self.clean_workspace()
 
         env = self.get_environment()
