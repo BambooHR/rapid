@@ -113,14 +113,14 @@ class TestClientCommunicator(TestCase):
 
         self.assertEqual('Status Code Failure: 404', str(exception.exception))
 
-    @patch('rapid.client.communicator.client_communicator.os')
+    @patch('rapid.client.communicator.client_communicator.OSUtil')
     def test_get_real_file_name_empty_override_uses_os_path(self, patch_os):
-        patch_os.path.join.return_value = '/testing/this/thing'
-        communicator = ClientCommunicator(None, flask_app=Mock(rapid_config=Mock(os_path_override=None)))
+        patch_os.path_join.return_value = '/testing/this/thing'
+        communicator = ClientCommunicator(None)
         self.assertEqual('/testing/this/thing', communicator._get_real_file_name('foo', 'bar'))
 
-    @patch('rapid.client.communicator.client_communicator.os')
-    def test_get_real_file_name_not_empty_override(self, patch_os):
-        patch_os.path.sep.join.return_value = '/testing/this/thing'
-        communicator = ClientCommunicator(None, flask_app=Mock(rapid_config=Mock(os_path_override='foobie_bubcus')))
+    @patch('rapid.lib.utils.os.getenv')
+    def test_get_real_file_name_not_empty_override(self, patch_env):
+        patch_env.return_value = 'foobie_bubcus'
+        communicator = ClientCommunicator(None)
         self.assertEqual('foofoobie_bubcusbar', communicator._get_real_file_name('foo', 'bar'))
