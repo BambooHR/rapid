@@ -328,7 +328,7 @@ class Executor(object):
         if self.work_request.environment:
             for key, value in self.work_request.environment.items():
                 try:
-                    env[key.decode('ascii', 'ignore')] = value.decode('ascii', 'ignore')
+                    env[key.encode('ascii', 'ignore')] = value.encode('ascii', 'ignore')
                 except AttributeError:
                     if type(key) == str and type(value) == str:
                         env[key] = value
