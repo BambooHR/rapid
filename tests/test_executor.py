@@ -525,3 +525,7 @@ class TestExecutor(TestCase):
 
         executor.verify_file_lines(['{}bogus2'.format(Constants.PARAMETERS)], None)
         verify_lines.assert_called_with( '{}bogus2'.format(Constants.PARAMETERS), None)
+
+    def test_get_environment_with_unicode_bytes(self):
+        executor = Executor(Mock(environment={b'Testing': u'\u2013 Trial and Error'}), None)
+        self.assertEqual('– Trial and Error', executor.get_environment()['Testing'])

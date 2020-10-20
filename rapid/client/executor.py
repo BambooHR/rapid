@@ -328,10 +328,14 @@ class Executor(object):
         if self.work_request.environment:
             for key, value in self.work_request.environment.items():
                 try:
-                    env[key.decode('ascii', 'ignore')] = value.decode('ascii', 'ignore')
-                except AttributeError:
-                    if type(key) == str and type(value) == str:
-                        env[key] = value
+                    if type(key) != str:
+                        key = key.decode('utf-8')
+                    if type(value) != str:
+                        value = value.decode('utf-8')
+
+                    env[key] = value
+                except (AttributeError, UnicodeEncodeError):
+                    print(f"Failed to encode: {key} => {value}")
 
         env['PYTHONUNBUFFERED'] = "true"
         env['pipeline_instance_id'] = str(self.work_request.pipeline_instance_id)

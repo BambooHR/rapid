@@ -85,3 +85,10 @@ class ClientConfiguration(Configuration):
             except Exception:  # pylint: disable=broad-except
                 pass
 
+        if self.os_path_override:
+            try:
+                os.environ.update({'os_path_override':self.os_path_override})
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+
