@@ -22,6 +22,9 @@ import logging
 import datetime
 
 from hashlib import sha1
+
+from sqlalchemy.util import classproperty
+
 from rapid.lib.version import Version
 
 logger = logging.getLogger("rapid")
@@ -174,3 +177,18 @@ class UpgradeUtil(object):
         except Exception as exception:
             logger.error(exception)
             return False
+
+
+class OSUtil:
+
+    @classproperty
+    def separator(clss):
+        return os.getenv('os_path_override', os.path.sep)
+
+    @staticmethod
+    def path_join(*args):
+        """
+        :param args: List[str]
+        :return:
+        """
+        return OSUtil.separator.join(args)

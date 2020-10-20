@@ -23,6 +23,7 @@ from requests.exceptions import ConnectionError  # pylint: disable=redefined-bui
 
 from rapid.client.client_configuration import ClientConfiguration
 from rapid.lib.constants import HeaderConstants
+from rapid.lib.utils import OSUtil
 
 from rapid.lib.version import Version
 
@@ -58,7 +59,6 @@ class ClientCommunicator(Communicator):
         self.quarantine_directory = quarantine_directory
         self.verify_certs = verify_certs if not flask_app else flask_app.rapid_config.verify_certs
         self.get_files_auth = get_files_auth
-        self.os_path_override = flask_app.rapid_config.os_path_override if flask_app.rapid_config.os_path_override else None
 
     def get_work_request_by_action_instance_id(self, action_instance_id):
         return self._default_get(self.get_uri(self.WORK_REQUEST_URI.format(action_instance_id))).json()
@@ -222,11 +222,7 @@ class ClientCommunicator(Communicator):
         return request
 
     def _get_real_file_name(self, directory, file_name):
-        real_file_name = os.path.join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
-
-        if self.os_path_override:
-            real_file_name = self.os_path_override.join([directory, file_name.split('/')[-1]])
-        return real_file_name
+        return OSUtil.path_join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
 
     def get_downloaded_file_name(self, directory, file_name):
         real_file_name = self._get_real_file_name(directory, file_name)
