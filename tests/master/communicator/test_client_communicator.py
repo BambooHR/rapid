@@ -115,7 +115,7 @@ class TestClientCommunicator(TestCase):
 
     @patch('rapid.client.communicator.client_communicator.os')
     def test_get_real_file_name_empty_override_uses_os_path(self, patch_os):
-        patch_os.path.sep.join.return_value = '/testing/this/thing'
+        patch_os.path.join.return_value = '/testing/this/thing'
         communicator = ClientCommunicator(None, flask_app=Mock(rapid_config=Mock(os_path_override=None)))
         self.assertEqual('/testing/this/thing', communicator._get_real_file_name('foo', 'bar'))
 
