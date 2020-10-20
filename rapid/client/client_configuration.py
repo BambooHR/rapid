@@ -43,6 +43,7 @@ class ClientConfiguration(Configuration):
         self.use_ssl = None
         self.verify_certs = None
         self.log_file = None
+        self.os_path_override = None
 
         self.is_single_use = False
 
@@ -58,6 +59,7 @@ class ClientConfiguration(Configuration):
                 'master_uri': ['http://rapidci.local'],
                 'registration_rate': [180, int],
                 'executor_count': [2, int],
+                'os_path_override': [None],
                 'grains': [None],
                 'grain_restrict': [False, bool],
                 'quarantine_directory': [os.path.join(tempfile.gettempdir(), 'rapid', 'quarantine')],
