@@ -15,7 +15,7 @@ class TestClientConfiguration(TestCase):
         client_config._set_values(parser)
 
         self.assertEqual('f', client_config.os_path_override)
-        self.assertEqual('f', OSUtil.separator)
+        self.assertEqual('f', OSUtil.separator())
 
     def test_os_path_override_default(self):
         parser = ConfigParser()
