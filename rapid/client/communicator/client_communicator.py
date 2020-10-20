@@ -58,6 +58,7 @@ class ClientCommunicator(Communicator):
         self.quarantine_directory = quarantine_directory
         self.verify_certs = verify_certs if not flask_app else flask_app.rapid_config.verify_certs
         self.get_files_auth = get_files_auth
+        self.os_path_override = flask_app.rapid_config.os_path_override if flask_app.rapid_config.os_path_override else os.path.sep
 
     def get_work_request_by_action_instance_id(self, action_instance_id):
         return self._default_get(self.get_uri(self.WORK_REQUEST_URI.format(action_instance_id))).json()
@@ -220,8 +221,15 @@ class ClientCommunicator(Communicator):
             raise Exception("Status Code Failure: {}".format(request.status_code))
         return request
 
-    def get_downloaded_file_name(self, directory, file_name):
+    def _get_real_file_name(self, directory, file_name):
         real_file_name = os.path.join(directory, file_name.split('/')[-1])  # required files must ALWAYS be with / not \
+
+        if self.os_path_override:
+            real_file_name = self.os_path_override.join([directory, file_name.split('/')[-1]])
+        return real_file_name
+
+    def get_downloaded_file_name(self, directory, file_name):
+        real_file_name = self._get_real_file_name(directory, file_name)
         try:
             os.makedirs(os.path.dirname(real_file_name))
         except Exception:

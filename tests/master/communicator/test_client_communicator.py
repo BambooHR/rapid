@@ -79,7 +79,7 @@ class TestClientCommunicator(TestCase):
     @patch('rapid.client.communicator.client_communicator.requests')
     @patch('rapid.client.communicator.client_communicator.ClientCommunicator._string_header_values')
     def test_default_send_stringifies_headers(self, header_values, requests, store_service):
-        communicator = ClientCommunicator(None)
+        communicator = ClientCommunicator(None, flask_app=Mock())
         requests.put.return_value = Mock(status_code=200)
         communicator._default_send('bogus', None)
 
@@ -88,7 +88,7 @@ class TestClientCommunicator(TestCase):
     @patch('rapid.client.communicator.client_communicator.StoreService')
     @patch('rapid.client.communicator.client_communicator.requests')
     def test_default_send_defaults_to_put(self, requests, store_service):
-        communicator = ClientCommunicator(None)
+        communicator = ClientCommunicator(None, flask_app=Mock())
         requests.put.return_value = Mock(status_code=200)
         communicator._default_send('bogus', None)
 
@@ -97,7 +97,7 @@ class TestClientCommunicator(TestCase):
     @patch('rapid.client.communicator.client_communicator.StoreService')
     @patch('rapid.client.communicator.client_communicator.requests')
     def test_default_send_supports_post(self, requests, store_service):
-        communicator = ClientCommunicator(None)
+        communicator = ClientCommunicator(None, flask_app=Mock())
         requests.post.return_value = Mock(status_code=200)
         communicator._default_send('bogus', None, 'post')
 
@@ -106,9 +106,21 @@ class TestClientCommunicator(TestCase):
     @patch('rapid.client.communicator.client_communicator.StoreService')
     @patch('rapid.client.communicator.client_communicator.requests')
     def test_default_send_throws_exception(self, requests, store_service):
-        communicator = ClientCommunicator(None)
+        communicator = ClientCommunicator(None, flask_app=Mock())
         requests.put.return_value = Mock(status_code=404)
         with self.assertRaises(Exception) as exception:
             communicator._default_send('bogus', None)
 
         self.assertEqual('Status Code Failure: 404', str(exception.exception))
+
+    @patch('rapid.client.communicator.client_communicator.os')
+    def test_get_real_file_name_empty_override_uses_os_path(self, patch_os):
+        patch_os.path.sep.join.return_value = '/testing/this/thing'
+        communicator = ClientCommunicator(None, flask_app=Mock(rapid_config=Mock(os_path_override=None)))
+        self.assertEqual('/testing/this/thing', communicator._get_real_file_name('foo', 'bar'))
+
+    @patch('rapid.client.communicator.client_communicator.os')
+    def test_get_real_file_name_not_empty_override(self, patch_os):
+        patch_os.path.sep.join.return_value = '/testing/this/thing'
+        communicator = ClientCommunicator(None, flask_app=Mock(rapid_config=Mock(os_path_override='foobie_bubcus')))
+        self.assertEqual('foofoobie_bubcusbar', communicator._get_real_file_name('foo', 'bar'))
