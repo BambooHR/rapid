@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from rapid.client.client_configuration import ClientConfiguration
 
 try:
     import simplejson as json
@@ -124,3 +125,8 @@ class TestClientCommunicator(TestCase):
         patch_env.return_value = 'foobie_bubcus'
         communicator = ClientCommunicator(None)
         self.assertEqual('foofoobie_bubcusbar', communicator._get_real_file_name('foo', 'bar'))
+
+    def test_trial(self):
+        config = ClientConfiguration('/Users/mbright/code/cihub/vagrantconf/configs/rapid.cfg')
+        client_communicator = ClientCommunicator(None)
+        print(client_communicator._get_real_file_name('/mnt/d/rapid/workspace', '/ci/build.sh'))
