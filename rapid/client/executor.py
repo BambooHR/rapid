@@ -385,7 +385,7 @@ class Executor(object):
             try:
                 Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
                 if platform.system() == 'Windows':
-                    os.system('rmdir /S /Q {}'.format(self.workspace))
+                    os.system('rd /s /q {}'.format(self.workspace))  # shutil.rmtree stalls in windows. The os.system runs in background
                 else:
                     shutil.rmtree(self.workspace, ignore_errors=True)
             except Exception:
