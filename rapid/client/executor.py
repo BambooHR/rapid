@@ -77,7 +77,7 @@ class Executor(object):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        for attribute in ['logger', 'thread', 'reading_thread', 'child_process', 'rapid_config']:
+        for attribute in ['logger', 'thread', 'reading_thread', 'child_process', 'rapid_config', '_file_handler']:
             if attribute in state:
                 del state[attribute]
 
@@ -111,7 +111,7 @@ class Executor(object):
         return logger
 
     def _get_log_file_name(self):
-        if self.rapid_config.workspace and self.rapid_config.log_to_directory:
+        if self.rapid_config and self.rapid_config.workspace and self.rapid_config.log_to_directory:
             try:
                 os.makedirs(os.path.join(self.rapid_config.log_to_directory), exist_ok=True)
             except:  # pylint: disable=bare-except
