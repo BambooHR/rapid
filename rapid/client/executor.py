@@ -96,9 +96,7 @@ class Executor(object):
     def _create_logger(self):
         log_file_name = self._get_log_file_name()
         if not log_file_name:
-            logger = logging.getLogger('rapid')
-            logger.setLevel(logging.INFO)
-            return logger
+            return rapid_logger
 
         logger = logging.getLogger("rapid-executor")
         logger.setLevel(logging.INFO)
@@ -111,7 +109,7 @@ class Executor(object):
         return logger
 
     def _get_log_file_name(self):
-        if self.rapid_config and self.rapid_config.workspace and self.rapid_config.log_to_directory:
+        if self.rapid_config and self.rapid_config.log_to_directory:
             try:
                 os.makedirs(os.path.join(self.rapid_config.log_to_directory), exist_ok=True)
             except:  # pylint: disable=bare-except
