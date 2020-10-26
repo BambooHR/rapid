@@ -32,6 +32,7 @@ from rapid.lib.features import Features
 from rapid.lib.store_service import StoreService
 from rapid.lib.utils import deep_merge, OSUtil
 
+rapid_logger = logging.getLogger('rapid')
 
 # pylint: disable=broad-except, too-many-instance-attributes
 
@@ -69,13 +70,14 @@ class Executor(object):
         self.rapid_config = rapid_config
         self.analyze_tests = None
         self.pid = None
+        self._file_handler = None
 
         if self.logger is None:
             self.logger = self._create_logger()
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        for attribute in ['logger', 'thread', 'reading_thread', 'child_process', 'rapid_config']:
+        for attribute in ['logger', 'thread', 'reading_thread', 'child_process', 'rapid_config', '_file_handler']:
             if attribute in state:
                 del state[attribute]
 
@@ -92,15 +94,37 @@ class Executor(object):
             raise Exception("No command was set.")
 
     def _create_logger(self):
-        logger = logging.getLogger("rapid")
+        log_file_name = self._get_log_file_name()
+        if not log_file_name:
+            return rapid_logger
+
+        logger = logging.getLogger("rapid-executor")
         logger.setLevel(logging.INFO)
+
+        self._file_handler = logging.FileHandler(log_file_name)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self._file_handler.setFormatter(formatter)
+        logger.addHandler(self._file_handler)
+        
         return logger
+
+    def _get_log_file_name(self):
+        if self.rapid_config and self.rapid_config.log_to_directory:
+            try:
+                os.makedirs(os.path.join(self.rapid_config.log_to_directory), exist_ok=True)
+            except:  # pylint: disable=bare-except
+                pass
+            return os.path.join(self.rapid_config.log_to_directory, '{}.log'.format(self.work_request.action_instance_id))
+        return None
 
     def start(self, threaded=True):
         """
         Spin off a process that will execute and run the given work request.
         :return:
         """
+        if self._get_log_file_name():
+            rapid_logger.info("Running: {}".format(self._get_log_file_name()))
+
         if threaded:
             self.thread = threading.Thread(target=self._start_child_process)
             self.thread.daemon = True
@@ -196,8 +220,14 @@ class Executor(object):
         except Exception as exception:
             self.logger.error(exception)
 
+        if self._file_handler:
+            self._file_handler.close()
+            self.logger.removeHandler(self._file_handler)
         # Clear only after having sent the done.
         StoreService.clear_executor(self)
+
+        if self._get_log_file_name():
+            rapid_logger.info("Finished: {}".format(self._get_log_file_name()))
 
     def _get_name_map(self, results):
         name_map = {}

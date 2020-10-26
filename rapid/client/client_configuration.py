@@ -44,6 +44,7 @@ class ClientConfiguration(Configuration):
         self.verify_certs = None
         self.log_file = None
         self.os_path_override = None
+        self.log_to_directory = False
 
         self.is_single_use = False
 
@@ -67,7 +68,8 @@ class ClientConfiguration(Configuration):
                 'api_key': [str(uuid.uuid3(uuid.NAMESPACE_OID, 'ClientApiKey!')).replace('-', '')],
                 'install_uri': ['https://pypi.python.org/pypi/'],
                 'install_options': [''],
-                'get_files_basic_auth': [None, list, ':']
+                'get_files_basic_auth': [None, list, ':'],
+                'log_to_directory': [None, str]
             },
             'general': {
                 'use_ssl': [False, bool],
