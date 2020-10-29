@@ -87,6 +87,14 @@ def configure_application(flask_app, args, manual_db_upgrade=False):
         else:
             run_db_upgrades(flask_app)
             setup_queue_thread(flask_app)
+    load_extensions(flask_app)
+
+
+def load_extensions(flask_app):
+    from rapid.lib.framework.ioc import IOC
+    from rapid.extensions.extension_loader import ExtensionLoader
+    extension_loader = IOC.get_class_instance(ExtensionLoader)
+    extension_loader.load_extensions(flask_app)
 
 
 def create_migration_script(flask_app, migration):
