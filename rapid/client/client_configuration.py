@@ -74,7 +74,8 @@ class ClientConfiguration(Configuration):
             'general': {
                 'use_ssl': [False, bool],
                 'verify_certs': [True, bool],
-                'log_file': [None]
+                'log_file': [None],
+                'extensions': [None, list, ',']
             }
         }
 

@@ -76,7 +76,8 @@ class MasterConfiguration(Configuration):
                 'install_uri': ['https://pypi.python.org/pypi/'],
                 'install_options': [''],
                 'verify_certs': [True, bool],
-                'log_file': [None]
+                'log_file': [None],
+                'extensions': [None, list, ',']
             },
             'ecs': {
                 'ecs_config_file': [None]

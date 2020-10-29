@@ -43,6 +43,8 @@ class Configuration(object):
 
     def __init__(self, file_name=None):
         self.hostname = socket.gethostname()
+        self.extensions = None
+
         self.parse_config_file(file_name)
 
     def parse_config_file(self, file_name):
