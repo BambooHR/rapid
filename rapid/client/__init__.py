@@ -48,6 +48,13 @@ def setup_logger(flask_app):
     setup_logging(flask_app)
 
 
+def load_extensions(flask_app):
+    from rapid.lib.framework.ioc import IOC
+    from rapid.extensions.extension_loader import ExtensionLoader
+    extension_loader = IOC.get_class_instance(ExtensionLoader)
+    extension_loader.load_extensions(flask_app)
+
+
 def configure_application(flask_app, args):
     setup_status_route(flask_app)
     setup_config_from_file(flask_app, args)
@@ -63,6 +70,7 @@ def configure_application(flask_app, args):
         log_server = LogServer(args.log_dir)
         log_server.configure_application(flask_app)
 
+    load_extensions(flask_app)
 
 def clean_workspace():
     try:

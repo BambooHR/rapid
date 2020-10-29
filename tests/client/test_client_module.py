@@ -14,7 +14,8 @@ class TestClientModule(TestCase):
     @patch('rapid.client.is_primary_worker')
     @patch('rapid.client.setup_client_register_thread')
     @patch('rapid.client.clean_workspace')
-    def test_configure_application_register_thread(self, cw, scrt, ipw, rc, lp, sl, scff, ssr):
+    @patch('rapid.client.load_extensions')
+    def test_configure_application_register_thread(self, le, cw, scrt, ipw, rc, lp, sl, scff, ssr):
         ipw.return_value = True
         mock_app = Mock()
         args = Mock(run=False, upgrade=False)
@@ -36,13 +37,15 @@ class TestClientModule(TestCase):
     @patch('rapid.client.is_primary_worker')
     @patch('rapid.client.setup_client_register_thread')
     @patch('rapid.client.clean_workspace')
-    def test_configure_application_does_not_register_when_not_primary(self, cw, scrt, ipw, rc, lp, sl, scff, ssr):
+    @patch('rapid.client.load_extensions')
+    def test_configure_application_does_not_register_when_not_primary(self, le, cw, scrt, ipw, rc, lp, sl, scff, ssr):
         ipw.return_value = False
         mock_app = Mock()
         args = Mock(run=False)
         configure_application(mock_app, args)
         self.assertEqual(0, cw.call_count)
         self.assertEqual(0, scrt.call_count)
+        le.assert_called_with(mock_app)
 
     @patch('rapid.client.setup_status_route')
     @patch('rapid.client.setup_config_from_file')
@@ -52,7 +55,8 @@ class TestClientModule(TestCase):
     @patch('rapid.client.is_primary_worker')
     @patch('rapid.client.setup_client_register_thread')
     @patch('rapid.client.clean_workspace')
-    def test_configure_application_does_not_register_when_runs_an_action_instance(self, cw, scrt, ipw, rc, lp, sl, scff, ssr):
+    @patch('rapid.client.load_extensions')
+    def test_configure_application_does_not_register_when_runs_an_action_instance(self, le, cw, scrt, ipw, rc, lp, sl, scff, ssr):
         ipw.return_value = True
         mock_app = Mock()
         args = Mock(run=True)
