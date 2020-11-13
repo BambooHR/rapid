@@ -41,7 +41,7 @@ class LogServer(object):
                 for check in [{'cmd': 'grep -a {} {}', 'files': ' '.join(log_files)}, {'cmd': 'zgrep -a {} {}', 'files': ' '.join(gz_files)}]:
                     cmd = check['cmd'].format(string_grep, check['files'])
                     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(process.stdout.readline, ''):
+                    for line in iter(process.stdout.readline, b''):
                         found_output = True
                         yield line
 
