@@ -82,6 +82,7 @@ def configure_application(flask_app, args, manual_db_upgrade=False):
         flask_app.rapid_config.set_basic_auth(args.basic_auth)
 
     if is_primary_worker() and not manual_db_upgrade:
+        print("Is Primary Worker!")
         if args.db_downgrade:
             run_db_downgrade(flask_app, args.db_downgrade)
         else:
