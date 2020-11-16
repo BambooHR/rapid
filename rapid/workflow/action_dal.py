@@ -34,7 +34,7 @@ from rapid.lib import get_db_session
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.dal.status_dal import StatusDal
 from rapid.workflow.data.models import ActionInstance, PipelineInstance, PipelineParameters, Status, \
-    PipelineStatistics, Statistics, StageInstance, WorkflowInstance, ActionInstanceConfig
+    PipelineStatistics, Statistics, StageInstance, WorkflowInstance, ActionInstanceConfig, AppConfiguration
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.event_service import EventService
 
@@ -161,9 +161,11 @@ class ActionDal(GeneralDal, Injectable):
     def get_workable_work_requests(self):
         results = []
         for session in get_db_session():
-            work_requests = {}
-            self._get_ready_work_requests(session, work_requests, results)
-            self._get_stalled_work_requests(session, work_requests, results)
+            app_configuration = session.query(AppConfiguration).get(1)
+            if not app_configuration or app_configuration.process_queue:
+                work_requests = {}
+                self._get_ready_work_requests(session, work_requests, results)
+                self._get_stalled_work_requests(session, work_requests, results)
 
         return results
 

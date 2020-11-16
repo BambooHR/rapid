@@ -91,6 +91,10 @@ class ActionInstanceConfig(BaseModel, Base):
     configuration = Column(Text, nullable=False)
 
 
+class AppConfiguration(BaseModel, Base):
+    process_queue = Column(Boolean, default=True)
+
+
 class IntegrationType(BaseModel, Base):
     name = Column(String(255), nullable=False)
     active = Column(Boolean, default=True, nullable=False)

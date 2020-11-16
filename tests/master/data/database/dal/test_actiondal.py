@@ -16,6 +16,7 @@
 
 import datetime
 from unittest.case import TestCase
+from unittest.mock import MagicMock
 
 from mock.mock import patch, Mock
 from nose.tools.trivial import eq_, ok_
@@ -24,7 +25,7 @@ from sqlalchemy import Boolean
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.constants import StatusConstants
 from rapid.workflow.action_dal import ActionDal
-from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig
+from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig, AppConfiguration
 
 
 class TestActionDal(TestCase):
@@ -43,7 +44,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_([ActionInstance, PipelineParameters, ActionInstanceConfig, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
+        eq_([AppConfiguration, ActionInstance, PipelineParameters, ActionInstanceConfig, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
@@ -294,3 +295,6 @@ class WrapperHelper(object):
 
     def all(self):
         return self.results
+
+    def get(self, number: int):
+        return MagicMock(process_queue=True)
