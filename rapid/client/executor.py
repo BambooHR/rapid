@@ -410,8 +410,16 @@ class Executor(object):
         for line in lines:
             self.verify_lines(line, logger)
 
+    def _normalize_workspace(self):
+        replacement = ''
+        if os.sep == '/':
+            replacement = '\\'
+        else:
+            replacement = '/'
+        return self.workspace.replace(replacement, os.sep)
+
     def clean_workspace(self):
-        if os.path.isdir(self.workspace):
+        if os.path.isdir(self._normalize_workspace()):
             try:
                 Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
                 if platform.system() == 'Windows':

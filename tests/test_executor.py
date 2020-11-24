@@ -529,3 +529,15 @@ class TestExecutor(TestCase):
     def test_get_environment_with_unicode_bytes(self):
         executor = Executor(Mock(environment={b'Testing': u'\u2013 Trial and Error'}), None)
         self.assertEqual('– Trial and Error', executor.get_environment()['Testing'])
+
+    @patch('rapid.client.executor.os')
+    def test_normalize_workspace_for_windows(self, mock_os):
+        mock_os.sep = '\\'
+        executor = Executor(None, None, workspace='D:\\testing/another\\foo/bar')
+        self.assertEqual('D:\\testing\\another\\foo\\bar', executor._normalize_workspace())
+
+    @patch('rapid.client.executor.os')
+    def test_normalize_workspace_for_linux(self, mock_os):
+        mock_os.sep = '/'
+        executor = Executor(None, None, workspace='/root\\bar/testing\\foo')
+        self.assertEqual('/root/bar/testing/foo', executor._normalize_workspace())
