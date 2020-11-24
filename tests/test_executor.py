@@ -386,6 +386,8 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus", logger=mock_logger)
 
+        mock_os.sep = '/'
+        
         executor.clean_workspace()
         mock_shutil.rmtree.assert_called_with("boggus", ignore_errors=True)
 
@@ -403,6 +405,8 @@ class TestExecutor(TestCase):
         def throw_exception(*args, **kwargs):
             raise Exception("Should not see this")
 
+        mock_os.sep = '/'
+        
         mock_shutil.rmtree = throw_exception
         executor.clean_workspace()
 
@@ -416,6 +420,7 @@ class TestExecutor(TestCase):
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus", workspace="boggus")
 
         mock_os.path.isdir.return_value = False
+        mock_os.sep = '/'
 
         executor.clean_workspace()
         mock_os.makedirs.assert_called_with("boggus")
@@ -437,6 +442,7 @@ class TestExecutor(TestCase):
 
         mock_os.makedirs = throw_exception
         mock_os.path.isdir.return_value = False
+        mock_os.sep = '/'
 
         executor.clean_workspace()
 
