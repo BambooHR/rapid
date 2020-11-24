@@ -410,14 +410,23 @@ class Executor(object):
         for line in lines:
             self.verify_lines(line, logger)
 
+    def _normalize_workspace(self):
+        replacement = ''
+        if os.sep == '/':
+            replacement = '\\'
+        else:
+            replacement = '/'
+        return self.workspace.replace(replacement, os.sep)
+
     def clean_workspace(self):
-        if os.path.isdir(self.workspace):
+        normalized_workspace = self._normalize_workspace()
+        if os.path.isdir(normalized_workspace):
             try:
-                Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(self.workspace), self.logger)
+                Executor._log(self.work_request.action_instance_id, "{} - removing workspace".format(normalized_workspace), self.logger)
                 if platform.system() == 'Windows':
-                    os.system('rmdir /S /Q {}'.format(self.workspace))
+                    os.system('rmdir /S /Q {}'.format(normalized_workspace))
                 else:
-                    shutil.rmtree(self.workspace, ignore_errors=True)
+                    shutil.rmtree(normalized_workspace, ignore_errors=True)
             except Exception:
                 pass
         else:
