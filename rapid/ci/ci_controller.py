@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+from flask import Flask
 from flask.globals import request
 
 from rapid.ci.services.vcs_service import VcsService
@@ -22,9 +22,8 @@ from rapid.lib.framework.injectable import Injectable
 
 
 class CIController(Injectable):
-    __injectables__ = {'vcs_service': VcsService, 'flask_app': None}
 
-    def __init__(self, vcs_service, flask_app):
+    def __init__(self, vcs_service: VcsService, flask_app: Flask):
         """
 
         :type vcs_service: :class:`rapid.ci.services.vcs_service.VcsService`

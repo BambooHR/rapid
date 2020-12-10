@@ -15,6 +15,7 @@
 """
 
 from rapid.lib.framework.ioc import IOC
+from rapid.lib.modules import WorkflowModule, ActionModule
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
@@ -25,9 +26,9 @@ def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
 
     setup_queue_handlers()
 
-    IOC.register_global('queue_constants', IOC.get_class_instance(QueueHandlerConstants))
-    IOC.register_global('workflow_module', IOC.get_class_instance(WorkflowService))
-    IOC.register_global('action_module', IOC.get_class_instance(ActionService))
+    IOC.register_global(QueueHandlerConstants, IOC.get_class_instance(QueueHandlerConstants))
+    IOC.register_global(WorkflowModule, IOC.get_class_instance(WorkflowService))
+    IOC.register_global(ActionModule, IOC.get_class_instance(ActionService))
 
 
 def configure_module(flask_app):

@@ -18,18 +18,17 @@ import logging
 from sqlalchemy import and_, exists
 
 from rapid.ci.data.models import Commit
-from rapid.lib.constants import ModuleConstants, StatusConstants, status_type_severity_mapping
+from rapid.lib.constants import StatusConstants, status_type_severity_mapping
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib import get_db_session
+from rapid.lib.modules import WorkflowModule, CiModule
 from rapid.release.data.models import Step, Release
 
 logger = logging.getLogger("rapid")
 
 
 class ReleaseDal(Injectable):
-    __injectables__ = {ModuleConstants.WORKFLOW_MODULE: None, ModuleConstants.CI_MODULE: None}
-
-    def __init__(self, workflow_module, ci_module):
+    def __init__(self, workflow_module: WorkflowModule, ci_module: CiModule):
         """
 
         :type workflow_module: :class:`rapid.lib.modules.modules.WorkflowModule`

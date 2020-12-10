@@ -7,9 +7,7 @@ logger = logging.getLogger('rapid')
 
 
 class ExtensionLoader(Injectable):
-    __injectables__ = {'rapid_config': None}
-
-    def __init__(self, rapid_config):
+    def __init__(self, rapid_config: Configuration):
         self.rapid_config = rapid_config
 
     def load_extensions(self, flask_app):

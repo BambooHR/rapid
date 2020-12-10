@@ -15,12 +15,13 @@
 """
 
 from rapid.lib.framework.injectable import Injectable
+from rapid.lib.modules import ActionModule
 from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 from rapid.workflow.data.dal.report_dal import ReportDal
 
 
-class ActionService(Injectable):
+class ActionService(ActionModule, Injectable):
     __injectables__ = {'pipeline_dal': PipelineDal, 'action_dal': ActionDal, 'report_dal': ReportDal}
 
     def __init__(self, pipeline_dal, action_dal, report_dal):

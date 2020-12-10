@@ -15,6 +15,7 @@
 """
 from unittest import TestCase
 
+from flask import Flask
 from mock import Mock
 from mock.mock import patch
 from nose.tools.trivial import eq_
@@ -22,6 +23,7 @@ from nose.tools.trivial import eq_
 from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.ioc import IOC
 from rapid.lib import get_db_session
+from rapid.lib.modules import CiModule
 from rapid.master.data.database.dal import get_dal, setup_dals
 from rapid.master.data.database.dal.general_dal import GeneralDal
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal
@@ -32,8 +34,8 @@ class TestDalPackage(TestCase):
 
     def test_setup_dals(self):
         mock_app = Mock()
-        IOC.register_global(ModuleConstants.CI_MODULE, Mock())
-        IOC.register_global('flask_app', mock_app)
+        IOC.register_global(CiModule, Mock())
+        IOC.register_global(Flask, mock_app)
         setup_dals(mock_app)
 
         for clazz in [Action, ActionInstance, Pipeline, PipelineInstance, PipelineParameters, PipelineStatistics, Stage,

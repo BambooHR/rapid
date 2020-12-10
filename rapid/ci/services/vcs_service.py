@@ -20,13 +20,8 @@ from rapid.lib.modules import CiModule
 
 
 class VcsService(Injectable, CiModule):
-    __injectables__ = {'commit_dal': CommitDal}
 
-    def __init__(self, commit_dal):
-        """
-        :type commit_dal: :class:`rapid.ci.data.commit_dal.CommitDal`
-        :return:
-        """
+    def __init__(self, commit_dal: CommitDal):
         self.commit_dal = commit_dal
 
     def get_vcs_by_repo_name(self, repo_name):

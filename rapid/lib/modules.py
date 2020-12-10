@@ -100,3 +100,46 @@ class CiModule(ABC):
     @abstractmethod
     def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
         yield
+
+
+class ActionModule(ABC):
+    @abstractmethod
+    def start_pipeline_via_repo(self, repo, json_data):
+        """
+        Start a pipeline via repository URL
+        :rtype: dict
+        """
+        yield
+
+    @abstractmethod
+    def get_status_by_name(self, name, session=None):
+        yield
+
+    @abstractmethod
+    def start_pipeline_by_id(self, pipeline_id, json_data):
+        yield
+
+    @abstractmethod
+    def get_pipeline_instance_by_id(self, pipeline_instance_id):
+        yield
+
+    @abstractmethod
+    def get_custom_report(self, report_name):
+        yield
+
+    @abstractmethod
+    def list_canned_reports(self):
+        yield
+
+    @abstractmethod
+    def cancel_pipeline_instance(self, pipeline_instance_id):
+        yield
+
+    @abstractmethod
+    def cancel_action_instance(self, action_instance_id):
+        yield
+
+    @abstractmethod
+    def get_work_request_by_action_instance_id(self, action_instance_id):
+        yield
+

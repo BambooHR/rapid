@@ -19,9 +19,7 @@ from rapid.release.data.release_dal import ReleaseDal
 
 
 class ReleaseService(Injectable):
-    __injectables__ = {'release_dal': ReleaseDal}
-
-    def __init__(self, release_dal):
+    def __init__(self, release_dal: ReleaseDal):
         self.release_dal = release_dal
 
     def set_release_step(self, release_id, step_id, status):

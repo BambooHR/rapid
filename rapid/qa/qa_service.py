@@ -20,14 +20,7 @@ from rapid.qa.data.dals.qa_dal import QaDal
 
 
 class QaService(Injectable, QaModule):
-    __injectables__ = {'qa_dal': QaDal}
-
-    def __init__(self, qa_dal):
-        """
-
-        :param qa_dal:
-        :type qa_dal: QaDal
-        """
+    def __init__(self, qa_dal: QaDal):
         self.qa_dal = qa_dal
 
     def reset_results(self, action_instance_id, session):

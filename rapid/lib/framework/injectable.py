@@ -18,6 +18,4 @@ from abc import ABC
 
 
 class Injectable(ABC):
-
-    __injected__ = []
-    __injectables__ = {}
+    pass

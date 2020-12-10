@@ -25,7 +25,7 @@ except ImportError:
 
 from flask import Flask
 
-from rapid.lib import is_primary_worker, setup_logging, setup_status_route
+from rapid.lib import is_primary_worker, setup_logging, setup_status_route, IOC
 from .parsers import load_parsers
 from ..lib import setup_config_from_file
 from .communicator.client_communicator import ClientCommunicator
@@ -33,6 +33,8 @@ from .controllers import register_controllers
 
 app = Flask("rapidci_client")
 app.rapid_config = {'_is': 'client'}
+IOC.register_global(Flask, app)
+
 logger = logging.getLogger("rapid")
 
 

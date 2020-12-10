@@ -18,10 +18,11 @@ from rapid.ci.ci_controller import CIController
 from rapid.ci.services.vcs_service import VcsService
 from rapid.ci.vcs.github_controller import GithubController
 from rapid.lib.framework.ioc import IOC
+from rapid.lib.modules import CiModule
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
-    IOC.register_global('ci_module', IOC.get_class_instance(VcsService))
+    IOC.register_global(CiModule, IOC.get_class_instance(VcsService))
 
 
 def configure_module(flask_app):

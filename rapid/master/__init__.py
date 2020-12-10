@@ -67,7 +67,7 @@ def _to_dict(exception):
 
 
 def configure_application(flask_app, args, manual_db_upgrade=False):
-    IOC.register_global('flask_app', flask_app)
+    IOC.register_global(Flask, flask_app)
     setup_config_from_file(flask_app, args)
     configure_db()
     configure_sub_modules(flask_app, args)
