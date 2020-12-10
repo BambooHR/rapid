@@ -22,18 +22,7 @@ from rapid.workflow.data.dal.report_dal import ReportDal
 
 
 class ActionService(ActionModule, Injectable):
-    __injectables__ = {'pipeline_dal': PipelineDal, 'action_dal': ActionDal, 'report_dal': ReportDal}
-
-    def __init__(self, pipeline_dal, action_dal, report_dal):
-        """
-
-        :param pipeline_dal:
-        :type pipeline_dal: PipelineDal
-        :param action_dal:
-        :type action_dal: ActionDal
-        :param report_dal:
-        :type report_dal: ReportDal
-        """
+    def __init__(self, pipeline_dal: PipelineDal, action_dal: ActionDal, report_dal: ReportDal):
         self.pipeline_dal = pipeline_dal
         self.action_dal = action_dal
         self.report_dal = report_dal

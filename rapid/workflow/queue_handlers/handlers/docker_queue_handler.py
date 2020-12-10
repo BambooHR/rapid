@@ -18,14 +18,11 @@ from rapid.workflow.queue_handlers.queue_handler_register import register_queue_
 
 @register_queue_handler
 class DockerQueueHandler(ContainerHandler, Injectable):
-    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
-    
     @property
     def container_identifier(self):
         return 'docker'
 
-    def __init__(self, rapid_config, action_instance_service):
-        # type: (MasterConfiguration, ActionInstanceService) -> None
+    def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService):
         super(DockerQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service
 

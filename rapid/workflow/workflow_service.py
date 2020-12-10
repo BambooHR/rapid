@@ -21,14 +21,7 @@ from rapid.workflow.action_service import ActionService
 
 class WorkflowService(WorkflowModule, Injectable):
 
-    __injectables__ = {'action_service': ActionService}
-
-    def __init__(self, action_service):
-        """
-
-        :param action_service:
-        :type action_service: ActionService
-        """
+    def __init__(self, action_service: ActionService):
         self.action_service = action_service
 
     def start_pipeline_via_repo(self, repo_name, parameters=None):

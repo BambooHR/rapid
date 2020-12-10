@@ -80,9 +80,7 @@ class WorkflowEngine(object):
 
 
 class InstanceWorkflowEngine(WorkflowEngine):
-    __injectables__ = {'status_dal': StatusDal}
-
-    def __init__(self, status_dal, pipeline_instance):
+    def __init__(self, status_dal: StatusDal, pipeline_instance):
         super(InstanceWorkflowEngine, self).__init__(pipeline_instance)
         self.status_dal = status_dal
 

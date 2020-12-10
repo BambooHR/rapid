@@ -17,13 +17,15 @@
 import logging
 import datetime
 
+from rapid.lib.queue_handler_constants import QueueHandlerConstants
+
 try:
     import simplejson as out_json
 except ImportError:
     import json as out_json
 
 
-from flask import request
+from flask import request, Flask
 from flask.wrappers import Response
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.sql.expression import asc
@@ -44,16 +46,8 @@ logger = logging.getLogger("rapid")
 
 
 class PipelineDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.CI_MODULE: CiModule, 'flask_app': None, 'queue_constants': None}
 
-    def __init__(self, ci_module, queue_constants, flask_app=None):
-        """
-
-        :type ci_module: :class:`rapid.lib.modules.modules.CiModule`
-        :type queue_constants: QueueHandlerConstants
-        :param flask_app: Flask
-        :return:
-        """
+    def __init__(self, ci_module: CiModule, queue_constants: QueueHandlerConstants, flask_app: Flask = None):
         super(PipelineDal, self).__init__()
         self.app = flask_app
         self.ci_module = ci_module

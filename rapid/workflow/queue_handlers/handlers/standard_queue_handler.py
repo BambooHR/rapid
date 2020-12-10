@@ -2,12 +2,14 @@ import logging
 import datetime
 import random
 
+from flask import Flask
 from requests import ConnectTimeout, ReadTimeout, ConnectionError
 
 from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.store_service import StoreService
 from rapid.master.communicator.master_communicator import MasterCommunicator
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.queue_handlers.queue_handler_register import register_queue_handler
@@ -77,14 +79,7 @@ class StandardQueueHandler(QueueHandler, Injectable):
         pages = None
         clients_array = None
 
-    def __init__(self, rapid_config, action_instance_service, flask_app):
-        """
-        :param rapid_config:
-        :type rapid_config: rapid.master.master_configuration.MasterConfiguration
-        :param action_instance_service:
-        :type action_instance_service: rapid.workflow.action_instance_service.ActionInstanceService
-        :type flask_app: Flask
-        """
+    def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService, flask_app: Flask):
         super(StandardQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service
         self.flask_app = flask_app

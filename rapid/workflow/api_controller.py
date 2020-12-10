@@ -14,6 +14,7 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
+from rapid.lib.modules import QaModule
 from rapid.release.release_service import ReleaseService
 
 try:
@@ -42,27 +43,14 @@ logger = logging.getLogger("rapid")
 
 
 class APIRouter(Injectable):
-    __injectables__ = {'action_instance_service': ActionInstanceService,
-                       'queue_service': QueueService,
-                       ModuleConstants.QA_MODULE: None,
-                       'workflow_service': WorkflowService,
-                       'release_service': ReleaseService}
     classes, models, table_names = None, None, None
     class_map = {}
 
-    def __init__(self, action_instance_service, queue_service, qa_module, workflow_service, release_service):
-        """
-
-        :param action_instance_service:
-        :type action_instance_service: ActionInstanceService
-        :param queue_service:
-        :type queue_service:
-        :param qa_module:
-        :type qa_module: rapid.lib.modules.modules.QaModule
-        :param workflow_service:
-        :type workflow_service: WorkflowService
-        :type release_service: ReleaseService
-        """
+    def __init__(self, action_instance_service: ActionInstanceService,
+                 queue_service: QueueService,
+                 qa_module: QaModule,
+                 workflow_service: WorkflowService,
+                 release_service: ReleaseService):
         self.app = None
         self.action_instance_service = action_instance_service
         self.queue_service = queue_service

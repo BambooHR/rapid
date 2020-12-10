@@ -20,11 +20,13 @@ import random
 
 import time
 
+from flask import Flask
 from sqlalchemy import func, and_, asc
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql.expression import exists
 
 from rapid.lib.exceptions import InvalidObjectException
+from rapid.lib.queue_handler_constants import QueueHandlerConstants
 from rapid.lib.store_service import StoreService
 from rapid.lib.constants import StatusConstants, StatusTypes, ModuleConstants
 from rapid.lib.work_request import WorkRequest
@@ -42,23 +44,14 @@ logger = logging.getLogger('rapid')
 
 
 class ActionDal(GeneralDal, Injectable):
-    __injectables__ = {ModuleConstants.QA_MODULE: QaModule,
-                       'store_service': StoreService,
-                       'event_service': EventService,
-                       'flask_app': None,
-                       'status_dal': StatusDal,
-                       'queue_constants': None}
     last_sent = None
 
-    def __init__(self, qa_module=None, store_service=None, event_service=None, flask_app=None, status_dal=None, queue_constants=None):
-        """
-
-        :param qa_module: rapid.master.modules.modules.QaModule
-        :type  store_service: StoreService
-        :type event_service: EventService
-        :type status_dal: StatusDal
-        :return:
-        """
+    def __init__(self, qa_module: QaModule = None,
+                 store_service: StoreService = None,
+                 event_service: EventService = None,
+                 flask_app: Flask = None,
+                 status_dal: StatusDal = None,
+                 queue_constants: QueueHandlerConstants = None):
         self.qa_module = qa_module
         self.store_service = store_service
         self.event_service = event_service
