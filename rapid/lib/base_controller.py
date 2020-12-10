@@ -14,11 +14,10 @@
  limitations under the License.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class BaseController(object):
-    __metaclass__ = ABCMeta
+class BaseController(ABC):
 
     @abstractmethod
     def register_url_rules(self, flask_app):

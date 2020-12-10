@@ -1,9 +1,8 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class QueueHandler(object):
+class QueueHandler(ABC):
     _GRAIN_SPLIT = '://'
-    __metaclass__ = ABCMeta
 
     def __init__(self, rapid_config):
         """

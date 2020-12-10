@@ -14,25 +14,24 @@
  limitations under the License.
 """
 
-import abc
+from abc import ABC, abstractmethod
 
 from rapid.lib.constants import Constants
 
 
-class AbstractParser(object):
-    __metaclass__ = abc.ABCMeta
+class AbstractParser(ABC):
 
     def __init__(self, workspace='', failures_only=False, failures_count=False):
         self.workspace = workspace
         self.failures_only = failures_only
         self.failures_count = failures_count
 
-    @abc.abstractmethod
+    @abstractmethod
     def _parse_lines(self, lines):
         yield
 
     @staticmethod
-    @abc.abstractmethod
+    @abstractmethod
     def get_type():
         yield
 
