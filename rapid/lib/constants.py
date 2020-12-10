@@ -35,6 +35,16 @@ class Constants(object):
     FAILURES = 'failures'
     FAILURES_COUNT = 'failures_count'
 
+    PRIMITIVES = (str, list, int, float, bool)
+
+    @staticmethod
+    def is_primitive(value):
+        return isinstance(value, Constants.PRIMITIVES) or value in Constants.PRIMITIVES
+
+    @staticmethod
+    def is_structure(value):
+        return value in [list, dict]
+
     @staticmethod
     def get_api_url(uri):
         return "{}{}".format(Constants.API_PREFIX, uri)
