@@ -29,7 +29,7 @@ def configure_module(flask_app):
     load_model_layers()
 
     try:
-        IOC.get_class_instance(GithubController, flask_app).register_url_rules(flask_app)
+        IOC.get_class_instance(GithubController).register_url_rules(flask_app)
         IOC.get_class_instance(CIController).register_url_rules()
     except Exception: # pylint: disable=broad-except
         import traceback

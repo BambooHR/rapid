@@ -19,10 +19,6 @@ logger = logging.getLogger('rapid')
 
 @register_queue_handler
 class StandardQueueHandler(QueueHandler, Injectable):
-    __injectables__ = {'rapid_config': None,
-                       'action_instance_service': ActionInstanceService,
-                       'flask_app': None}
-
     def process_work_request(self, work_request, clients):
         """
         1. Find a client that can do the work based off the label

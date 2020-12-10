@@ -19,7 +19,7 @@ from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules import CiModule
 
 
-class VcsService(Injectable, CiModule):
+class VcsService(CiModule, Injectable):
 
     def __init__(self, commit_dal: CommitDal):
         self.commit_dal = commit_dal

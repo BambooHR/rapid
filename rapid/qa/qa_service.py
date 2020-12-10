@@ -19,7 +19,7 @@ from rapid.lib.modules import QaModule
 from rapid.qa.data.dals.qa_dal import QaDal
 
 
-class QaService(Injectable, QaModule):
+class QaService(QaModule, Injectable):
     def __init__(self, qa_dal: QaDal):
         self.qa_dal = qa_dal
 

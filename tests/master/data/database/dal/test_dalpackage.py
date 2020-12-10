@@ -14,13 +14,12 @@
  limitations under the License.
 """
 from unittest import TestCase
+from unittest.mock import patch
 
 from flask import Flask
 from mock import Mock
-from mock.mock import patch
 from nose.tools.trivial import eq_
 
-from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.ioc import IOC
 from rapid.lib import get_db_session
 from rapid.lib.modules import CiModule

@@ -51,8 +51,6 @@ class IOC:
                             and not Constants.is_structure(arg) \
                             and (not hasattr(arg.__init__, '__code__') or len(arg.__init__.__code__.co_varnames) == 1):
                         dynamic_args.append(arg())
-                elif clzz.__injectables__ and param in clzz.__injectables__:
-                    dynamic_args.append(self.get_instance_of(clzz.__injectables__[param]))
             dynamic_args.reverse()
         return dynamic_args
 
@@ -82,4 +80,4 @@ class IOC:
 
     @staticmethod
     def register_global(name, value):
-        IOC.get_instance().global_registers[name] = value
+        IOC.get_instance().overrides[name] = value
