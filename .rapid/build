@@ -69,12 +69,7 @@ function setup() {
 }
 
 function run_tox_tests() {
-    if type python2.7 > /dev/null 2>&1
-    then
-        tox -e py27
-    else
-        tox -e py37
-    fi  
+    tox -e py37
     if [[ $? -ne 0 ]]
     then
         fail "Failed to run tox tests"
