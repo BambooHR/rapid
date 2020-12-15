@@ -87,6 +87,8 @@ function release_build() {
             fail "Failed to set version in version.py"
         fi
 
+        rm -rf ./dist/*
+
         version=`python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}'`
         if [[ $? -ne 0 ]]
         then
@@ -125,7 +127,7 @@ function release_build() {
     elif [[ ${push_live} -eq 1 ]]
     then
         echo "Pushing to live..."
-        version=`python setup.py sdist upload -r pypi|grep 'Submitting dist'| awk '{print $2}'|awk -F'/' '{print $2}'|awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
+        version=`twine upload dist/* |grep 'Uploading'| awk '{print $2}' | awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
         if [[ ${PIPESTATUS[0]} -ne 0 ]]
         then
             fail "Failed to release to pypi"
