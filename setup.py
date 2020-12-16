@@ -36,7 +36,7 @@ except NameError:
 
 requirements = [
     'flask',
-    'requests==2.25.0',
+    'requests==2.25.1',
     'futures',
     'jsonpickle',
     'simplejson==3.10.0',
