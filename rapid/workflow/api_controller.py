@@ -14,6 +14,8 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
+from rapid.lib.modules import QaModule
+from rapid.lib.version import Version
 from rapid.release.release_service import ReleaseService
 
 try:
@@ -42,27 +44,14 @@ logger = logging.getLogger("rapid")
 
 
 class APIRouter(Injectable):
-    __injectables__ = {'action_instance_service': ActionInstanceService,
-                       'queue_service': QueueService,
-                       ModuleConstants.QA_MODULE: None,
-                       'workflow_service': WorkflowService,
-                       'release_service': ReleaseService}
     classes, models, table_names = None, None, None
     class_map = {}
 
-    def __init__(self, action_instance_service, queue_service, qa_module, workflow_service, release_service):
-        """
-
-        :param action_instance_service:
-        :type action_instance_service: ActionInstanceService
-        :param queue_service:
-        :type queue_service:
-        :param qa_module:
-        :type qa_module: rapid.lib.modules.modules.QaModule
-        :param workflow_service:
-        :type workflow_service: WorkflowService
-        :type release_service: ReleaseService
-        """
+    def __init__(self, action_instance_service: ActionInstanceService,
+                 queue_service: QueueService,
+                 qa_module: QaModule,
+                 workflow_service: WorkflowService,
+                 release_service: ReleaseService):
         self.app = None
         self.action_instance_service = action_instance_service
         self.queue_service = queue_service
@@ -98,6 +87,8 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
         flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/print", "print_pipeline_instance", api_key_required(self.print_pipeline_instance), methods=['GET'])
+
+        flask_app.add_url_rule("/api/canary", api_key_required(self.get_canary), methods=['GET'])
 
         self.app = flask_app
 
@@ -342,6 +333,10 @@ class APIRouter(Injectable):
                 for action_instance in workflow_instance.action_instances:
                     response += "    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}\n".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice)
         return {"message": response}
+
+    @json_response()
+    def get_canary(self):
+        return {'version': Version.get_version()}
 
     def _explode_class(self, clazz):
         columns = {}
