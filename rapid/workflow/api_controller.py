@@ -14,6 +14,7 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
+from rapid.lib.version import Version
 from rapid.release.release_service import ReleaseService
 
 try:
@@ -98,6 +99,8 @@ class APIRouter(Injectable):
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/cancel", "cancel_pipeline_instance", api_key_required(self.cancel_pipeline_instance), methods=['POST'])
         flask_app.add_url_rule("/api/action_instances/<int:action_instance_id>/cancel", "cancel_action_instance", api_key_required(self.cancel_action_instance), methods=['POST'])
         flask_app.add_url_rule("/api/pipeline_instances/<int:pipeline_instance_id>/print", "print_pipeline_instance", api_key_required(self.print_pipeline_instance), methods=['GET'])
+
+        flask_app.add_url_rule("/api/canary", api_key_required(self.get_canary), methods=['GET'])
 
         self.app = flask_app
 
@@ -342,6 +345,10 @@ class APIRouter(Injectable):
                 for action_instance in workflow_instance.action_instances:
                     response += "    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}\n".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice)
         return {"message": response}
+
+    @json_response()
+    def get_canary(self):
+        return {'version': Version.get_version()}
 
     def _explode_class(self, clazz):
         columns = {}
