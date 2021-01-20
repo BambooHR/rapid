@@ -80,8 +80,6 @@ function run_tox_tests() {
 function release_build() {
     if [[ ${is_release_branch} -eq 1 ]]
     then
-        buildStepNotify 'rapidBuild'
-
         if [[ $? -ne 0 ]]
         then
             fail "Failed to set version in version.py"
@@ -100,29 +98,28 @@ function release_build() {
         commit_is_head_of_release ${commit}
         if [[ $? == 1 ]]
         then
+            # Move The AppSpec and Release Files into s3
+            prepare_rapid_release "${version}"
+            if [[ $? -ne 0 ]]
+            then
+                fail "Unable to prepare rapid release"
+            fi
 
             if [[ "${modified_code}" != "" ]]
             then
+            #              This just pushes to the package cloud
                 release_python_internal dist/rapid-framework-${version}.tar.gz
                 if [[ $? -ne 0 ]]
                 then
                     fail "Internal Release failed"
                 fi
 
-                echo "Rolling version[${version}]"
-                if [[ "${version}" != "" ]]
-                then
-                    upgrade_rapid "${version}"
-                    if [[ $? -ne 0 ]]
-                    then
-                        fail "Failed to deploy new rapid version"
-                    fi
-                fi
+                buildStepNotify "rapidbuild" '{"status": "pending", "version": "'${version}'"}'
+            else
+                buildStepNotify "rapidbuild"
+                buildStepNotify 'deploypackage'
 
-                notify_rapid_release ${version}
             fi
-
-            buildStepNotify 'deploypackage'
         fi
     elif [[ ${push_live} -eq 1 ]]
     then
