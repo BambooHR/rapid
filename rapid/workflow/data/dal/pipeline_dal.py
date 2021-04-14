@@ -124,6 +124,9 @@ class PipelineDal(GeneralDal, Injectable):
                 session.flush()
                 pipeline.stages.extend(self.get_stages(json, pipeline, session))
 
+                import pprint
+                pprint.pprint(pipeline.serialize())
+                
                 response = out_json.dumps(pipeline.serialize())
                 try:
                     session.commit()
