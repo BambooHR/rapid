@@ -68,6 +68,9 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
             except ECSConnectionError:
                 raise QueueHandlerShouldSleep('ECS Connection issue detected.')
+            except ClientError as param_exception:
+                if 'RequestLimitExceeded' in f'{param_exception}':
+                    raise QueueHandlerShouldSleep('ECS Request Limit Exceeded')
         return True
 
     def process_action_instance(self, action_instance, clients):
