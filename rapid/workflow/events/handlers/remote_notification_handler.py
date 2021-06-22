@@ -134,12 +134,13 @@ class RemoteNotificationHandler(EventHandler):
                 value = self._translate_string_for_action_instance(action_instance, value)
 
                 try:
-                    if value.startswith('{') and value[-1] == '}':
-                        new_dict[key] = parameters[value.replace('{', '').replace('}', '')]
-                    elif '{' in value and '}' in value:
-                        new_dict[key] = value.replace('{', '').replace('}', '')
+                    for param_key, param_value in parameters.items():
+                        value = value.replace(f'{{{param_key}}}', param_value)
                 except Exception:
                     pass
+
+                new_dict[key] = value
+
         except Exception:
             pass
         return new_dict
