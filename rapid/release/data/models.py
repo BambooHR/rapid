@@ -36,6 +36,12 @@ class Release(BaseModel, Base):
     status = relationship('Status')
     integration = relationship('Integration')
     commit = relationship('Commit', backref=backref('release', uselist=False))
+    details = relationship('ReleaseDetail', backref=backref('release', uselist=False))
+
+
+class ReleaseDetail(BaseModel, Base):
+    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False, index=True)
+    details = Column(Text)
 
 
 class StepIntegration(BaseModel, Base):
