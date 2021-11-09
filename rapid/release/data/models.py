@@ -36,7 +36,7 @@ class Release(BaseModel, Base):
     status = relationship('Status')
     integration = relationship('Integration')
     commit = relationship('Commit', backref=backref('release', uselist=False))
-    details = relationship('ReleaseDetail', backref=backref('release', uselist=False))
+    details = relationship('ReleaseDetail', uselist=False, backref=backref('release'))
 
 
 class ReleaseDetail(BaseModel, Base):
