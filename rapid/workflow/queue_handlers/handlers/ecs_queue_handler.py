@@ -7,7 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from rapid.lib.constants import StatusConstants
-from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep, ECSConnectionError
+from rapid.lib.exceptions import ECSLimitReached, QueueHandlerShouldSleep, ECSConnectionError, ECSCapacityReached, ECSServiceUnavailable
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.work_request import WorkRequest
 from rapid.master.master_configuration import MasterConfiguration
@@ -68,6 +68,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
             except ECSConnectionError:
                 raise QueueHandlerShouldSleep('ECS Connection issue detected.')
+            except ECSCapacityReached:
+                raise QueueHandlerShouldSleep('ECS Capacity unavailable.')
+            except ECSServiceUnavailable:
+                raise QueueHandlerShouldSleep('ECS Service unavailable.')
             except ClientError as param_exception:
                 param_str = f'{param_exception}'
                 if 'RequestLimitExceeded' in param_str:
@@ -181,10 +185,15 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             response_dict = ecs_client.run_task(**task_definition)
             if response_dict['failures']:
                 logger.error("Failures were found: [{}]".format(response_dict['failures']))
-                if 'limit' in response_dict['failures'][0]['reason']:
-                    raise ECSLimitReached(response_dict['failures'][0]['reason'])
-                elif 'connect timed out' in response_dict['failures'][0]['reason']:
-                    raise ECSConnectionError(response_dict['failures'][0]['reason'])
+                reason = response_dict['failures'][0]['reason']
+                if 'limit' in reason:
+                    raise ECSLimitReached(reason)
+                elif 'connect timed out' in reason:
+                    raise ECSConnectionError(reason)
+                elif 'Capacity is unavailable at this time' in reason:
+                    raise ECSCapacityReached(reason)
+                elif 'Service unavailable' in reason:
+                    raise ECSServiceUnavailable(reason)
                 else:
                     status_id = StatusConstants.FAILED
             elif not response_dict['tasks']:
