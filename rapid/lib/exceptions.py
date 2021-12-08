@@ -79,6 +79,14 @@ class ECSLimitReached(Exception):
     pass
 
 
+class ECSCapacityReached(Exception):
+    pass
+
+
+class ECSServiceUnavailable(Exception):
+    pass
+
+
 class ECSConnectionError(Exception):
     pass
 
