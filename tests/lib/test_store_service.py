@@ -15,10 +15,10 @@
 """
 
 from unittest.case import TestCase
+from unittest.mock import Mock, patch
 
 import jsonpickle
-from mock.mock import Mock, patch
-from nose.tools.trivial import eq_, ok_
+from nose.tools import eq_, ok_
 
 from rapid.lib.store_service import StoreService
 
@@ -108,17 +108,21 @@ class TestStoreService(TestCase):
         self.assertEqual([], StoreService.get_executors())
 
     @patch('rapid.lib.store_service.tempfile')
+    @patch('rapid.lib.store_service.psutil')
     @patch('rapid.lib.store_service.os')
-    def test_get_executors_returns_what_is_running(self, os, tempfile):
+    def test_get_executors_returns_what_is_running(self, os, psutil, tempfile):
         os.listdir.return_value = ['rapid-1-12']
+        psutil.pids.return_value = [12]
         tempfile.gettempdir.return_value = '/tmp/boo'
 
         self.assertEqual([{'action_instance_id': '1', 'pid': '12'}], StoreService.get_executors())
-        os.kill.assert_called_with(12, 0)
+        psutil.pids.assert_called_with()
 
     @patch('rapid.lib.store_service.tempfile')
+    @patch('rapid.lib.store_service.psutil')
     @patch('rapid.lib.store_service.os')
-    def test_get_executors_filters_invalid_running_pids(self, os, tempfile):
+    def test_get_executors_filters_invalid_running_pids(self, os, psutil, tempfile):
+        psutil.pids.return_value = [12345]
         os.listdir.return_value = ['rapid-1-12']
         os.path.join.return_value = 'flibertygibet'
         tempfile.gettempdir.return_value = '/tmp/boo'
@@ -126,5 +130,5 @@ class TestStoreService(TestCase):
         os.kill.side_effect = OSError('foobar')
 
         self.assertEqual([], StoreService.get_executors())
-        os.kill.assert_called_with(12, 0)
+        psutil.pids.assert_called_with()
         os.remove.assert_called_with('flibertygibet')

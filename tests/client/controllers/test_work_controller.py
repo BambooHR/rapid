@@ -98,7 +98,9 @@ class TestWorkController(TestCase):
         eq_(True, controller.can_work_on(Mock(action_instance_id=1111)))
 
     @patch("rapid.lib.store_service.os")
-    def test_can_work_on_with_work_existing_action_instance(self, os):
+    @patch("rapid.lib.store_service.psutil")
+    def test_can_work_on_with_work_existing_action_instance(self, psutil, os):
+        psutil.pids.return_value = [11111]
         controller = WorkController()
         controller.app = Mock()
         controller.app.rapid_config.executor_count = 1
