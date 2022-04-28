@@ -13,6 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+import psutil
+
 try:
     import simplejson as json
 except ImportError:
@@ -209,7 +211,7 @@ class WorkController(BaseController):
         if pid_file is not None:
             try:
                 base_name = basename(pid_file)
-                os.kill(int(base_name.split('-')[-1]), 9)
+                psutil.Process(int(base_name.split('-')[-1])).kill()
                 return Response(json.dumps({"message": "Killed process."}), 200)
             except Exception:
                 pass
