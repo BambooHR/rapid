@@ -98,7 +98,9 @@ class TestWorkController(TestCase):
         eq_(True, controller.can_work_on(Mock(action_instance_id=1111)))
 
     @patch("rapid.lib.store_service.os")
-    def test_can_work_on_with_work_existing_action_instance(self, os):
+    @patch("rapid.lib.store_service.psutil")
+    def test_can_work_on_with_work_existing_action_instance(self, psutil, os):
+        psutil.pids.return_value = [11111]
         controller = WorkController()
         controller.app = Mock()
         controller.app.rapid_config.executor_count = 1
@@ -213,14 +215,15 @@ class TestWorkController(TestCase):
         eq_(501, response.call_args_list[0][0][1])
 
     @patch("rapid.client.controllers.work_controller.StoreService")
-    @patch("rapid.client.controllers.work_controller.os")
+    @patch("rapid.client.controllers.work_controller.psutil")
     @patch("rapid.client.controllers.work_controller.Response")
-    def test_work_cancel_should_cancel_if_action_instance_found(self, response, mock_os, store_service):
+    def test_work_cancel_should_cancel_if_action_instance_found(self, response, mock_psutil, store_service):
         controller = WorkController()
         store_service.check_for_pidfile.return_value = 'testing-1-2-3'
 
         controller.work_cancel(12345)
-        mock_os.kill.assert_called_with(3, 9)
+        mock_psutil.Process.assert_called_with(3)
+        mock_psutil.Process().kill.assert_called_with()
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     @patch("rapid.client.controllers.work_controller.os")
