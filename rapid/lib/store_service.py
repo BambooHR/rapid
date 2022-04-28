@@ -19,6 +19,7 @@ import logging
 import tempfile
 
 import jsonpickle
+import psutil
 
 from rapid.lib.in_memory_store import InMemoryStore
 
@@ -42,10 +43,12 @@ class StoreService(object):
                     _sp = filename.split('-')
                     if _sp[0] == 'rapid':
                         try:
-                            os.kill(int(_sp[2]), 0)
-                            executors.append({'action_instance_id': _sp[1], 'pid': _sp[2]})
-                        except OSError:
-                            os.remove(os.path.join(tmp_dir, filename))
+                            if int(_sp[2]) in psutil.pids():
+                                executors.append({'action_instance_id': _sp[1], 'pid': _sp[2]})
+                            else:
+                                os.remove(os.path.join(tmp_dir, filename))
+                        except (IndexError, TypeError, OSError):
+                            pass
                 except Exception:
                     pass
         except Exception as exception:

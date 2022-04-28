@@ -1,8 +1,10 @@
 alembic
 SQLAlchemy
 Flask-SQLAlchemy
+flask
 requests==2.25.0
-futures
+futures;python_version<'3.9'
+psutil
 jsonpickle
 mysql-connector-python
 pygithub
