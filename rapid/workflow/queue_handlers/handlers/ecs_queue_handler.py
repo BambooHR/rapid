@@ -80,6 +80,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                     raise QueueHandlerShouldSleep('ECS Capacity is unavailable')
                 if 'Service Unavailable.' in param_str:
                     raise QueueHandlerShouldSleep('ECS Service unavailable.')
+            except Exception as exception:
+                if 'Service Unavailable' in f'{exception}':
+                    raise QueueHandlerShouldSleep('ECS Service unavailable.')
+                raise
         return True
 
     def process_action_instance(self, action_instance, clients):
