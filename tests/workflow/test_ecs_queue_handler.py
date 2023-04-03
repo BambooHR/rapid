@@ -179,9 +179,10 @@ class TestECSQueueHandler(TestCase):
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_task_definition')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._set_task_status')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._run_task')
-    def test_process_work_handles_sleep_exception(self, run_task, set_task_status, task_definition, ecs_client):
+    @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
+    def test_process_work_handles_sleep_exception(self, logger, run_task, set_task_status, task_definition, ecs_client):
         task_definition.return_value = {'taskDefinition': Mock()}
-        run_task.side_effect = ECSLimitReached
+        run_task.side_effect = ECSLimitReached("Foobar")
 
         with self.assertRaises(QueueHandlerShouldSleep):
             self.handler.process_work_request(Mock(action_instance_id=1), [])
@@ -194,8 +195,10 @@ class TestECSQueueHandler(TestCase):
 
         client.return_value = mock_client
 
-        with self.assertRaises(ECSLimitReached):
+        with self.assertRaises(ECSLimitReached) as exception:
             self.handler._run_task({})
+
+        self.assertEqual("You've reached the limit on the number of tasks you can run concurrently", f"{exception.exception}")
 
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.ECSQueueHandler._get_ecs_client')
     @patch('rapid.workflow.queue_handlers.handlers.ecs_queue_handler.logger')
