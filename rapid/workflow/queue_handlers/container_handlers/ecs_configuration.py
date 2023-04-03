@@ -55,7 +55,7 @@ class ECSConfiguration(Configuration):
                 'networkConfiguration': ConfigurationDefaults(self.NOT_SET, dict),
                 'tags': ConfigurationDefaults(self.NOT_SET, list),
                 'enableECSManagedTags': ConfigurationDefaults(self.NOT_SET, bool),
-                'propogateTags': default_config
+                'propagateTags': default_config
             }
         }
 

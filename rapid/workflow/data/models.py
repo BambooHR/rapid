@@ -128,7 +128,7 @@ class PipelineInstance(BaseModel, DateModel, Base):
     priority = Column(Integer, default=0, index=True)
 
     stage_instances = relationship("StageInstance", backref="pipeline_instance", order_by="asc(StageInstance.order)")
-    action_instances = relationship("ActionInstance", order_by="ActionInstance.id")
+    action_instances = relationship("ActionInstance", order_by="ActionInstance.id", overlaps="pipeline_instance")
     parameters = relationship('PipelineParameters', backref="pipeline_instance")
     stats = relationship('PipelineStatistics', backref="pipeline_instance")
     pipeline = relationship('Pipeline')
