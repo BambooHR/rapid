@@ -64,16 +64,22 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                     self._set_task_status(work_request.action_instance_id, status_id, assigned_to, end_date=end_date)
                 elif status_id != StatusConstants.READY:
                     self._set_task_status(work_request.action_instance_id, status_id, assigned_to, start_date=datetime.datetime.utcnow())
-            except ECSLimitReached:
+            except ECSLimitReached as limit:
+                logger.error("ECSQueueHandler: Limit reached: {}".format(limit))
                 raise QueueHandlerShouldSleep('ECS Limit was reached.')
-            except ECSConnectionError:
+            except ECSConnectionError as conn_error:
+                logger.error("ECSQueueHandler: Connection issue: {}".format(conn_error))
                 raise QueueHandlerShouldSleep('ECS Connection issue detected.')
-            except ECSCapacityReached:
+            except ECSCapacityReached as capacity:
+                logger.error("ECSQueueHandler: Capacity issue: {}".format(capacity))
                 raise QueueHandlerShouldSleep('ECS Capacity unavailable.')
-            except ECSServiceUnavailable:
+            except ECSServiceUnavailable as service_error:
+                logger.error("ECSQueueHandler: Service issue: {}".format(service_error))
                 raise QueueHandlerShouldSleep('ECS Service unavailable.')
             except ClientError as param_exception:
                 param_str = f'{param_exception}'
+                logger.error("ECSQueueHandler: ClientError: {}".format(param_exception))
+
                 if 'RequestLimitExceeded' in param_str:
                     raise QueueHandlerShouldSleep('ECS Request Limit Exceeded')
                 if 'Capacity is unavailable at this time' in param_str:
@@ -82,6 +88,8 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                     raise QueueHandlerShouldSleep('ECS Service unavailable.')
             except Exception as exception:
                 if 'Service Unavailable' in f'{exception}':
+                    logger.error("ECSQueueHandler: Service Unavailable: {}".format(exception))
+
                     raise QueueHandlerShouldSleep('ECS Service unavailable.')
                 raise
         return True
@@ -144,6 +152,9 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         container_overrides = self._get_task_definition_key(task_definition, 'overrides:dict.containerOverrides:list')
         container_overrides.append({"name": image.split(':')[0],
                                     "environment": environment_default})
+
+        task_definition['tags'] = [{'key': 'pipeline_instance_id', 'value': f'{work_request.pipeline_instance_id}'},
+                                   {'key': 'action_instance_id', 'value': f'{work_request.action_instance_id}'}]
 
         task_definition['taskDefinition'] = self._get_substituted_value(work_request, image.strip())
         task_definition['count'] = 1
