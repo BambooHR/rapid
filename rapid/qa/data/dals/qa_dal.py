@@ -179,7 +179,7 @@ class QaDal(GeneralDal):
             session.add(area_model)
             area_mapper[area]['model'] = area_model
 
-        session.commit()
+        session.flush()
 
         if feature_keys:
             for feature in session.query(QaFeature).filter(QaFeature.name.in_(feature_keys)).all():
@@ -200,7 +200,7 @@ class QaDal(GeneralDal):
             except:
                 pass
 
-        session.commit()
+        session.flush()
 
         if bp_keys:
             for _bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)).all():
@@ -221,7 +221,7 @@ class QaDal(GeneralDal):
             except:
                 pass
 
-        session.commit()
+        session.flush()
 
         if test_keys:
             for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
@@ -243,6 +243,7 @@ class QaDal(GeneralDal):
                         if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
                             qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
 
+        session.flush()
         session.commit()
 
         return {"message": "Success!"}
@@ -267,7 +268,7 @@ class QaDal(GeneralDal):
                     for (key, value) in summary.items():
                         if key in statuses:
                             session.add(QaStatusSummary(status_id=statuses[key].id, action_instance_id=action_instance.id, count=value))
-                    session.commit()
+                    session.flush()
                 del results[Constants.RESULTS_SUMMARY]
         except:
             import traceback
@@ -297,7 +298,7 @@ class QaDal(GeneralDal):
                     session.add(qa_test)
                     test_cache[qa_test.name] = qa_test
 
-                session.commit()
+                session.flush()
 
                 status_cache = {}
                 for test, value in results.items():
