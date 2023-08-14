@@ -15,10 +15,8 @@
 """
 # pylint: disable=bare-except,too-many-locals,unused-import,unused-variable,too-many-branches,too-many-statements,too-many-nested-blocks
 from sqlalchemy import and_
-from sqlalchemy.orm import joinedload, subqueryload
-from sqlalchemy.sql.expression import select, union_all
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import func
-from sqlalchemy.sql.schema import Column
 
 from rapid.lib.results_serializer import ResultsSerializer
 from rapid.qa.data.models import QaProduct
@@ -46,8 +44,12 @@ class QaDal(GeneralDal):
         session.execute(Stacktrace.__table__.delete().where(Stacktrace.qa_test_history_id.in_(
             session.query(QaTestHistory.id).filter(QaTestHistory.action_instance_id == action_instance_id))))
 
+        session.commit()
+
         session.execute(QaTestHistory.__table__.delete().where(QaTestHistory.action_instance_id == action_instance_id))
         session.execute(QaStatusSummary.__table__.delete().where(QaStatusSummary.action_instance_id == action_instance_id))
+
+        session.commit()
 
     def save_results(self, action_instance, session, post_data):
         return self._save_results(action_instance, session, post_data)
@@ -113,6 +115,7 @@ class QaDal(GeneralDal):
 
                 if product:
                     area_mapper = self._get_area_mapper(session, product.id, json)
+                    session.commit()
                     return area_mapper
 
         return {}
@@ -176,7 +179,7 @@ class QaDal(GeneralDal):
             session.add(area_model)
             area_mapper[area]['model'] = area_model
 
-        session.flush()
+        session.commit()
 
         if feature_keys:
             for feature in session.query(QaFeature).filter(QaFeature.name.in_(feature_keys)).all():
@@ -197,7 +200,7 @@ class QaDal(GeneralDal):
             except:
                 pass
 
-        session.flush()
+        session.commit()
 
         if bp_keys:
             for _bp in session.query(QaBehaviorPoint).filter(QaBehaviorPoint.name.in_(bp_keys)).all():
@@ -218,7 +221,7 @@ class QaDal(GeneralDal):
             except:
                 pass
 
-        session.flush()
+        session.commit()
 
         if test_keys:
             for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
@@ -240,7 +243,6 @@ class QaDal(GeneralDal):
                         if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
                             qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
 
-        session.flush()
         session.commit()
 
         return {"message": "Success!"}
@@ -265,7 +267,7 @@ class QaDal(GeneralDal):
                     for (key, value) in summary.items():
                         if key in statuses:
                             session.add(QaStatusSummary(status_id=statuses[key].id, action_instance_id=action_instance.id, count=value))
-                    session.flush()
+                    session.commit()
                 del results[Constants.RESULTS_SUMMARY]
         except:
             import traceback
@@ -295,7 +297,7 @@ class QaDal(GeneralDal):
                     session.add(qa_test)
                     test_cache[qa_test.name] = qa_test
 
-                session.flush()
+                session.commit()
 
                 status_cache = {}
                 for test, value in results.items():

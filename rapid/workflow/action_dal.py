@@ -24,6 +24,7 @@ from sqlalchemy import func, and_, asc
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql.expression import exists
 
+from rapid.lib.filters import ObjectFilters
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.store_service import StoreService
 from rapid.lib.constants import StatusConstants, StatusTypes, ModuleConstants
@@ -254,13 +255,27 @@ class ActionDal(GeneralDal, Injectable):
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
 
-            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance)
-            instance_workflow_engine.reset_action(action_instance)
+            pipeline_instance = session.query(PipelineInstance) \
+                .options(
+                    joinedload(PipelineInstance.action_instances),
+                    joinedload(PipelineInstance.stage_instances) \
+                    .joinedload(StageInstance.workflow_instances) \
+                    .joinedload(WorkflowInstance.action_instances)).get(action_instance.pipeline_instance_id)
 
-            if self.qa_module is not None:
-                self.qa_module.reset_results(action_instance.id, session)
-            
-            session.commit()
+            action_instances = ObjectFilters.by_attribute('id', _id, pipeline_instance.action_instances)
+            if action_instances:
+                action_instance = action_instances[0]
+
+                instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
+                reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
+
+                session.commit()
+
+                if self.qa_module is not None and reset_ids:
+                    for action_instance_id in reset_ids:
+                        self.qa_module.reset_results(action_instance_id, session)
+
+                session.commit()
         return True
 
     def cancel_action_instance(self, action_instance_id):
