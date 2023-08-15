@@ -19,6 +19,7 @@ import datetime
 import random
 
 import time
+from typing import Union
 
 from sqlalchemy import func, and_, asc
 from sqlalchemy.orm import joinedload, aliased
@@ -249,31 +250,36 @@ class ActionDal(GeneralDal, Injectable):
                 for action_instance in workflow_instance.action_instances:
                     print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
 
+    def _get_loaded_pipeline_instance(self, session, action_instance: ActionInstance) -> PipelineInstance:
+        return session.query(PipelineInstance) \
+            .options(
+            joinedload(PipelineInstance.action_instances),
+            joinedload(PipelineInstance.stage_instances) \
+                .joinedload(StageInstance.workflow_instances) \
+                .joinedload(WorkflowInstance.action_instances)).get(action_instance.pipeline_instance_id)
+
     def reset_action_instance(self, _id, complete_reset=False, check_status=False):  # pylint: disable=unused-argument
         for session in get_db_session():
             action_instance = session.query(ActionInstance).get(_id)
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
 
-            pipeline_instance = session.query(PipelineInstance) \
-                .options(
-                    joinedload(PipelineInstance.action_instances),
-                    joinedload(PipelineInstance.stage_instances) \
-                    .joinedload(StageInstance.workflow_instances) \
-                    .joinedload(WorkflowInstance.action_instances)).get(action_instance.pipeline_instance_id)
+            pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance)
 
-            action_instances = ObjectFilters.by_attribute('id', _id, pipeline_instance.action_instances)
-            if action_instances:
-                action_instance = action_instances[0]
+            action_instances = ObjectFilters.by_attribute('id', action_instance.id, pipeline_instance.action_instances)
+            if not action_instances:
+                return False
 
-                instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
-                reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
+            action_instance =  action_instances[0]
 
-                session.commit()
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
+            reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
 
-                if self.qa_module is not None and reset_ids:
-                    for action_instance_id in reset_ids:
-                        self.qa_module.reset_results(action_instance_id, session)
+            session.commit()
+
+            if self.qa_module is not None and reset_ids:
+                for action_instance_id in reset_ids:
+                    self.qa_module.reset_results(action_instance_id, session)
 
                 session.commit()
         return True

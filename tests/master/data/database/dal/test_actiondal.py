@@ -15,7 +15,7 @@
 """
 
 import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from mock.mock import patch, Mock
 from sqlalchemy import Boolean
@@ -261,6 +261,66 @@ class TestActionDal(UnitTest):
 
         mock_workflow.complete_an_action.assert_called_with(123455, StatusConstants.CANCELED)
         mock_constants.cancel_worker.assert_called_with(get_action_instance().serialize())
+
+    @patch('rapid.workflow.action_dal.get_db_session')
+    @patch('rapid.workflow.action_dal.ActionInstance')
+    @patch.object(ActionDal, ActionDal._get_loaded_pipeline_instance.__name__)
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_reset_action_instance_contract(self, mock_instance_engine,
+                                            mock_loaded_pipeline_instance,
+                                            mock_action_instance,
+                                            mock_get_session):
+        mock_engine = Mock()
+        mock_session = Mock()
+        mock_get_session.return_value = [mock_session]
+        mock_instance = Mock(status_id=StatusConstants.INPROGRESS)
+        mock_pi_instance = Mock(action_instances=[mock_instance])
+
+        mock_session.query().get.return_value = mock_instance
+        mock_loaded_pipeline_instance.return_value = mock_pi_instance
+        mock_instance_engine.return_value = mock_engine
+
+        dal = ActionDal()
+
+        dal.reset_action_instance(11)
+
+        mock_session.query.assert_called_with(mock_action_instance)
+        mock_session.commit.assert_called_with()
+        
+        mock_loaded_pipeline_instance.assert_called_with(mock_session, mock_instance)
+        mock_instance_engine.assert_called_with(dal.status_dal, mock_pi_instance)
+
+    @patch('rapid.workflow.action_dal.PipelineInstance')
+    @patch('rapid.workflow.action_dal.StageInstance')
+    @patch('rapid.workflow.action_dal.WorkflowInstance')
+    @patch('rapid.workflow.action_dal.joinedload')
+    def test_get_loaded_pipeline_instance_contract(self, mock_load,
+                                                   mock_workflow,
+                                                   mock_stage,
+                                                   mock_pipeline):
+        mock_session = Mock()
+        mock_action_instance = Mock()
+
+        mock_load_second = Mock()
+        mock_load_second.joinedload().joinedload.return_value = 'foobie'
+        mock_load.side_effect = ['foobar', mock_load_second]
+
+        dal = ActionDal()
+
+        dal._get_loaded_pipeline_instance(mock_session, mock_action_instance)
+
+        mock_session.query.assert_called_with(mock_pipeline)
+
+        mock_load_second.joinedload.assert_called_with(mock_stage.workflow_instances)
+        mock_load_second.joinedload().joinedload.assert_called_with(mock_workflow.action_instances)
+
+        mock_session.query().options.assert_called_with('foobar', 'foobie')
+        mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
+
+
+
+
+
 
 
 class WrapperHelper(object):
