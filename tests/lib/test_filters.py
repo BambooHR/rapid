@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from lib.filters import ObjectFilters
+from rapid.lib.filters import ObjectFilters
 
 
 class TestFilters(TestCase):
