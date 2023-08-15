@@ -13,67 +13,64 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
 from rapid.testmapper import PythonFile
+from tests.framework.unit_test import UnitTest
 
 
-class TestTestMapper(TestCase):
+class TestTestMapper(UnitTest):
 
     def test_handle_unit_with_colon(self):
         file = PythonFile(None, None)
 
         file.handle_unit(" @rapid-unit: Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'unit'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'unit'})
 
     def test_handle_unit_without_colon(self):
         file = PythonFile(None, None)
 
         file.handle_unit(" @rapid-unit Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'unit'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'unit'})
 
     def test_handle_integration_with_colon(self):
         file = PythonFile(None, None)
 
         file.handle_integration(" @rapid-integration: Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'integration'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'integration'})
 
     def test_handle_integration_without_colon(self):
         file = PythonFile(None, None)
 
         file.handle_integration(" @rapid-integration Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'integration'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'integration'})
 
     def test_handle_selenium_with_colon(self):
         file = PythonFile(None, None)
 
         file.handle_selenium(" @rapid-selenium: Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'selenium'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'selenium'})
 
     def test_handle_selenium_without_colon(self):
         file = PythonFile(None, None)
 
         file.handle_selenium(" @rapid-selenium Area:Feature:Behavior point")
 
-        eq_(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'selenium'})
+        self.assertEqual(file._current_settings, {file.AREA: 'Area', file.FEATURE: 'Feature', file.BP: 'Behavior point', 'level': 'selenium'})
 
     def test_handle_tags_with_colon(self):
         file = PythonFile(None, None)
 
         file.handle_tags(" @rapid-tags: This is a tag")
 
-        eq_(file._current_settings, {'tags': ['This', 'is', 'a', 'tag']})
+        self.assertEqual(file._current_settings, {'tags': ['This', 'is', 'a', 'tag']})
 
     def test_handle_tags_without_colon(self):
         file = PythonFile(None, None)
 
         file.handle_tags(" @rapid-tags This is a tag")
 
-        eq_(file._current_settings, {'tags': ['This', 'is', 'a', 'tag']})
+        self.assertEqual(file._current_settings, {'tags': ['This', 'is', 'a', 'tag']})

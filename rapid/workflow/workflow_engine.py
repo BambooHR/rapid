@@ -287,7 +287,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 if instance.status_id == StatusConstants.INPROGRESS:
                     all_complete = False
                     break  # if you are inprogress, don't bother checking the rest.
-                elif instance.status_id == StatusConstants.READY:
+                if instance.status_id == StatusConstants.READY:
                     all_complete = False
                 elif instance.status_id > StatusConstants.SUCCESS:
                     fail_found = True

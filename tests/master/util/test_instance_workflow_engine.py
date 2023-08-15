@@ -14,48 +14,46 @@
  limitations under the License.
 """
 import datetime
-from unittest.case import TestCase
-
 from mock.mock import Mock
-from nose.tools.trivial import eq_, ok_
 
 from rapid.lib.constants import StatusConstants, StatusTypes
 from rapid.workflow.workflow_engine import InstanceWorkflowEngine
 from rapid.workflow.data.models import PipelineInstance, StageInstance, WorkflowInstance, ActionInstance, \
     Status, Pipeline, Stage, Workflow, Action
+from tests.framework.unit_test import UnitTest
 
 
-class TestInstanceWorkflowEngine(TestCase):
+class TestInstanceWorkflowEngine(UnitTest):
 
     def test_init(self):
         status_dal = Mock()
         pipeline_instance = PipelineInstance(id=1)
         workflow_engine = InstanceWorkflowEngine(status_dal, pipeline_instance)
 
-        eq_(workflow_engine.pipeline, pipeline_instance)
-        eq_(status_dal, workflow_engine.status_dal)
-        eq_(PipelineInstance, workflow_engine.pipeline_class)
-        eq_(StageInstance, workflow_engine.stage_class)
-        eq_(WorkflowInstance, workflow_engine.workflow_class)
-        eq_(ActionInstance, workflow_engine.action_class)
+        self.assertEqual(workflow_engine.pipeline, pipeline_instance)
+        self.assertEqual(status_dal, workflow_engine.status_dal)
+        self.assertEqual(PipelineInstance, workflow_engine.pipeline_class)
+        self.assertEqual(StageInstance, workflow_engine.stage_class)
+        self.assertEqual(WorkflowInstance, workflow_engine.workflow_class)
+        self.assertEqual(ActionInstance, workflow_engine.action_class)
 
     def test_get_stages(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         stage_instance = StageInstance()
         pipeline_instance = PipelineInstance(stage_instances=[stage_instance])
-        eq_([stage_instance], workflow_engine._get_stages(pipeline_instance))
+        self.assertEqual([stage_instance], workflow_engine._get_stages(pipeline_instance))
 
     def test_get_workflows(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_instance = WorkflowInstance()
         stage_instance = StageInstance(workflow_instances=[workflow_instance])
-        eq_([workflow_instance], workflow_engine._get_workflows(stage_instance))
+        self.assertEqual([workflow_instance], workflow_engine._get_workflows(stage_instance))
 
     def test_get_actions(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         action_instance = ActionInstance()
         workflow_instance = WorkflowInstance(action_instances=[action_instance])
-        eq_([action_instance], workflow_engine._get_actions(workflow_instance))
+        self.assertEqual([action_instance], workflow_engine._get_actions(workflow_instance))
 
     # Test the complete code
 
@@ -67,16 +65,16 @@ class TestInstanceWorkflowEngine(TestCase):
 
         workflow_engine = InstanceWorkflowEngine(status_dal, Mock())
 
-        eq_(status, workflow_engine._get_status(1))
-        eq_({1: status}, workflow_engine.status_cache)
+        self.assertEqual(status, workflow_engine._get_status(1))
+        self.assertEqual({1: status}, workflow_engine.status_cache)
 
     def test_check_verify_statuses_simple(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
 
         all_complete, all_passed, failed_type = workflow_engine._check_and_verify_statuses([StageInstance(status_id=StatusConstants.NEW)])
-        eq_(False, all_complete)
-        eq_(True, all_passed)
-        eq_(None, failed_type)
+        self.assertEqual(False, all_complete)
+        self.assertEqual(True, all_passed)
+        self.assertEqual(None, failed_type)
 
     def test_check_verify_statuses_simple_inprogress(self):
         self._testing_check_verify([StageInstance(status_id=StatusConstants.INPROGRESS)], [False, True, None])
@@ -104,41 +102,41 @@ class TestInstanceWorkflowEngine(TestCase):
         action_instance = ActionInstance()
         InstanceWorkflowEngine._mark_action_instance_complete(action_instance, StatusConstants.SUCCESS)
 
-        eq_(StatusConstants.SUCCESS, action_instance.status_id)
-        ok_(action_instance.end_date is not None)
+        self.assertEqual(StatusConstants.SUCCESS, action_instance.status_id)
+        self.assertTrue(action_instance.end_date is not None)
 
     def test_mark_action_instance_complete_canceled(self):
         action_instance = ActionInstance(start_date=datetime.datetime.utcnow())
         InstanceWorkflowEngine._mark_action_instance_complete(action_instance, StatusConstants.CANCELED)
 
-        eq_(action_instance.start_date, action_instance.end_date)
+        self.assertEqual(action_instance.start_date, action_instance.end_date)
 
     def test_mark_workflow_instance_complete(self):
         workflow_instance = WorkflowInstance()
         InstanceWorkflowEngine._mark_workflow_instance_complete(workflow_instance, StatusConstants.FAILED)
 
-        eq_(StatusConstants.FAILED, workflow_instance.status_id)
-        ok_(workflow_instance.end_date is not None)
+        self.assertEqual(StatusConstants.FAILED, workflow_instance.status_id)
+        self.assertTrue(workflow_instance.end_date is not None)
 
     def test_mark_stage_instance_complete(self):
         stage_instance = StageInstance()
         InstanceWorkflowEngine._mark_stage_instance_complete(stage_instance, StatusConstants.SUCCESS)
 
-        eq_(StatusConstants.SUCCESS, stage_instance.status_id)
-        ok_(stage_instance.end_date is not None)
+        self.assertEqual(StatusConstants.SUCCESS, stage_instance.status_id)
+        self.assertTrue(stage_instance.end_date is not None)
 
     def test_mark_stage_instance_complete_canceled(self):
         stage_instance = StageInstance(start_date=datetime.datetime.utcnow())
         InstanceWorkflowEngine._mark_stage_instance_complete(stage_instance, StatusConstants.CANCELED)
 
-        eq_(stage_instance.start_date, stage_instance.end_date)
+        self.assertEqual(stage_instance.start_date, stage_instance.end_date)
 
     def test_mark_pipeline_instance_complete(self):
         pipeline_instance = PipelineInstance()
         InstanceWorkflowEngine._mark_pipeline_instance_complete(pipeline_instance, StatusConstants.FAILED)
 
-        eq_(StatusConstants.FAILED, pipeline_instance.status_id)
-        ok_(pipeline_instance.end_date is not None)
+        self.assertEqual(StatusConstants.FAILED, pipeline_instance.status_id)
+        self.assertTrue(pipeline_instance.end_date is not None)
 
     def test_reconciled_stages(self):
         stage_instance = StageInstance(id=2, status_id=StatusConstants.SUCCESS, stage_id=2)
@@ -148,36 +146,36 @@ class TestInstanceWorkflowEngine(TestCase):
         instance_workflow_engine._load_pipeline()
         instance_workflow_engine.complete_a_stage(2, StatusConstants.SUCCESS)
 
-        eq_(StatusConstants.SUCCESS, pipeline_instance.status_id)
-        ok_(pipeline_instance.end_date is not None)
+        self.assertEqual(StatusConstants.SUCCESS, pipeline_instance.status_id)
+        self.assertTrue(pipeline_instance.end_date is not None)
 
     def test_can_continue_workflow_status_not_in_severity(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_engine.status_cache[StatusConstants.SUCCESS] = Status(id=StatusConstants.SUCCESS, type=StatusTypes.SUCCESS)
         workflow_engine.status_cache[100] = Status(id=100, type="semiborked")
 
-        ok_(workflow_engine._can_continue_workflow([ActionInstance(status_id=100), ActionInstance(status_id=StatusConstants.SUCCESS)]))
+        self.assertTrue(workflow_engine._can_continue_workflow([ActionInstance(status_id=100), ActionInstance(status_id=StatusConstants.SUCCESS)]))
 
     def test_can_continue_workflow_should_fail(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_engine.status_cache[StatusConstants.SUCCESS] = Status(id=StatusConstants.SUCCESS, type=StatusTypes.SUCCESS)
         workflow_engine.status_cache[100] = Status(id=100, type=StatusTypes.FAILED)
 
-        ok_(not workflow_engine._can_continue_workflow([ActionInstance(status_id=100), ActionInstance(status_id=StatusConstants.SUCCESS)]))
+        self.assertTrue(not workflow_engine._can_continue_workflow([ActionInstance(status_id=100), ActionInstance(status_id=StatusConstants.SUCCESS)]))
 
     def test_can_continue_workflow_should_continue_with_sliced_actions(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_engine.status_cache[StatusConstants.SUCCESS] = Status(id=StatusConstants.READY, type=StatusTypes.SUCCESS)
         workflow_engine.status_cache[100] = Status(id=100, type=StatusTypes.FAILED)
 
-        ok_(workflow_engine._can_continue_workflow([ActionInstance(status_id=100, slice='1/2', action_id=1), ActionInstance(status_id=StatusConstants.READY, slice='1/1', action_id=1)]))
+        self.assertTrue(workflow_engine._can_continue_workflow([ActionInstance(status_id=100, slice='1/2', action_id=1), ActionInstance(status_id=StatusConstants.READY, slice='1/1', action_id=1)]))
 
     def test_activate_next_action_all_complete_simple(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         action_instances = [ActionInstance(status_id=StatusConstants.NEW)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.READY, action_instances[0].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[0].status_id)
 
     def test_activate_next_action_all_complete_with_ready(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -186,8 +184,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.READY, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_orders(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -196,8 +194,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.READY, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_same_order(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -206,8 +204,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=1)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.READY, action_instances[1].status_id)
-        eq_(StatusConstants.READY, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_same_order_multiple_new(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -217,10 +215,10 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         return_value = workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.READY, action_instances[1].status_id)
-        eq_(StatusConstants.READY, action_instances[2].status_id)
-        eq_(StatusConstants.NEW, action_instances[3].status_id)
-        ok_(not return_value)
+        self.assertEqual(StatusConstants.READY, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.READY, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[3].status_id)
+        self.assertTrue(not return_value)
 
     def test_activate_next_action_all_complete_with_inprogress(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -229,8 +227,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.INPROGRESS, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_failed(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -241,8 +239,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.FAILED, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.FAILED, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_canceled(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -253,8 +251,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.CANCELED, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.CANCELED, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_activate_next_action_all_complete_with_unknown(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -265,8 +263,8 @@ class TestInstanceWorkflowEngine(TestCase):
                             ActionInstance(status_id=StatusConstants.NEW, order=2)]
         workflow_engine._activate_next_action_all_complete(action_instances)
 
-        eq_(StatusConstants.UNKNOWN, action_instances[1].status_id)
-        eq_(StatusConstants.NEW, action_instances[2].status_id)
+        self.assertEqual(StatusConstants.UNKNOWN, action_instances[1].status_id)
+        self.assertEqual(StatusConstants.NEW, action_instances[2].status_id)
 
     def test_create_action_instance_with_no_slicing(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -275,11 +273,11 @@ class TestInstanceWorkflowEngine(TestCase):
         workflow = Workflow(actions=[Action(slices=0, id=1, cmd="test1"), Action(slices=0, id=2, cmd="test2")])
         workflow_engine._create_action_instances(Mock(id=1), workflow_instance, workflow)
 
-        eq_(2, len(workflow_instance.action_instances))
-        eq_('test1', workflow_instance.action_instances[0].cmd)
-        eq_(StatusConstants.READY, workflow_instance.action_instances[0].status_id)
-        eq_('test2', workflow_instance.action_instances[1].cmd)
-        eq_(StatusConstants.NEW, workflow_instance.action_instances[1].status_id)
+        self.assertEqual(2, len(workflow_instance.action_instances))
+        self.assertEqual('test1', workflow_instance.action_instances[0].cmd)
+        self.assertEqual(StatusConstants.READY, workflow_instance.action_instances[0].status_id)
+        self.assertEqual('test2', workflow_instance.action_instances[1].cmd)
+        self.assertEqual(StatusConstants.NEW, workflow_instance.action_instances[1].status_id)
 
     def test_create_action_instance_with_slicing_after(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -288,12 +286,12 @@ class TestInstanceWorkflowEngine(TestCase):
         workflow = Workflow(actions=[Action(slices=0, id=1, cmd="test1"), Action(slices=4, id=2, cmd="test2")])
         workflow_engine._create_action_instances(Mock(id=1), workflow_instance, workflow)
 
-        eq_(5, len(workflow_instance.action_instances))
-        eq_('test1', workflow_instance.action_instances[0].cmd)
-        eq_(StatusConstants.READY, workflow_instance.action_instances[0].status_id)
+        self.assertEqual(5, len(workflow_instance.action_instances))
+        self.assertEqual('test1', workflow_instance.action_instances[0].cmd)
+        self.assertEqual(StatusConstants.READY, workflow_instance.action_instances[0].status_id)
         for i in range(1, 5):
-            eq_('test2', workflow_instance.action_instances[i].cmd)
-            eq_(StatusConstants.NEW, workflow_instance.action_instances[i].status_id)
+            self.assertEqual('test2', workflow_instance.action_instances[i].cmd)
+            self.assertEqual(StatusConstants.NEW, workflow_instance.action_instances[i].status_id)
 
     def test_create_action_instance_with_slicing_before(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
@@ -302,13 +300,13 @@ class TestInstanceWorkflowEngine(TestCase):
         workflow = Workflow(actions=[Action(slices=4, id=1, cmd="test1"), Action(slices=0, id=2, cmd="test2")])
         workflow_engine._create_action_instances(Mock(id=1), workflow_instance, workflow)
 
-        eq_(5, len(workflow_instance.action_instances))
+        self.assertEqual(5, len(workflow_instance.action_instances))
         for i in range(0, 4):
-            eq_('test1', workflow_instance.action_instances[i].cmd)
-            eq_(StatusConstants.READY, workflow_instance.action_instances[i].status_id)
+            self.assertEqual('test1', workflow_instance.action_instances[i].cmd)
+            self.assertEqual(StatusConstants.READY, workflow_instance.action_instances[i].status_id)
 
-        eq_('test2', workflow_instance.action_instances[4].cmd)
-        eq_(StatusConstants.NEW, workflow_instance.action_instances[4].status_id)
+        self.assertEqual('test2', workflow_instance.action_instances[4].cmd)
+        self.assertEqual(StatusConstants.NEW, workflow_instance.action_instances[4].status_id)
 
     def test_reset_pipeline_instance_status_set_to_inprogress(self):
         pipeline_instance = self._build_pipeline_instance(['1:1', '7:1-1-1-1,1,4,1-1-1-1'])
@@ -438,9 +436,9 @@ class TestInstanceWorkflowEngine(TestCase):
 
         all_complete, all_passed, failed_type = workflow_engine._check_and_verify_statuses(objects)
 
-        eq_(expected[0], all_complete, "All Complete did not match")
-        eq_(expected[1], all_passed, "All passed did not match.")
-        eq_(expected[2], failed_type, "Failed Type did not match.")
+        self.assertEqual(expected[0], all_complete, "All Complete did not match")
+        self.assertEqual(expected[1], all_passed, "All passed did not match.")
+        self.assertEqual(expected[2], failed_type, "Failed Type did not match.")
 
     def _pipeline_helper(self):
         action_instance = ActionInstance(id=1, order=0)

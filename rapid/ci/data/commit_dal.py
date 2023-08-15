@@ -13,11 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from sqlalchemy.sql.expression import desc
 
 from rapid.lib.exceptions import DatabaseException, InvalidObjectException

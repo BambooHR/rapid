@@ -13,84 +13,82 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from tests.framework.unit_test import UnitTest
 
 try:
     import simplejson as json
 except:
     import json
 
-from unittest.case import TestCase
-
-from mock.mock import patch, Mock
-from nose.tools.trivial import eq_, ok_
+from mock.mock import patch
 
 from rapid.lib import version
 from rapid.lib.work_request import WorkRequest
 from rapid.master.communicator.client import Client
 
 
-class TestClientObject(TestCase):
+class TestClientObject(UnitTest):
 
     def test_can_handle(self):
         client = Client('127.0.0.1', 9000, None, None)
 
-        ok_(client.can_handle('something'))
+        self.assertTrue(client.can_handle('something'))
 
     def test_can_handle_label(self):
         client = Client('127.0.0.1', 9000, 'something', None)
 
-        ok_(True, client.can_handle('something'))
+        self.assertTrue(True, client.can_handle('something'))
 
     def test_can_handle_not_label(self):
         client = Client('127.0.0.1', 9000, 'only', None)
 
-        ok_(not client.can_handle('something'))
+        self.assertTrue(not client.can_handle('something'))
 
     def test_get_availability_url(self):
         client = Client('127.0.0.1', 9000, None, None)
 
-        eq_("http://127.0.0.1:9000/work/request", client.get_availability_uri())
+        self.assertEqual("http://127.0.0.1:9000/work/request", client.get_availability_uri())
 
     def test_can_handle_complex_grain(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', None)
 
-        ok_(client.can_handle('one;two'))
+        self.assertTrue(client.can_handle('one;two'))
 
     def test_can_handle_complex_grain_restricted(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', True)
 
-        ok_(not client.can_handle('one;two'))
+        self.assertTrue(not client.can_handle('one;two'))
 
     def test_can_handle_complex_grain_restricted_approve(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', True)
 
-        ok_(client.can_handle('two;three;one'))
+        self.assertTrue(client.can_handle('two;three;one'))
 
     def test_can_handle_not_restricted_complex(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', False)
 
-        ok_(client.can_handle(None))
+        self.assertTrue(client.can_handle(None))
 
     def test_can_handle_not_restricted_empty_string(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', False)
 
-        ok_(not client.can_handle(''))
+        self.assertTrue(not client.can_handle(''))
 
     def test_can_handle_while_asleep(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', False)
 
         client.sleep = True
-        ok_(not client.can_handle('one'))
+        self.assertTrue(not client.can_handle('one'))
 
     def test_can_handle_multiple_grain(self):
         client = Client('127.0.0.1', 9000, 'one;two;three', False)
 
-        ok_(client.can_handle("one;two"))
+        self.assertTrue(client.can_handle("one;two"))
 
     def test_get_state(self):
         client = Client('127.0.0.1', 9000, 'one;to;three', False, 'ApiKey', hostname='bogus', time_elapse=1000)
 
-        eq_({'grain_restrict': False,
+        self.assertEqual({'grain_restrict': False,
              'is_ssl': False,
              'sleep': False,
              'grains': ['one', 'to', 'three'],
@@ -102,19 +100,19 @@ class TestClientObject(TestCase):
 
     def test_get_headers(self):
         client = Client(None, None, None, None, 'trial', False)
-        eq_({'X-Rapidci-Version': version.__version__, 'Content-Type': 'application/json', 'X-Rapidci-Api-Key': "trial"}, client.get_headers())
+        self.assertEqual({'X-Rapidci-Version': version.__version__, 'Content-Type': 'application/json', 'X-Rapidci-Api-Key': "trial"}, client.get_headers())
 
     def test_grain_restrict(self):
         client = Client(None, None, None, True)
-        eq_(False, client.can_handle(""))
+        self.assertEqual(False, client.can_handle(""))
 
     def test_get_work_uri(self):
         client = Client("127.0.0.1", '8097', None, False)
-        eq_("http://127.0.0.1:8097/work/execute", client.get_work_uri())
+        self.assertEqual("http://127.0.0.1:8097/work/execute", client.get_work_uri())
 
     def test_get_status_uri(self):
         client = Client("127.0.0.1", '8097', None, False)
-        eq_("http://127.0.0.1:8097/status", client.get_status_uri())
+        self.assertEqual("http://127.0.0.1:8097/status", client.get_status_uri())
 
     @patch("rapid.master.communicator.client.requests")
     def test_send_work(self, requests):
@@ -122,5 +120,5 @@ class TestClientObject(TestCase):
         work_request = WorkRequest()
 
         client.send_work(work_request)
-        eq_(1, requests.post.call_count)
+        self.assertEqual(1, requests.post.call_count)
         requests.post.assert_called_with(client.get_work_uri(), json=work_request.__dict__, headers=client.get_headers(), verify=True, timeout=4)

@@ -13,18 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
 from rapid.testmapper import PythonFile
+from tests.framework.unit_test import UnitTest
 
 
-class TestQaDal(TestCase):
+class TestQaDal(UnitTest):
 
     def test_parse_action(self):
         python_file = PythonFile(None, None)
 
-        eq_("unit", python_file.parse_action("@rapid-unit Test:Test:Testing"))
-        eq_("unit", python_file.parse_action("rapid-unit: Test:Test:Testing"))
-        eq_(None, python_file.parse_action("@@@@rapid-unit12: Test:Test:Testing"))
+        self.assertEqual("unit", python_file.parse_action("@rapid-unit Test:Test:Testing"))
+        self.assertEqual("unit", python_file.parse_action("rapid-unit: Test:Test:Testing"))
+        self.assertEqual(None, python_file.parse_action("@@@@rapid-unit12: Test:Test:Testing"))

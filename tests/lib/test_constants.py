@@ -14,14 +14,11 @@
  limitations under the License.
 """
 
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
 from rapid.lib.constants import Constants
+from tests.framework.unit_test import UnitTest
 
 
-class TestConstants(TestCase):
+class TestConstants(UnitTest):
 
     def test_get_api_url(self):
-        eq_("/api/trial", Constants.get_api_url("trial"))
+        self.assertEqual("/api/trial", Constants.get_api_url("trial"))

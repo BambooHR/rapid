@@ -17,19 +17,16 @@ import os
 import tempfile
 
 from mock.mock import Mock, patch
-from nose.tools import eq_
-from unittest import TestCase
-
-from nose.tools.trivial import ok_
 
 from rapid.client import load_parsers
 from rapid.client.executor import Executor
 from rapid.lib.communication import Communication
 from rapid.lib.constants import Constants
 from rapid.lib.work_request import WorkRequest
+from tests.framework.unit_test import UnitTest
 
 
-class TestExecutor(TestCase):
+class TestExecutor(UnitTest):
     def setUp(self):
         load_parsers()
 
@@ -48,14 +45,14 @@ class TestExecutor(TestCase):
         communicator = Mock()
         communicator.get_downloaded_file_name.return_value = "/tmp/rapidci/workspace/trial.sh"
 
-        eq_(["/bin/sh", "/tmp/rapidci/workspace/trial.sh"], executor.get_command(communicator))
+        self.assertEqual(["/bin/sh", "/tmp/rapidci/workspace/trial.sh"], executor.get_command(communicator))
 
     def test_get_remote_files_invalid_line(self):
         """
         rapid-unit: Rapid Client:Remote Execution:Will download remote file when remote: is used.
         :return:
         :rtype:
-        """
+        """                                                                               
         with self.assertRaises(Exception) as cm:
             Executor._get_remote_files("This is a test")
         self.assertEqual("list index out of range", str(cm.exception))
@@ -76,7 +73,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest(), None)
 
-        eq_("SUCCESS", executor._get_status(0))
+        self.assertEqual("SUCCESS", executor._get_status(0))
 
     def test_get_results_FAILURE(self):
         """
@@ -86,7 +83,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest(), None)
 
-        eq_("FAILED", executor._get_status(1))
+        self.assertEqual("FAILED", executor._get_status(1))
 
     def test_get_results_OVERRIDE(self):
         """
@@ -97,7 +94,7 @@ class TestExecutor(TestCase):
         executor = Executor(WorkRequest(), None)
         executor.status_overrides = {4: "GIT_ERROR"}
 
-        eq_("GIT_ERROR", executor._get_status(4))
+        self.assertEqual("GIT_ERROR", executor._get_status(4))
 
     def test_get_parameters(self):
         """
@@ -107,7 +104,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest(), None)
 
-        eq_(["/tmp/testing.txt", "/tmp/*.txt"], executor._get_parameters_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.PARAMETERS)))
+        self.assertEqual(["/tmp/testing.txt", "/tmp/*.txt"], executor._get_parameters_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.PARAMETERS)))
 
     def test_get_parameters_error(self):
         """
@@ -129,7 +126,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest(), None)
 
-        eq_(['/tmp/testing.txt', '/tmp/*.txt'], executor._get_stats_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.STATS)))
+        self.assertEqual(['/tmp/testing.txt', '/tmp/*.txt'], executor._get_stats_files("{}/tmp/testing.txt,/tmp/*.txt".format(Constants.STATS)))
 
     def test_convert_to_dict(self):
         """
@@ -137,7 +134,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_({"first": "is good", "second": "is=bad"}, Executor._convert_to_dict(["first=is good", "second=is=bad"]))
+        self.assertEqual({"first": "is good", "second": "is=bad"}, Executor._convert_to_dict(["first=is good", "second=is=bad"]))
 
     def test_get_results(self):
         """
@@ -147,7 +144,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest(), None)
         file_name = '{}/parsers/*.xml'.format(os.path.dirname(os.path.realpath(__file__)))
-        eq_({
+        self.assertEqual({
             'JUnitXmlReporter.constructor~should default path to an empty string': {
                 'status': 'FAILED',
                 'stacktrace': 'Assertion failed',
@@ -174,10 +171,10 @@ class TestExecutor(TestCase):
         environment.update({'Something': 'More', 'action_instance_id': '1', 'pipeline_instance_id': '2', 'PYTHONUNBUFFERED': 'true'})
         test = executor.get_environment()
 
-        eq_('More', executor.get_environment()['Something'])
-        eq_('1', executor.get_environment()['action_instance_id'])
-        eq_('2', executor.get_environment()['pipeline_instance_id'])
-        eq_('true', executor.get_environment()['PYTHONUNBUFFERED'])
+        self.assertEqual('More', executor.get_environment()['Something'])
+        self.assertEqual('1', executor.get_environment()['action_instance_id'])
+        self.assertEqual('2', executor.get_environment()['pipeline_instance_id'])
+        self.assertEqual('true', executor.get_environment()['PYTHONUNBUFFERED'])
 
     def test_verify_work_request_no_action_instance_id(self):
         """
@@ -246,7 +243,7 @@ class TestExecutor(TestCase):
         mock = Mock()
         executor = Executor(mock, "http", logger=Mock())
 
-        eq_({'analyze_tests': None, 'results_files': [],
+        self.assertEqual({'analyze_tests': None, 'results_files': [],
              'work_request': mock, 'parameter_files': [],
              'master_uri': 'http', 'thread_id': None,
              'read_pid': None, 'status_overrides': {},
@@ -262,7 +259,7 @@ class TestExecutor(TestCase):
         """
         line = "#{}2:SUCCESS,3:FAILED".format(Constants.STATUS_OVERRIDE)
 
-        eq_({2: "SUCCESS", 3: "FAILED"}, Executor._get_status_overrides(line))
+        self.assertEqual({2: "SUCCESS", 3: "FAILED"}, Executor._get_status_overrides(line))
 
     def test_get_status_override_no_status(self):
         """
@@ -270,7 +267,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_({}, Executor._get_status_overrides("qwerqwer:qpoiuadsfj"))
+        self.assertEqual({}, Executor._get_status_overrides("qwerqwer:qpoiuadsfj"))
 
     def test_get_status_override_bad_status(self):
         """
@@ -278,7 +275,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_({}, Executor._get_status_overrides("#{}2_SUCCESS,3_FAILED".format(Constants.STATUS_OVERRIDE)))
+        self.assertEqual({}, Executor._get_status_overrides("#{}2_SUCCESS,3_FAILED".format(Constants.STATUS_OVERRIDE)))
 
     @patch("rapid.client.executor.threading")
     def test_start(self, threading):
@@ -308,7 +305,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_(None, Executor._get_parameters(None, None))
+        self.assertEqual(None, Executor._get_parameters(None, None))
 
     @patch("rapid.client.executor.open")
     @patch("rapid.client.executor.glob")
@@ -321,7 +318,7 @@ class TestExecutor(TestCase):
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
 
-        eq_({"something": "12345"}, Executor._get_parameters("", [""]))
+        self.assertEqual({"something": "12345"}, Executor._get_parameters("", [""]))
 
     def test_get_stats_no_stats_files(self):
         """
@@ -329,7 +326,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_(None, Executor._get_stats(None, None))
+        self.assertEqual(None, Executor._get_stats(None, None))
 
     @patch("rapid.client.executor.open")
     @patch("rapid.client.executor.glob")
@@ -342,7 +339,7 @@ class TestExecutor(TestCase):
         glob.glob.return_value = [""]
         open_mock.return_value.__enter__.return_value.readlines.return_value = ["something=12345"]
 
-        eq_({"something": "12345"}, Executor._get_stats("", [""]))
+        self.assertEqual({"something": "12345"}, Executor._get_stats("", [""]))
 
     def test_log(self):
         """
@@ -363,7 +360,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest({'args': None}), "bogus")
 
-        eq_([], executor.get_arguments())
+        self.assertEqual([], executor.get_arguments())
 
     def test_get_arguments_from_work_request(self):
         """
@@ -373,7 +370,7 @@ class TestExecutor(TestCase):
         """
         executor = Executor(WorkRequest({'args': "testing arguments"}), "bogus")
 
-        eq_(["testing", "arguments"], executor.get_arguments())
+        self.assertEqual(["testing", "arguments"], executor.get_arguments())
 
     @patch("rapid.client.controllers.work_controller.logger")
     @patch("rapid.client.executor.shutil")
@@ -454,7 +451,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_("filename", Executor._get_executable_name("filename"))
+        self.assertEqual("filename", Executor._get_executable_name("filename"))
 
     def test_get_executable_name_with_remote_file(self):
         """
@@ -462,7 +459,7 @@ class TestExecutor(TestCase):
         :return:
         :rtype:
         """
-        eq_("filename", Executor._get_executable_name("{}filename".format(Communication.REMOTE_FILE)))
+        self.assertEqual("filename", Executor._get_executable_name("{}filename".format(Communication.REMOTE_FILE)))
 
     def test_get_read_process_output(self):
         """
@@ -517,8 +514,8 @@ class TestExecutor(TestCase):
         }
         name_map = executor._get_name_map(results)
 
-        ok_('testGetDateDiffString with data set #0' in name_map)
-        ok_('testSendOfferLetterMissingRequestDataException' in name_map)
+        self.assertTrue('testGetDateDiffString with data set #0' in name_map)
+        self.assertTrue('testSendOfferLetterMissingRequestDataException' in name_map)
 
     @patch('rapid.client.executor.Executor.verify_lines')
     def test_check_for_dynamic_config_file(self, verify_lines):
