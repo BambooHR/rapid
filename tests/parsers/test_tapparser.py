@@ -13,14 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
 from rapid.client.parsers.tap_parser import TapParser
+from tests.framework.unit_test import UnitTest
 
 
-class TestTapParser(TestCase):
+class TestTapParser(UnitTest):
     def __get_failing_results(self):
         return """Tap
 TAP version 13
@@ -60,19 +57,19 @@ ok 11 - Should get all actions, even with partial data.
         parser = TapParser()
         results = parser.parse(self.__get_failing_results().split("\n"))
 
-        eq_(1, results['__summary__']['FAILED'])
+        self.assertEqual(1, results['__summary__']['FAILED'])
 
     def test_parser_should_have_summary_with_10_success(self):
         parser = TapParser()
         results = parser.parse(self.__get_failing_results().split("\n"))
 
-        eq_(10, results['__summary__']['SUCCESS'])
+        self.assertEqual(10, results['__summary__']['SUCCESS'])
 
     def test_parser_should_produce_stacktrace(self):
         parser = TapParser()
         results = parser.parse(self.__get_failing_results().split("\n"))
 
-        eq_("""  ---
+        self.assertEqual("""  ---
     operator: deepEqual
     expected: |-
       [ { 0: { id: 'jim' } } ]

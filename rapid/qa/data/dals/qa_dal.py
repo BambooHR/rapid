@@ -15,10 +15,8 @@
 """
 # pylint: disable=bare-except,too-many-locals,unused-import,unused-variable,too-many-branches,too-many-statements,too-many-nested-blocks
 from sqlalchemy import and_
-from sqlalchemy.orm import joinedload, subqueryload
-from sqlalchemy.sql.expression import select, union_all
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import func
-from sqlalchemy.sql.schema import Column
 
 from rapid.lib.results_serializer import ResultsSerializer
 from rapid.qa.data.models import QaProduct
@@ -46,8 +44,12 @@ class QaDal(GeneralDal):
         session.execute(Stacktrace.__table__.delete().where(Stacktrace.qa_test_history_id.in_(
             session.query(QaTestHistory.id).filter(QaTestHistory.action_instance_id == action_instance_id))))
 
+        session.commit()
+
         session.execute(QaTestHistory.__table__.delete().where(QaTestHistory.action_instance_id == action_instance_id))
         session.execute(QaStatusSummary.__table__.delete().where(QaStatusSummary.action_instance_id == action_instance_id))
+
+        session.commit()
 
     def save_results(self, action_instance, session, post_data):
         return self._save_results(action_instance, session, post_data)
@@ -113,6 +115,7 @@ class QaDal(GeneralDal):
 
                 if product:
                     area_mapper = self._get_area_mapper(session, product.id, json)
+                    session.commit()
                     return area_mapper
 
         return {}

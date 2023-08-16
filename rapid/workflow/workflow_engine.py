@@ -287,7 +287,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 if instance.status_id == StatusConstants.INPROGRESS:
                     all_complete = False
                     break  # if you are inprogress, don't bother checking the rest.
-                elif instance.status_id == StatusConstants.READY:
+                if instance.status_id == StatusConstants.READY:
                     all_complete = False
                 elif instance.status_id > StatusConstants.SUCCESS:
                     fail_found = True
@@ -348,15 +348,16 @@ class InstanceWorkflowEngine(WorkflowEngine):
                         return action
         return None
 
-    def reset_action(self, action, first_stage=False):
+    def reset_action(self, action, first_stage=False, complete_reset=True):
         action.workflow_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
         action.workflow_instance.end_date = None
         action.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
         action.workflow_instance.stage_instance.end_date = None
 
-        self.reset_action_instances(action, action.workflow_instance.action_instances, first_stage, single_instance=True)
+        return self.reset_action_instances(action, action.workflow_instance.action_instances, first_stage, complete_reset=complete_reset)
 
-    def reset_action_instances(self, action_instance, action_instances, first_stage=False, single_instance=False):
+    def reset_action_instances(self, action_instance, action_instances, first_stage=False, complete_reset=False):
+        reset_ids = []
         first = True
         first_order = None
         action_order = action_instance.order
@@ -368,21 +369,19 @@ class InstanceWorkflowEngine(WorkflowEngine):
             if first and first_order != current_order:
                 first = False
 
-            if single_instance:
-                if current_order < action_order or action_instance.id == instance.id:
-                    if action_instance.id == instance.id:
-                        if single_instance:
-                            instance.workflow_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
-                            instance.workflow_instance.end_date = None
-                            instance.workflow_instance.stage_instance.end_date = None
-                            instance.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
-                            self.pipeline.end_date = None
-                            self.pipeline.status_id = StatusConstants.INPROGRESS
+            if complete_reset:
+                if current_order < action_order or action_instance.action_id == instance.action_id:
+                    if action_instance.action_id == instance.action_id:
+                        instance.workflow_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
+                        instance.workflow_instance.end_date = None
+                        instance.workflow_instance.stage_instance.end_date = None
+                        instance.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if not first_stage else StatusConstants.NEW
 
                     instance.status_id = StatusConstants.NEW if not first else StatusConstants.READY
                     instance.start_date = None
                     instance.assigned_to = None
                     instance.end_date = None
+                    reset_ids.append(instance.id)
                 elif instance.order == current_order:
                     continue
                 else:
@@ -392,6 +391,13 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 instance.start_date = None
                 instance.assigned_to = None
                 instance.end_date = None
+                reset_ids.append(instance.id)
+
+        if reset_ids:
+            self.pipeline.end_date = None
+            self.pipeline.status_id = StatusConstants.INPROGRESS
+
+        return reset_ids
 
 
     @staticmethod

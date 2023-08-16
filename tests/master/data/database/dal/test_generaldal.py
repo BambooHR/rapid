@@ -13,32 +13,30 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from unittest import TestCase
-
-from nose.tools import eq_, ok_
 
 from rapid.master.data.database.dal.general_dal import GeneralDal
+from tests.framework.unit_test import UnitTest
 
 
-class TestGeneralDal(TestCase):
+class TestGeneralDal(UnitTest):
 
     def test_get_instance_with_attributes(self):
         dal = GeneralDal()
         instance = dal.get_instance(TestStatus, {'type': "WHOOOHOOO"})
 
-        eq_("WHOOOHOOO", instance.type, "object attribute was not set correctly.")
+        self.assertEqual("WHOOOHOOO", instance.type, "object attribute was not set correctly.")
 
     def test_get_instance_with_no_attributes(self):
         dal = GeneralDal()
         instance = dal.get_instance(TestStatus, {})
 
-        eq_(None, instance.type, "object attribute was not set correctly.")
+        self.assertEqual(None, instance.type, "object attribute was not set correctly.")
 
     def test_get_instance_with_none_attributes(self):
         dal = GeneralDal()
         instance = dal.get_instance(TestStatus, None)
 
-        eq_(None, instance.type, "object attribute was not set correctly.")
+        self.assertEqual(None, instance.type, "object attribute was not set correctly.")
 
     def test_set_attribute_on_object(self):
         dal = GeneralDal()
@@ -46,7 +44,7 @@ class TestGeneralDal(TestCase):
 
         dal._set_attributes(instance, {"type": "Worked!"})
 
-        eq_("Worked!", instance.type, "setting the attribute didn't work.")
+        self.assertEqual("Worked!", instance.type, "setting the attribute didn't work.")
 
     def test_set_invalid_attribute_on_object(self):
         dal = GeneralDal()
@@ -54,7 +52,7 @@ class TestGeneralDal(TestCase):
 
         dal._set_attributes(instance, {"foo": "No Worky!"})
 
-        ok_(not hasattr(instance, 'foo'))
+        self.assertTrue(not hasattr(instance, 'foo'))
 
 
 class TestStatus(object):

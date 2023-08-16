@@ -15,45 +15,43 @@
 """
 from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import InvalidObjectException
+from tests.framework.unit_test import UnitTest
 
 try:
     import simplejson as json
 except:
     import json
 
-from unittest import TestCase
-
 from mock.mock import Mock, patch
-from nose.tools import eq_
 
 from rapid.workflow.data.dal.pipeline_dal import PipelineDal
 
 
-class TestPipelineDal(TestCase):
+class TestPipelineDal(UnitTest):
 
     def setUp(self):
         self.mock_constants = Mock()
         self.dal = PipelineDal(Mock(), self.mock_constants)
 
     def test_get_actions_empty(self):
-        eq_([], self.dal.get_actions({}, None, None, Mock()))
+        self.assertEqual([], self.dal.get_actions({}, None, None, Mock()))
 
     def test_get_actions_data(self):
         action_json = {'cmd': 'something'}
 
         actions = self.dal.get_actions({'actions': [action_json]}, Mock(id=1), Mock(id=2), Mock())
         for key, value in {'cmd': 'something', 'pipeline_id': 1, 'workflow_id': 2, 'order': 0}.items():
-            eq_(value, getattr(actions[0], key))
+            self.assertEqual(value, getattr(actions[0], key))
 
     def test_get_workflows_empty(self):
-        eq_([], self.dal.get_workflows({}, None, None, Mock()))
+        self.assertEqual([], self.dal.get_workflows({}, None, None, Mock()))
 
     def test_get_workflows_data_no_actions(self):
         workflow_json = {'name': 'foo', 'active': True}
 
         workflows = self.dal.get_workflows({'workflows': [workflow_json]}, Mock(id=1), Mock(id=2), Mock())
         for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": []}.items():
-            eq_(value, getattr(workflows[0], key))
+            self.assertEqual(value, getattr(workflows[0], key))
 
     def test_get_workflows_data_with_actions(self):
         workflow_json = {'name': 'foo', 'active': True, 'actions': [{'cmd': 'something'}]}
@@ -61,19 +59,19 @@ class TestPipelineDal(TestCase):
         workflows = self.dal.get_workflows({'workflows': [workflow_json]}, Mock(id=1), Mock(id=2), Mock())
         for key, value in {'name': 'foo', 'active': True, "stage_id": 2, "order": 0, "actions": 1 }.items():
             if key == 'actions':
-                eq_(value, len(getattr(workflows[0], 'actions')))
+                self.assertEqual(value, len(getattr(workflows[0], 'actions')))
             else:
-                eq_(value, getattr(workflows[0], key))
+                self.assertEqual(value, getattr(workflows[0], key))
 
     def test_get_stages_empty(self):
-        eq_([], self.dal.get_stages({}, None, None))
+        self.assertEqual([], self.dal.get_stages({}, None, None))
 
     def test_get_stages_data_no_workflows(self):
         stage_json = {'name': 'foostage', 'active': True}
 
         stages = self.dal.get_stages({'stages': [stage_json]}, Mock(id=1), Mock())
         for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0}.items():
-            eq_(value, getattr(stages[0], key))
+            self.assertEqual(value, getattr(stages[0], key))
 
     def test_get_stages_data_with_workflows(self):
         stage_json = {'name': 'foostage', 'active': True, 'workflows': [{'name': 'foo', 'active': True, 'actions': []}]}
@@ -81,9 +79,9 @@ class TestPipelineDal(TestCase):
         stages = self.dal.get_stages({'stages': [stage_json]}, Mock(id=1), Mock())
         for key, value in {'name': 'foostage', 'active': True, 'pipeline_id': 1, 'order': 0, 'workflows': 1}.items():
             if 'workflows' == key:
-                eq_(value, len(getattr(stages[0], key)))
+                self.assertEqual(value, len(getattr(stages[0], key)))
             else:
-                eq_(value, getattr(stages[0], key))
+                self.assertEqual(value, getattr(stages[0], key))
 
     def test_get_pipeline_no_json(self):
         with self.assertRaises(BaseException) as cm:
@@ -96,7 +94,7 @@ class TestPipelineDal(TestCase):
         get_db_session.return_value = [Mock()]
         pipeline = self.dal._get_pipeline({"name": "something", "active": True})
 
-        eq_({"name": "something", "active": True, "id": None}, json.loads(pipeline))
+        self.assertEqual({"name": "something", "active": True, "id": None}, json.loads(pipeline))
 
     def _register_helper(self, uri, name, func, methods):
         if not hasattr(self, 'registry'):
@@ -108,9 +106,9 @@ class TestPipelineDal(TestCase):
         mock_app.add_url_rule = self._register_helper
         self.dal.register_url_rules(mock_app)
 
-        eq_(self.dal.app, mock_app)
-        eq_(self.registry['/api/pipelines/create'], {'name': 'create_pipeline', 'func': 'create_pipeline', 'methods': ['POST']})
-        eq_(self.registry['/api/pipelines/<int:pipeline_id>/start'], {'name': 'start_pipeline_instance', 'func': 'start_pipeline_instance', 'methods': ['POST']})
+        self.assertEqual(self.dal.app, mock_app)
+        self.assertEqual(self.registry['/api/pipelines/create'], {'name': 'create_pipeline', 'func': 'create_pipeline', 'methods': ['POST']})
+        self.assertEqual(self.registry['/api/pipelines/<int:pipeline_id>/start'], {'name': 'start_pipeline_instance', 'func': 'start_pipeline_instance', 'methods': ['POST']})
 
     @patch('rapid.workflow.data.dal.pipeline_dal.PipelineDal.get_pipeline_instance_by_id')
     @patch('rapid.workflow.data.dal.pipeline_dal.get_db_session')
@@ -126,8 +124,8 @@ class TestPipelineDal(TestCase):
         with self.assertRaises(InvalidObjectException) as exception:
             self.dal.cancel_pipeline_instance(12345)
 
-        eq_(404, exception.exception.code)
-        eq_("Pipeline Instance not found", exception.exception.description)
+        self.assertEqual(404, exception.exception.code)
+        self.assertEqual("Pipeline Instance not found", exception.exception.description)
 
     @patch('rapid.workflow.data.dal.pipeline_dal.StoreService')
     @patch('rapid.workflow.data.dal.pipeline_dal.PipelineDal.get_pipeline_instance_by_id')
@@ -154,7 +152,7 @@ class TestPipelineDal(TestCase):
 
         self.dal.app = Mock(rapid_config=Mock(verify_certs=False))
 
-        eq_("Running clients have been canceled and pipeline canceled.", self.dal.cancel_pipeline_instance(12345)['message'])
+        self.assertEqual("Running clients have been canceled and pipeline canceled.", self.dal.cancel_pipeline_instance(12345)['message'])
 
         self.mock_constants.cancel_worker.assert_called_with(mock_pipeline_instance.action_instances[0].serialize())
         

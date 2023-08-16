@@ -13,12 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from unittest.case import TestCase
-
-from nose.tools.trivial import eq_
-
 from rapid.lib.framework.ioc import IOC
 from rapid.lib.framework.injectable import Injectable
+from tests.framework.unit_test import UnitTest
 
 
 class TrialClass(object):
@@ -42,11 +39,11 @@ class TestClass(Injectable):
         self.oneMore = oneMore
 
 
-class TestIOC(TestCase):
+class TestIOC(UnitTest):
 
     def test_multi_dependency(self):
         testclass = IOC.get_class_instance(TestClass, "Something")
 
-        eq_(False, testclass.trial.has_trial())
+        self.assertEqual(False, testclass.trial.has_trial())
 
 

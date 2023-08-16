@@ -1,7 +1,6 @@
 import logging
 import importlib
 
-from rapid.lib.configuration import Configuration
 from rapid.lib.framework.injectable import Injectable
 logger = logging.getLogger('rapid')
 

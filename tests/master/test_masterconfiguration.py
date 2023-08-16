@@ -13,41 +13,41 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from tests.framework.unit_test import UnitTest
+
 try:
     from ConfigParser import SafeConfigParser
 except ImportError:
     from configparser import ConfigParser as SafeConfigParser
 
-from nose.tools import eq_
-from unittest import TestCase
 from rapid.master.master_configuration import MasterConfiguration
 
 
-class TestMasterConfiguration(TestCase):
+class TestMasterConfiguration(UnitTest):
 
     def test_default_port(self):
         config = MasterConfiguration()
         config._set_values(None)
 
-        eq_(8080, config.port, "Default Port not set.")
+        self.assertEqual(8080, config.port, "Default Port not set.")
 
     def test_default_queue_time(self):
         config = MasterConfiguration()
         config._set_values(None)
 
-        eq_(6, config.queue_time, "Default Queue Time not set.")
+        self.assertEqual(6, config.queue_time, "Default Queue Time not set.")
 
     def test_default_db_connect_string(self):
         config = MasterConfiguration()
         config._set_values(None)
 
-        eq_('sqlite:///data.db', config.db_connect_string, "Default DB Connect String not set.")
+        self.assertEqual('sqlite:///data.db', config.db_connect_string, "Default DB Connect String not set.")
 
     def test_default_data_type(self):
         config = MasterConfiguration()
         config._set_values(None)
 
-        eq_('inmemory', config.data_type, "Default Data Type not set.")
+        self.assertEqual('inmemory', config.data_type, "Default Data Type not set.")
 
     def test_config_override(self):
         config = MasterConfiguration()
@@ -56,11 +56,11 @@ class TestMasterConfiguration(TestCase):
         parser.set('master', 'port', '8881')
         config._set_values(parser)
 
-        eq_(8881, config.port, "Config override did not work right. [8881 != {}]".format(config.port))
+        self.assertEqual(8881, config.port, "Config override did not work right. [8881 != {}]".format(config.port))
 
     def test_config_get_section(self):
         config = MasterConfiguration()
-        eq_('master', config.get_section('api_key'))
+        self.assertEqual('master', config.get_section('api_key'))
 
     def test_custom_reports_dir(self):
         config = MasterConfiguration()
@@ -69,7 +69,7 @@ class TestMasterConfiguration(TestCase):
         parser.set('master', 'custom_reports_dir', "/tmp/trial")
 
         config._set_values(parser)
-        eq_("/tmp/trial", config.custom_reports_dir)
+        self.assertEqual("/tmp/trial", config.custom_reports_dir)
 
     def test_git_default_parameters(self):
         config = MasterConfiguration()
@@ -78,7 +78,7 @@ class TestMasterConfiguration(TestCase):
         parser.set('master', 'github_default_parameters', "repository:repository.clone_url\nssh_url:respository.ssh_url")
 
         config._set_values(parser)
-        eq_("repository:repository.clone_url\nssh_url:respository.ssh_url", config.github_default_parameters)
+        self.assertEqual("repository:repository.clone_url\nssh_url:respository.ssh_url", config.github_default_parameters)
 
     def test_basic_auth_consumption_and_setting(self):
         config = MasterConfiguration()
@@ -87,8 +87,8 @@ class TestMasterConfiguration(TestCase):
         parser.set('master', 'basic_auth', 'foo:bar')
 
         config._set_values(parser)
-        eq_('foo', config.basic_auth_user)
-        eq_('bar', config.basic_auth_pass)
+        self.assertEqual('foo', config.basic_auth_user)
+        self.assertEqual('bar', config.basic_auth_pass)
 
     def test_ecs_config_file_parsing(self):
         config = MasterConfiguration()
