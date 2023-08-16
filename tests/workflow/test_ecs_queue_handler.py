@@ -221,3 +221,10 @@ class TestECSQueueHandler(TestCase):
 
         (status_id, assigned_to) = self.handler._run_task({})
         self.assertEqual(StatusConstants.FAILED, status_id)
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_ecs_client.__name__)
+    def test_process_action_instance_when_no_assigned_to(self, mock_ecs_client):
+        self.handler._ecs_configuration = Mock(default_task_definition={'cluster': 'foobar'})
+        self.handler.process_action_instance({}, [])
+
+        self.handler.action_instance_service.reset_action_instance.assert_not_called()

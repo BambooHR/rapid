@@ -13,6 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from tests.framework.unit_test import UnitTest
+
 try:
     import simplejson as json
 except:
@@ -20,30 +22,27 @@ except:
 
 from mock import MagicMock
 from mock.mock import Mock
-from nose.tools import ok_, eq_
 
-from unittest import TestCase
-import pickle
 from rapid.lib.work_request import WorkRequest, WorkRequestEncoder
 
 
-class TestWorkRequest(TestCase):
+class TestWorkRequest(UnitTest):
 
     def test_prepare_to_send_with_hash(self):
         work_request = WorkRequest()
         work_request.prepare_to_send({'action_instance_id': 1, 'pipeline_instance_id': 2, 'grain': 'foobar'})
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar', work_request.grain)
 
     def test_prepare_to_send_with_hash_with__grain(self):
         work_request = WorkRequest()
         work_request.prepare_to_send({'action_instance_id': 1, 'pipeline_instance_id': 2, '_grain': 'foobar'})
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar', work_request.grain)
 
     def test_prepare_to_send_with_obj(self):
         mock_obj = MagicMock(action_instance_id=1, pipeline_instance_id=2, grain='foobar1')
@@ -52,9 +51,9 @@ class TestWorkRequest(TestCase):
         work_request = WorkRequest()
         work_request.prepare_to_send(mock_obj)
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar1', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar1', work_request.grain)
 
     def test_prepare_to_send_with_obj_with__grain(self):
         mock_obj = MagicMock(action_instance_id=1, pipeline_instance_id=2, _grain='foobar')
@@ -63,9 +62,9 @@ class TestWorkRequest(TestCase):
         work_request = WorkRequest()
         work_request.prepare_to_send(mock_obj)
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar', work_request.grain)
 
     def test_generate_from_request(self):
         mock_obj = MagicMock()
@@ -74,9 +73,9 @@ class TestWorkRequest(TestCase):
         work_request = WorkRequest()
         work_request.generate_from_request(mock_obj)
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar', work_request.grain)
 
     def test_generate_from_request_with_grain(self):
         mock_obj = MagicMock()
@@ -85,20 +84,20 @@ class TestWorkRequest(TestCase):
         work_request = WorkRequest()
         work_request.generate_from_request(mock_obj)
 
-        eq_(1, work_request.action_instance_id)
-        eq_(2, work_request.pipeline_instance_id)
-        eq_('foobar', work_request.grain)
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(2, work_request.pipeline_instance_id)
+        self.assertEqual('foobar', work_request.grain)
 
     def test_jsonify(self):
         work_request = WorkRequest({'action_instance_id': 1, 'pipeline_instance_id': 2})
 
-        eq_(json.loads('{"executable": null, "environment": {}, "headers": {"content-type": "application/json"}, "cmd": null, "args": null, "slice": null, "workflow_instance_id": null, "action_instance_id": 1, "pipeline_instance_id": 2, "grain": null, "configuration": null}'), json.loads(json.dumps(work_request, cls=WorkRequestEncoder)))
+        self.assertEqual(json.loads('{"executable": null, "environment": {}, "headers": {"content-type": "application/json"}, "cmd": null, "args": null, "slice": null, "workflow_instance_id": null, "action_instance_id": 1, "pipeline_instance_id": 2, "grain": null, "configuration": null}'), json.loads(json.dumps(work_request, cls=WorkRequestEncoder)))
 
     def test_get_state_is_not_the_same_object(self):
         work_request = WorkRequest({'action_instance_id': 1})
 
-        eq_(work_request.__dict__, work_request.__getstate__())
-        ok_(id(work_request.__dict__) != id(work_request.__getstate__()), "Dict should not be the same memory location, should be a copy.")
+        self.assertEqual(work_request.__dict__, work_request.__getstate__())
+        self.assertTrue(id(work_request.__dict__) != id(work_request.__getstate__()), "Dict should not be the same memory location, should be a copy.")
 
     def test_invalid_key_will_not_error(self):
         work_request = WorkRequest()
@@ -110,19 +109,19 @@ class TestWorkRequest(TestCase):
 
     def test_dynamic_grain_none_set(self):
         work_request = WorkRequest({"grain": "trial;testing;what"})
-        eq_("trial;testing;what", work_request.grain)
+        self.assertEqual("trial;testing;what", work_request.grain)
 
     def test_dynamic_grain_found(self):
         work_request = WorkRequest({"environment": {"foo": "cool"}, "grain": '{foo}'})
-        eq_("cool", work_request.grain)
+        self.assertEqual("cool", work_request.grain)
 
     def test_dynamic_grain_multiple_found(self):
         work_request = WorkRequest({"environment": {"foo": "cool", "bar": "stuff"}, "grain": '{foo};{bar}'})
-        eq_("cool;stuff", work_request.grain)
+        self.assertEqual("cool;stuff", work_request.grain)
 
     def test_dynamic_grain_one_found(self):
         work_request = WorkRequest({"environment": {"foo": "cool"}, "grain": '{foo};{bar}'})
-        eq_("cool;{bar}", work_request.grain)
+        self.assertEqual("cool;{bar}", work_request.grain)
 
 
 class BogusObject(object):

@@ -13,21 +13,18 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-from unittest.case import TestCase
-
 import datetime
 
 import sys
 from mock.mock import Mock, patch
-from nose.tools.trivial import eq_, ok_
 
 from rapid.client.controllers.work_controller import WorkController
 import rapid.lib
 from rapid.lib import version
+from tests.framework.unit_test import UnitTest
 
 
-class TestWorkController(TestCase):
+class TestWorkController(UnitTest):
     def test_register_rules(self):
         app = Mock()
         controller = WorkController()
@@ -55,14 +52,14 @@ class TestWorkController(TestCase):
 
         controller.register_url_rules(app)
         for assertions in url_rules:
-            eq_(registered_rules[assertions[0]], assertions)
+            self.assertEqual(registered_rules[assertions[0]], assertions)
 
     def test_app_is_tracked(self):
         app = Mock()
         controller = WorkController()
 
         controller.register_url_rules(app)
-        eq_(app, controller.app)
+        self.assertEqual(app, controller.app)
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_can_work_on_less_executors(self, store_service):
@@ -70,7 +67,7 @@ class TestWorkController(TestCase):
         controller.app = Mock()
         controller.app.rapid_config.executor_count = 1
         store_service.get_executors.return_value = []
-        eq_(True, controller.can_work_on())
+        self.assertEqual(True, controller.can_work_on())
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_can_work_on_equal_executors(self, store_service):
@@ -78,7 +75,7 @@ class TestWorkController(TestCase):
         controller.app = Mock()
         controller.app.rapid_config.executor_count = 1
         store_service.get_executors.return_value = [1]
-        eq_(False, controller.can_work_on())
+        self.assertEqual(False, controller.can_work_on())
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_can_work_on_more_executors(self, store_service):
@@ -86,7 +83,7 @@ class TestWorkController(TestCase):
         controller.app = Mock()
         controller.app.rapid_config.executor_count = 1
         store_service.get_executors.return_value = [1, 1]
-        eq_(False, controller.can_work_on())
+        self.assertEqual(False, controller.can_work_on())
 
     @patch("rapid.lib.store_service.os")
     def test_can_work_on_with_work(self, os):
@@ -95,7 +92,7 @@ class TestWorkController(TestCase):
         controller.app.rapid_config.executor_count = 1
         os.listdir.return_value = []
 
-        eq_(True, controller.can_work_on(Mock(action_instance_id=1111)))
+        self.assertEqual(True, controller.can_work_on(Mock(action_instance_id=1111)))
 
     @patch("rapid.lib.store_service.os")
     @patch("rapid.lib.store_service.psutil")
@@ -106,22 +103,22 @@ class TestWorkController(TestCase):
         controller.app.rapid_config.executor_count = 1
         os.listdir.return_value = ['rapid-11-11111']
 
-        eq_(False, controller.can_work_on(Mock(action_instance_id=11)))
+        self.assertEqual(False, controller.can_work_on(Mock(action_instance_id=11)))
 
     def test_check_version_empty_header(self):
         controller = WorkController()
-        eq_(False, controller.check_version(Mock(headers={})), "Should return false when header is not present")
+        self.assertEqual(False, controller.check_version(Mock(headers={})), "Should return false when header is not present")
 
     def test_check_version_same_versions(self):
         controller = WorkController()
-        eq_(True, controller.check_version(Mock(headers={version.Version.HEADER: version.__version__})))
+        self.assertEqual(True, controller.check_version(Mock(headers={version.Version.HEADER: version.__version__})))
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_check_version_different_versions_is_updating(self, store_service):
         controller = WorkController()
         controller.app = Mock()
         store_service.is_updating.return_value = True
-        eq_(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
+        self.assertEqual(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
 
     @patch("rapid.client.controllers.work_controller.threading")
     @patch("rapid.client.controllers.work_controller.StoreService")
@@ -129,19 +126,19 @@ class TestWorkController(TestCase):
         controller = WorkController()
         controller.app = Mock()
         store_service.is_updating.return_value = False
-        eq_(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
-        eq_(1, threading.Thread.call_count)
+        self.assertEqual(False, controller.check_version(Mock(headers={version.Version.HEADER: "1"})))
+        self.assertEqual(1, threading.Thread.call_count)
 
     def test_get_version(self):
         controller = WorkController()
-        eq_(version.Version.get_version(), controller.get_version())
+        self.assertEqual(version.Version.get_version(), controller.get_version())
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_sleep_for_executors_zero_length(self, store_service):
         store_service.get_executors.return_value = []
 
-        eq_([], WorkController._sleep_for_executors())
-        eq_(1, store_service.get_executors.call_count)
+        self.assertEqual([], WorkController._sleep_for_executors())
+        self.assertEqual(1, store_service.get_executors.call_count)
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_sleep_for_executors_one_length(self, store_service):
@@ -156,7 +153,7 @@ class TestWorkController(TestCase):
         WorkController._sleep_for_executors(.001, 2)
         now_time = datetime.datetime.now()
 
-        ok_(400000 > (now_time - work_time).microseconds)
+        self.assertTrue(400000 > (now_time - work_time).microseconds)
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     def test_sleep_for_executors_time_out(self, store_service):
@@ -170,7 +167,7 @@ class TestWorkController(TestCase):
 
         WorkController._sleep_for_executors(0, 2)
 
-        eq_([3, 4], self.count)
+        self.assertEqual([3, 4], self.count)
 
     @patch("rapid.client.controllers.work_controller.UpgradeUtil")
     def test_start_upgrade_no_executors(self, upgrade_util):
@@ -212,7 +209,7 @@ class TestWorkController(TestCase):
         store_service.check_for_pidfile.return_value = None
 
         controller.work_cancel(12345)
-        eq_(501, response.call_args_list[0][0][1])
+        self.assertEqual(501, response.call_args_list[0][0][1])
 
     @patch("rapid.client.controllers.work_controller.StoreService")
     @patch("rapid.client.controllers.work_controller.psutil")
@@ -234,4 +231,4 @@ class TestWorkController(TestCase):
         mock_os.kill.side_effect = Exception("Booo")
 
         controller.work_cancel(124545)
-        eq_(501, response.call_args_list[0][0][1])
+        self.assertEqual(501, response.call_args_list[0][0][1])

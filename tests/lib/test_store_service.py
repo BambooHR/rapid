@@ -14,22 +14,21 @@
  limitations under the License.
 """
 
-from unittest.case import TestCase
 from unittest.mock import Mock, patch
 
 import jsonpickle
-from nose.tools import eq_, ok_
 
 from rapid.lib.store_service import StoreService
+from tests.framework.unit_test import UnitTest
 
 
-class TestStoreService(TestCase):
+class TestStoreService(UnitTest):
 
     def test_set_updating_no_uwsgi(self):
         config = Mock()
         StoreService.set_updating(config)
 
-        eq_(True, StoreService.is_updating(config))
+        self.assertEqual(True, StoreService.is_updating(config))
 
     @patch("rapid.lib.store_service.uwsgi")
     def test_set_updating_with_uwsgi(self, uwsgi):
@@ -42,30 +41,30 @@ class TestStoreService(TestCase):
     def test_is_updating_no_uwsgi(self, uwsgi):
         config = Mock(rapid_config=Mock(_rapidci_updating=True))
 
-        eq_(True, StoreService.is_updating(config))
+        self.assertEqual(True, StoreService.is_updating(config))
 
     @patch("rapid.lib.store_service.uwsgi")
     def test_is_updating_with_uwsgi(self, uwsgi):
         config = Mock()
         uwsgi.cache_get.return_value = jsonpickle.dumps(True)
 
-        eq_(True, StoreService.is_updating(config))
+        self.assertEqual(True, StoreService.is_updating(config))
 
     def test_get_master_key_no_uwsgi(self):
         config = Mock(rapid_config=Mock(_rapidci_master_key="API_KEY"))
-        eq_("API_KEY", StoreService.get_master_key(config))
+        self.assertEqual("API_KEY", StoreService.get_master_key(config))
 
     @patch("rapid.lib.store_service.uwsgi")
     def test_get_master_key_with_uwsgi(self, uwsgi):
         config = Mock()
         uwsgi.cache_get.return_value = jsonpickle.dumps("API_KEY")
 
-        eq_("API_KEY", StoreService.get_master_key(config))
+        self.assertEqual("API_KEY", StoreService.get_master_key(config))
 
     def test_save_master_key_no_uwsgi(self):
         config = Mock(rapid_config=Mock(_rapidci_master_key=None))
         StoreService.save_master_key(config, "API_KEY")
-        eq_("API_KEY", StoreService.get_master_key(config))
+        self.assertEqual("API_KEY", StoreService.get_master_key(config))
 
     @patch("rapid.lib.store_service.uwsgi")
     def test_save_master_key_with_uwsgi(self, uwsgi):
@@ -77,12 +76,12 @@ class TestStoreService(TestCase):
     @patch("rapid.lib.store_service.os")
     def test_check_pidfile(self, os):
         os.listdir.return_value = ['rapid-111-1111']
-        ok_(StoreService.check_for_pidfile(111), "Pidfile should be found")
+        self.assertTrue(StoreService.check_for_pidfile(111), "Pidfile should be found")
 
     @patch("rapid.lib.store_service.os")
     def test_check_pidfile(self, os):
         os.listdir.return_value = ['rapid-11-1111']
-        ok_(not StoreService.check_for_pidfile(111), "Pidfile should not be found")
+        self.assertTrue(not StoreService.check_for_pidfile(111), "Pidfile should not be found")
 
     def test_inmemory_store_for_service(self):
         StoreService.set_calculating_workflow(12345)

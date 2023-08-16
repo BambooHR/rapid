@@ -13,12 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 import requests
 from rapid.lib.version import Version
 # pylint: disable=too-many-instance-attributes

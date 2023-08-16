@@ -13,16 +13,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from unittest import TestCase
-
 from ddt import ddt, data
-from nose.tools.trivial import eq_, ok_
 
 from rapid.workflow.data.models import Pipeline, Stage, Workflow, PipelineInstance, StageInstance, WorkflowInstance, Action, ActionInstance
+from tests.framework.unit_test import UnitTest
 
 
 @ddt
-class TestModels(TestCase):
+class TestModels(UnitTest):
     mapping = {
         Pipeline: {'clz': PipelineInstance, 'parent_id': 'pipeline_id'},
         Stage: {'clz': StageInstance, 'parent_id': 'stage_id', 'check_fields': {'order': 1}},
@@ -50,9 +48,9 @@ class TestModels(TestCase):
         model_instance = model(name='Testing', id=1, **additional_kws)
 
         instance_conversion = model_instance.convert_to_instance()
-        ok_(model_map['clz'] == type(instance_conversion))
-        eq_(1, getattr(instance_conversion, model_map['parent_id']))
+        self.assertTrue(model_map['clz'] == type(instance_conversion))
+        self.assertEqual(1, getattr(instance_conversion, model_map['parent_id']))
 
         if 'check_fields' in model_map:
             for key, value in model_map['check_fields'].items():
-                eq_(value, getattr(instance_conversion, key))
+                self.assertEqual(value, getattr(instance_conversion, key))

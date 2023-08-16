@@ -14,30 +14,28 @@
  limitations under the License.
 """
 from rapid.client.client_configuration import ClientConfiguration
+from tests.framework.unit_test import UnitTest
 
 try:
     import simplejson as json
 except:
     import json
 
-from unittest.case import TestCase
-
 from mock.mock import Mock, patch
-from nose.tools.trivial import eq_
 
 from rapid.client.communicator.client_communicator import ClientCommunicator
 from rapid.master.master_configuration import MasterConfiguration
 
 
-class TestClientCommunicator(TestCase):
+class TestClientCommunicator(UnitTest):
 
     def test_init(self):
         mock_app = Mock()
         client_communicator = ClientCommunicator("bogus", "/tmp/trial", mock_app)
 
-        eq_("bogus", client_communicator.server_uri)
-        eq_("/tmp/trial", client_communicator.quarantine_directory)
-        eq_(mock_app, client_communicator.flask_app)
+        self.assertEqual("bogus", client_communicator.server_uri)
+        self.assertEqual("/tmp/trial", client_communicator.quarantine_directory)
+        self.assertEqual(mock_app, client_communicator.flask_app)
 
     @patch("rapid.client.communicator.client_communicator.socket")
     def test_register_post_data(self, socket):
@@ -48,7 +46,7 @@ class TestClientCommunicator(TestCase):
         socket.gethostname.return_value = "bogus"
 
         test = {"grains": "one;two", "grain_restrict": False, "hostname": 'bogus'}
-        eq_(test, json.loads(ClientCommunicator._get_register_post_data(config)))
+        self.assertEqual(test, json.loads(ClientCommunicator._get_register_post_data(config)))
 
     @patch("rapid.client.communicator.client_communicator.time")
     def test_get_register_headers(self, time):
@@ -62,7 +60,7 @@ class TestClientCommunicator(TestCase):
                 'X-RAPIDCI-REGISTER-KEY': config.register_api_key,
                 'X-RAPIDCI-TIME': '1000',
                 'X-RAPIDCI-CLIENT-KEY': config.api_key}
-        eq_(test, ClientCommunicator._get_register_headers(config))
+        self.assertEqual(test, ClientCommunicator._get_register_headers(config))
 
     @patch('rapid.client.communicator.client_communicator.StoreService')
     @patch('rapid.client.communicator.client_communicator.requests')

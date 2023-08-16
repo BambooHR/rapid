@@ -15,20 +15,19 @@
 """
 
 import datetime
-from unittest.case import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from mock.mock import patch, Mock
-from nose.tools.trivial import eq_, ok_
 from sqlalchemy import Boolean
 
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.constants import StatusConstants
 from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig, AppConfiguration
+from tests.framework.unit_test import UnitTest
 
 
-class TestActionDal(TestCase):
+class TestActionDal(UnitTest):
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_queryables(self, get_db_session):
@@ -44,7 +43,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_([AppConfiguration, ActionInstance, PipelineParameters, ActionInstanceConfig, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
+        self.assertEqual([AppConfiguration, ActionInstance, PipelineParameters, ActionInstanceConfig, ActionInstance, PipelineParameters, ActionInstanceConfig], session.query_args)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_outerjoin(self, get_db_session):
@@ -60,9 +59,9 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        ok_(PipelineParameters in session.outerjoin_args)
-        eq_(PipelineParameters.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].left)
-        eq_(ActionInstance.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].right)
+        self.assertTrue(PipelineParameters in session.outerjoin_args)
+        self.assertEqual(PipelineParameters.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].left)
+        self.assertEqual(ActionInstance.__table__.columns['pipeline_instance_id'], session.outerjoin_args[1].right)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_filters(self, get_db_session):
@@ -79,7 +78,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_(8, len(session.filter_args))
+        self.assertEqual(8, len(session.filter_args))
 
         filter_1 = session.filter_args[0]
         filter_2 = session.filter_args[1]
@@ -90,17 +89,17 @@ class TestActionDal(TestCase):
         filter_7 = session.filter_args[6]
         filter_8 = session.filter_args[7]
 
-        eq_(ActionInstance.__table__.columns['status_id'], filter_1.left)
-        eq_(StatusConstants.READY, filter_1.right.value)
+        self.assertEqual(ActionInstance.__table__.columns['status_id'], filter_1.left)
+        self.assertEqual(StatusConstants.READY, filter_1.right.value)
 
-        eq_(ActionInstance.__table__.columns['manual'], filter_2.left)
-        eq_(0, filter_2.right.value)
+        self.assertEqual(ActionInstance.__table__.columns['manual'], filter_2.left)
+        self.assertEqual(0, filter_2.right.value)
 
-        eq_(ActionInstance.__table__.columns['pipeline_instance_id'], filter_3.left)
-        eq_(PipelineInstance.__table__.columns['id'], filter_3.right)
+        self.assertEqual(ActionInstance.__table__.columns['pipeline_instance_id'], filter_3.left)
+        self.assertEqual(PipelineInstance.__table__.columns['id'], filter_3.right)
 
-        eq_(PipelineInstance.__table__.columns['status_id'], filter_4.left)
-        eq_(StatusConstants.INPROGRESS, filter_4.right.value)
+        self.assertEqual(PipelineInstance.__table__.columns['status_id'], filter_4.left)
+        self.assertEqual(StatusConstants.INPROGRESS, filter_4.right.value)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_verify_order_by(self, get_db_session):
@@ -116,11 +115,11 @@ class TestActionDal(TestCase):
 
         action_dal.get_workable_work_requests()
 
-        eq_(PipelineInstance.__table__.columns['priority'], session.order_by_args[0].element)
-        eq_(PipelineInstance.__table__.columns['created_date'], session.order_by_args[1].element)
-        eq_(PipelineInstance.__table__.columns['id'], session.order_by_args[2].element)
-        eq_(ActionInstance.__table__.columns['order'], session.order_by_args[3].element)
-        eq_(ActionInstance.__table__.columns['slice'], session.order_by_args[4].element)
+        self.assertEqual(PipelineInstance.__table__.columns['priority'], session.order_by_args[0].element)
+        self.assertEqual(PipelineInstance.__table__.columns['created_date'], session.order_by_args[1].element)
+        self.assertEqual(PipelineInstance.__table__.columns['id'], session.order_by_args[2].element)
+        self.assertEqual(ActionInstance.__table__.columns['order'], session.order_by_args[3].element)
+        self.assertEqual(ActionInstance.__table__.columns['slice'], session.order_by_args[4].element)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_workable_work_requests_work_request_validation(self, get_db_session):
@@ -139,12 +138,12 @@ class TestActionDal(TestCase):
 
         work_requests = action_dal.get_workable_work_requests()
         work_request = work_requests[0]
-        eq_(1, len(work_requests))
-        eq_(1, work_request.action_instance_id)
-        eq_(1, work_request.pipeline_instance_id)
-        eq_(1, work_request.workflow_instance_id)
+        self.assertEqual(1, len(work_requests))
+        self.assertEqual(1, work_request.action_instance_id)
+        self.assertEqual(1, work_request.pipeline_instance_id)
+        self.assertEqual(1, work_request.workflow_instance_id)
 
-        eq_({"foo": "bar", "foo2": "bar2"}, work_request.environment)
+        self.assertEqual({"foo": "bar", "foo2": "bar2"}, work_request.environment)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_verify_working_verify_join(self, get_db_session):
@@ -155,8 +154,8 @@ class TestActionDal(TestCase):
 
         action_dal.get_verify_working(10)
 
-        eq_(PipelineInstance, session.join_args[0])
-        # eq_(StatusConstants.INPROGRESS, session.join_args[1].right.value)
+        self.assertEqual(PipelineInstance, session.join_args[0])
+        # self.assertEqual(StatusConstants.INPROGRESS, session.join_args[1].right.value)
 
     @patch('rapid.workflow.data.models.Base')
     @patch('rapid.workflow.action_dal.get_db_session')
@@ -171,7 +170,7 @@ class TestActionDal(TestCase):
 
         action_dal.get_verify_working(10)
 
-        eq_(6, len(session.filter_args))
+        self.assertEqual(6, len(session.filter_args))
 
         filter_1 = session.filter_args[0]
         filter_2 = session.filter_args[1]
@@ -180,26 +179,26 @@ class TestActionDal(TestCase):
         filter_5 = session.filter_args[4]
         filter_6 = session.filter_args[5]
 
-        eq_(PipelineInstance.__table__.columns['status_id'], filter_1.left)
-        eq_(StatusConstants.INPROGRESS, filter_1.right.value)
+        self.assertEqual(PipelineInstance.__table__.columns['status_id'], filter_1.left)
+        self.assertEqual(StatusConstants.INPROGRESS, filter_1.right.value)
 
-        eq_(ActionInstance.__table__.columns['status_id'], filter_2.left)
-        eq_(StatusConstants.INPROGRESS, filter_2.right.value)
+        self.assertEqual(ActionInstance.__table__.columns['status_id'], filter_2.left)
+        self.assertEqual(StatusConstants.INPROGRESS, filter_2.right.value)
 
-        eq_(ActionInstance.__table__.columns['assigned_to'], filter_3.left)
-        eq_('', filter_3.right.value)
+        self.assertEqual(ActionInstance.__table__.columns['assigned_to'], filter_3.left)
+        self.assertEqual('', filter_3.right.value)
 
-        eq_(ActionInstance.__table__.columns['start_date'], filter_4.left)
-        eq_(diff.minute, filter_4.right.value.minute)
-        eq_(diff.day, filter_4.right.value.day)
-        eq_(diff.year, filter_4.right.value.year)
-        eq_(diff.hour, filter_4.right.value.hour)
+        self.assertEqual(ActionInstance.__table__.columns['start_date'], filter_4.left)
+        self.assertEqual(diff.minute, filter_4.right.value.minute)
+        self.assertEqual(diff.day, filter_4.right.value.day)
+        self.assertEqual(diff.year, filter_4.right.value.year)
+        self.assertEqual(diff.hour, filter_4.right.value.hour)
 
-        eq_(ActionInstance.__table__.columns['end_date'], filter_5.left)
-        eq_(Boolean, type(filter_5.type))
+        self.assertEqual(ActionInstance.__table__.columns['end_date'], filter_5.left)
+        self.assertEqual(Boolean, type(filter_5.type))
 
-        eq_(ActionInstance.__table__.columns['manual'], filter_6.left)
-        eq_(0, filter_6.right.value)
+        self.assertEqual(ActionInstance.__table__.columns['manual'], filter_6.left)
+        self.assertEqual(0, filter_6.right.value)
 
     @patch('rapid.workflow.action_dal.get_db_session')
     def test_get_verify_working_verify_results(self, get_db_session):
@@ -213,7 +212,7 @@ class TestActionDal(TestCase):
 
         results = action_dal.get_verify_working(10)
 
-        eq_([action_instance.serialize()], results)
+        self.assertEqual([action_instance.serialize()], results)
 
     @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
     @patch('rapid.workflow.action_dal.get_db_session')
@@ -230,8 +229,8 @@ class TestActionDal(TestCase):
         with self.assertRaises(InvalidObjectException) as exception:
             action_dal.cancel_action_instance(12345)
 
-        eq_(404, exception.exception.code)
-        eq_("Action Instance not found", exception.exception.description)
+        self.assertEqual(404, exception.exception.code)
+        self.assertEqual("Action Instance not found", exception.exception.description)
 
     @patch('rapid.workflow.action_dal.StoreService')
     @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
@@ -258,10 +257,70 @@ class TestActionDal(TestCase):
         mock_constants = Mock()
         action_dal = ActionDal(flask_app=Mock(), queue_constants=mock_constants)
 
-        eq_("Action Instance has been canceled.", action_dal.cancel_action_instance(123455)['message'])
+        self.assertEqual("Action Instance has been canceled.", action_dal.cancel_action_instance(123455)['message'])
 
         mock_workflow.complete_an_action.assert_called_with(123455, StatusConstants.CANCELED)
         mock_constants.cancel_worker.assert_called_with(get_action_instance().serialize())
+
+    @patch('rapid.workflow.action_dal.get_db_session')
+    @patch('rapid.workflow.action_dal.ActionInstance')
+    @patch.object(ActionDal, ActionDal._get_loaded_pipeline_instance.__name__)
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_reset_action_instance_contract(self, mock_instance_engine,
+                                            mock_loaded_pipeline_instance,
+                                            mock_action_instance,
+                                            mock_get_session):
+        mock_engine = Mock()
+        mock_session = Mock()
+        mock_get_session.return_value = [mock_session]
+        mock_instance = Mock(status_id=StatusConstants.INPROGRESS)
+        mock_pi_instance = Mock(action_instances=[mock_instance])
+
+        mock_session.query().get.return_value = mock_instance
+        mock_loaded_pipeline_instance.return_value = mock_pi_instance
+        mock_instance_engine.return_value = mock_engine
+
+        dal = ActionDal()
+
+        dal.reset_action_instance(11)
+
+        mock_session.query.assert_called_with(mock_action_instance)
+        mock_session.commit.assert_called_with()
+        
+        mock_loaded_pipeline_instance.assert_called_with(mock_session, mock_instance)
+        mock_instance_engine.assert_called_with(dal.status_dal, mock_pi_instance)
+
+    @patch('rapid.workflow.action_dal.PipelineInstance')
+    @patch('rapid.workflow.action_dal.StageInstance')
+    @patch('rapid.workflow.action_dal.WorkflowInstance')
+    @patch('rapid.workflow.action_dal.joinedload')
+    def test_get_loaded_pipeline_instance_contract(self, mock_load,
+                                                   mock_workflow,
+                                                   mock_stage,
+                                                   mock_pipeline):
+        mock_session = Mock()
+        mock_action_instance = Mock()
+
+        mock_load_second = Mock()
+        mock_load_second.joinedload().joinedload.return_value = 'foobie'
+        mock_load.side_effect = ['foobar', mock_load_second]
+
+        dal = ActionDal()
+
+        dal._get_loaded_pipeline_instance(mock_session, mock_action_instance)
+
+        mock_session.query.assert_called_with(mock_pipeline)
+
+        mock_load_second.joinedload.assert_called_with(mock_stage.workflow_instances)
+        mock_load_second.joinedload().joinedload.assert_called_with(mock_workflow.action_instances)
+
+        mock_session.query().options.assert_called_with('foobar', 'foobie')
+        mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
+
+
+
+
+
 
 
 class WrapperHelper(object):

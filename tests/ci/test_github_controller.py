@@ -13,21 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.case import TestCase
-
 from mock.mock import MagicMock
-from nose.tools.trivial import eq_
 
 from rapid.ci.vcs.github_controller import GithubController
+from tests.framework.unit_test import UnitTest
 
 
-class TestGithubController(TestCase):
+class TestGithubController(UnitTest):
 
     def test_get_json_value(self):
         mock_config = MagicMock()
         controller = GithubController(MagicMock(), MagicMock(), mock_config, MagicMock())
 
-        eq_('something', controller._get_json_value({'test': {'trial': {'value': 'something'}}}, 'test.trial.value'))
+        self.assertEqual('something', controller._get_json_value({'test': {'trial': {'value': 'something'}}}, 'test.trial.value'))
 
     def test_process_webhooks_wraps_properly(self):
         controller = GithubController(MagicMock(), MagicMock(), MagicMock(), MagicMock())
