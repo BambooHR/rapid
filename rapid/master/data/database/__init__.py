@@ -14,7 +14,8 @@
  limitations under the License.
 """
 
-
 def execute_db_query(query):
-    from rapid.lib import db
-    return db.engine.execute(query)
+    from rapid.lib import get_db_session
+    from sqlalchemy.sql import text
+    for session in get_db_session():
+        return session.execute(text(query))

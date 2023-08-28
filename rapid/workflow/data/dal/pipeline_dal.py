@@ -181,22 +181,22 @@ class PipelineDal(GeneralDal, Injectable):
         _visited_objs = []
 
         class AlchemyEncoder(out_json.JSONEncoder):
-            def default(self, obj):  # pylint: disable=arguments-differ,method-hidden
-                if isinstance(obj.__class__, DeclarativeMeta):
+            def default(self, o):  # pylint: disable=arguments-differ,method-hidden
+                if isinstance(o.__class__, DeclarativeMeta):
                     # don't re-visit self
-                    if obj in _visited_objs:
+                    if o in _visited_objs:
                         return None
-                    _visited_objs.append(obj)
+                    _visited_objs.append(o)
 
                     # an SQLAlchemy class
                     fields = {}
-                    for field in [x for x in dir(obj) if
+                    for field in [x for x in dir(o) if
                                   not x.startswith('_') and x != 'metadata' and x != 'query' and x != 'query_class']:
-                        fields[field] = obj.__getattribute__(field)
+                        fields[field] = getattr(o, field)
                     # a json-encodable dict
                     return fields
 
-                return out_json.JSONEncoder.default(self, obj)
+                return out_json.JSONEncoder.default(self, o)
 
         return AlchemyEncoder
 

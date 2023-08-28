@@ -31,7 +31,7 @@ class EventHandlerFactory(object):
         :return:
         :rtype: EventHandler
         """
-        import rapid.workflow.events.handlers as handlers
+        from rapid.workflow.events import handlers
         for importer, modname, ispkg in pkgutil.iter_modules(handlers.__path__):  # pylint: disable=unused-variable
             try:
                 name = "{}.{}".format(handlers.__name__, modname)

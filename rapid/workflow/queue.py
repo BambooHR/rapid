@@ -67,7 +67,7 @@ class Queue(Injectable):
                         queue_handler.process_work_request(work_request, clients)
                     except QueueHandlerShouldSleep:
                         sleeping_queue_handlers.append(queue_handler)
-                    except Exception as exception:
+                    except Exception as exception:  #pylint: disable=broad-exception-caught
                         logger.error(exception)
                         self.action_instance_service.edit_action_instance(work_request.action_instance_id, {'status_id': StatusConstants.FAILED,
                                                                                                             'start_date': datetime.utcnow(),
@@ -80,7 +80,7 @@ class Queue(Injectable):
                 if queue_handler.can_process_action_instance(action_instance):
                     try:
                         queue_handler.process_action_instance(action_instance, clients)
-                    except Exception as exception:
+                    except Exception as exception:  #pylint: disable=broad-exception-caught
                         logger.error(exception)
                         self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': StatusConstants.FAILED,
                                                                                                   'start_date': datetime.utcnow(),

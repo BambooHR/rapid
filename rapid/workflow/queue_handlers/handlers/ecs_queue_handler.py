@@ -26,13 +26,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
     def container_identifier(self):
         return 'ecs'
 
-    def __init__(self, rapid_config, action_instance_service):
-        """
-        Parameters
-        ----------
-        rapid_config: MasterConfiguration
-        action_instance_service: ActionInstanceService
-        """
+    def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService):
         super(ECSQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service
         self._ecs_client = None
@@ -66,31 +60,31 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                     self._set_task_status(work_request.action_instance_id, status_id, assigned_to, start_date=datetime.datetime.utcnow())
             except ECSLimitReached as limit:
                 logger.error("ECSQueueHandler: Limit reached: {}".format(limit))
-                raise QueueHandlerShouldSleep('ECS Limit was reached.')
+                raise QueueHandlerShouldSleep('ECS Limit was reached.') from limit
             except ECSConnectionError as conn_error:
                 logger.error("ECSQueueHandler: Connection issue: {}".format(conn_error))
-                raise QueueHandlerShouldSleep('ECS Connection issue detected.')
+                raise QueueHandlerShouldSleep('ECS Connection issue detected.') from conn_error
             except ECSCapacityReached as capacity:
                 logger.error("ECSQueueHandler: Capacity issue: {}".format(capacity))
-                raise QueueHandlerShouldSleep('ECS Capacity unavailable.')
+                raise QueueHandlerShouldSleep('ECS Capacity unavailable.') from capacity
             except ECSServiceUnavailable as service_error:
                 logger.error("ECSQueueHandler: Service issue: {}".format(service_error))
-                raise QueueHandlerShouldSleep('ECS Service unavailable.')
+                raise QueueHandlerShouldSleep('ECS Service unavailable.') from service_error
             except ClientError as param_exception:
                 param_str = f'{param_exception}'
                 logger.error("ECSQueueHandler: ClientError: {}".format(param_exception))
 
                 if 'RequestLimitExceeded' in param_str:
-                    raise QueueHandlerShouldSleep('ECS Request Limit Exceeded')
+                    raise QueueHandlerShouldSleep('ECS Request Limit Exceeded') from param_exception
                 if 'Capacity is unavailable at this time' in param_str:
-                    raise QueueHandlerShouldSleep('ECS Capacity is unavailable')
+                    raise QueueHandlerShouldSleep('ECS Capacity is unavailable') from param_exception
                 if 'Service Unavailable.' in param_str:
-                    raise QueueHandlerShouldSleep('ECS Service unavailable.')
+                    raise QueueHandlerShouldSleep('ECS Service unavailable.') from param_exception
             except Exception as exception:
                 if 'Service Unavailable' in f'{exception}':
                     logger.error("ECSQueueHandler: Service Unavailable: {}".format(exception))
 
-                    raise QueueHandlerShouldSleep('ECS Service unavailable.')
+                    raise QueueHandlerShouldSleep('ECS Service unavailable.') from exception
                 raise
         return True
 
@@ -104,7 +98,8 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         if arn and task and 'taskArns' in task:
             if arn in task['taskArns']:
                 return True
-            self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
+            return self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
+        return False
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         try:
@@ -119,7 +114,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 return True
 
             logger.info("Failed to cancel ECS arn: {}".format(arn))
-        except Exception as exception:
+        except Exception as exception: #pylint: disable=broad-exception-caught
             logger.exception(exception)
         return False
 
@@ -151,7 +146,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                                {'name': 'workflow_instance_id', 'value': str(work_request.workflow_instance_id)},
                                {'name': 'pipeline_instance_id', 'value': str(work_request.pipeline_instance_id)}]
 
-        (grain_type, image) = self._get_grain_type_split(work_request.grain)
+        (grain_type, image) = self._get_grain_type_split(work_request.grain)  #pylint: disable=unused-variable
         container_overrides = self._get_task_definition_key(task_definition, 'overrides:dict.containerOverrides:list')
         container_overrides.append({"name": image.split(':')[0],
                                     "environment": environment_default})
@@ -176,10 +171,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                         current_pointer = task_definition[key]
                 except KeyError:
                     if current_pointer is not None:
-                        current_pointer[key] = eval('{}()'.format(default_type))
+                        current_pointer[key] = eval('{}()'.format(default_type))  #pylint: disable=eval-used
                         current_pointer = current_pointer[key]
                     else:
-                        current_pointer = eval('{}()'.format(default_type))
+                        current_pointer = eval('{}()'.format(default_type))  #pylint: disable=eval-used
                         task_definition[key] = current_pointer
             except ValueError:
                 pass
@@ -206,14 +201,13 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 reason = response_dict['failures'][0]['reason']
                 if 'limit' in reason:
                     raise ECSLimitReached(reason)
-                elif 'connect timed out' in reason:
+                if 'connect timed out' in reason:
                     raise ECSConnectionError(reason)
-                elif 'Capacity is unavailable at this time' in reason:
+                if 'Capacity is unavailable at this time' in reason:
                     raise ECSCapacityReached(reason)
-                elif 'Service unavailable' in reason:
+                if 'Service unavailable' in reason:
                     raise ECSServiceUnavailable(reason)
-                else:
-                    status_id = StatusConstants.FAILED
+                status_id = StatusConstants.FAILED
             elif not response_dict['tasks']:
                 logger.error("No tasks were returned")
                 status_id = StatusConstants.READY

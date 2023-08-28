@@ -23,8 +23,8 @@ from flask import Flask, Response
 from rapid.master.data import run_db_downgrade, configure_db
 from rapid.lib import setup_config_from_file, is_primary_worker, setup_status_route
 from rapid.lib.framework.ioc import IOC
-from .controllers import register_controllers
-from .data import configure_data_layer, run_db_upgrades, create_revision
+from rapid.master.controllers import register_controllers
+from rapid.master.data import configure_data_layer, run_db_upgrades, create_revision
 
 app = Flask("rapidci_master")
 app.rapid_config = {'_is': 'master'}
@@ -56,13 +56,15 @@ logger.setLevel(logging.INFO)  # pylint: disable=no-member
 def internal_error(exception):
     response = Response(status=500, content_type='application/json')
     response.data = _to_dict(exception)
-    app.logger.error(exception.message)  # pylint: disable=no-member
+    if hasattr(exception, 'message'):
+        app.logger.error(exception.message)  # pylint: disable=no-member
+    else:
+        app.logger.error(exception)
     return response
 
 
 def _to_dict(exception):
-    _rv = dict()
-    _rv['message'] = exception.message if hasattr(exception, 'message') else 'An exception has occurred'
+    _rv = {'message': exception.message if hasattr(exception, 'message') else 'An exception has occurred'}
     return _rv
 
 
@@ -91,7 +93,6 @@ def configure_application(flask_app, args, manual_db_upgrade=False):
 
 
 def load_extensions(flask_app):
-    from rapid.lib.framework.ioc import IOC
     from rapid.extensions.extension_loader import ExtensionLoader
     extension_loader = IOC.get_class_instance(ExtensionLoader)
     extension_loader.load_extensions(flask_app)
@@ -146,7 +147,7 @@ def run_queue(flask_app):
             clients = []
             try:
                 clients = StoreService.get_clients(flask_app)
-            except:
+            except Exception:  #pylint: disable=broad-exception-caught
                 pass
 
             try:

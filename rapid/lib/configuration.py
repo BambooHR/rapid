@@ -53,7 +53,7 @@ class Configuration(object):
             if file_name:
                 if os.path.exists(file_name):
                     parser.read(file_name)
-        except Exception:  # pylint: disable=bare-except
+        except Exception:  # pylint: disable=bare-except,broad-exception-caught
             logger.info("Using defaults")
 
         self._set_values(parser)
@@ -65,20 +65,20 @@ class Configuration(object):
         """
         Returns
         -------
-        dict
-            dict of key, dict of key value mappings.
+        typing.Dict
+            typing.Dict of key, dict of key value mappings.
         """
         yield
 
     def get_section(self, key):
-        for section, value in self.section_mapping.items():
+        for section, value in self.section_mapping.items():  #pylint: disable=no-member
             if key in value:
                 return section
         return None
 
     def _set_values(self, parser):
-        for section, map in self.section_mapping.items():
-            for key, value in map.items():
+        for section, _map in self.section_mapping.items():  #pylint: disable=no-member
+            for key, value in _map.items():
                 try:
                     self._set_parser_value(parser, section, key, *value.defaults)
                 except AttributeError:

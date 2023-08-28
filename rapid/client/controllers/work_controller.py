@@ -13,8 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-import psutil
-
 try:
     import simplejson as json
 except ImportError:
@@ -27,6 +25,7 @@ import time
 import pickle
 import logging
 import threading
+import psutil
 
 from flask.globals import request
 from flask.wrappers import Response
@@ -90,7 +89,7 @@ class WorkController(BaseController):
                                                           get_files_auth=self.app.rapid_config.get_files_basic_auth)
                     try:
                         delete_file = False
-                        with open("{}/{}".format(quarantine_directory, item), 'r') as tmp_file:
+                        with open("{}/{}".format(quarantine_directory, item), 'r') as tmp_file:  #pylint: disable=unspecified-encoding
                             data = pickle.loads(tmp_file.read())
                             try:
                                 status = data['status']

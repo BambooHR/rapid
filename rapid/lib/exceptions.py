@@ -31,10 +31,10 @@ class HttpException(HTTPException):
         super(HttpException, self).__init__(description)
         self.code = code
 
-    def get_headers(self, environ=None):
+    def get_headers(self, environ=None, scope=None):
         return self.headers
 
-    def get_body(self, environ=None):
+    def get_body(self, environ=None, scope=None):
         return json.dumps({"message": self.description})
 
 

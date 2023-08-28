@@ -164,7 +164,7 @@ class Executor(object):
                 stdout = subprocess.PIPE
                 stderr = subprocess.STDOUT
 
-            self.child_process = subprocess.Popen(command, cwd=self.workspace, env=env, stderr=stderr, stdout=stdout)
+            self.child_process = subprocess.Popen(command, cwd=self.workspace, env=env, stderr=stderr, stdout=stdout)  #pylint: disable=consider-using-with
             self.pid = self.child_process.pid
 
             StoreService.save_executor(self)
@@ -196,9 +196,9 @@ class Executor(object):
                 if Constants.RESULTS_SUMMARY in results and 'FAILED' in results[Constants.RESULTS_SUMMARY] and results[Constants.RESULTS_SUMMARY]['FAILED'] > self.failure_threshold:
                     raise ThresholdException("Failure threshold was exceeded")
 
-        except ThresholdException as exception:
+        except ThresholdException:
             status = 'UNSTABLE'
-        except ResultsFileNotFoundException as exception:
+        except ResultsFileNotFoundException:
             self.logger.error("Expected ResultsFile was not where specified.")
             status = 'FAILED'
         except ResultsFileNotParsedException:
@@ -244,7 +244,7 @@ class Executor(object):
             parameters = {}
             for glob_tmp in parameter_files:
                 for parameter_file in glob.glob(os.path.join(workspace, glob_tmp)):
-                    with open(parameter_file) as glob_file:
+                    with open(parameter_file, encoding='utf-8') as glob_file:
                         lines = glob_file.readlines()
                         parameters.update(Executor._convert_to_dict(lines))
 
@@ -258,7 +258,7 @@ class Executor(object):
             for glob_tmp in stats_files:
                 try:
                     for stats_file in glob.glob(os.path.join(workspace, glob_tmp)):
-                        with open(stats_file) as glob_file:
+                        with open(stats_file, encoding='utf-8') as glob_file:
                             lines = glob_file.readlines()
                             stats.update(Executor._convert_to_dict(lines))
                 except Exception:  # No need to worry about failing stats files.
@@ -285,7 +285,7 @@ class Executor(object):
                 file_was_read = False
                 for results_file in glob.glob("{}/{}".format(workspace, wrapper.file_name)):
                     file_was_read = True
-                    with open(results_file) as glob_file:
+                    with open(results_file, encoding='utf-8') as glob_file:
                         try:
                             lines = glob_file.read().splitlines(True)
                             parsed_results = parse_file(lines, selected_parser)
@@ -300,8 +300,8 @@ class Executor(object):
                                 del parsed_results[Constants.RESULTS_SUMMARY]
 
                             results.update(parsed_results)
-                        except Exception:
-                            raise ResultsFileNotParsedException("Result file did not parse.")
+                        except Exception as exception:
+                            raise ResultsFileNotParsedException("Result file did not parse.") from exception
 
                 if not file_was_read:
                     raise ResultsFileNotFoundException("Results file not read.")
@@ -344,8 +344,8 @@ class Executor(object):
             if isinstance(message, bytes):
                 message = message.decode('utf-8')
             try:
-                logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
-            except:
+                logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))  # pylint: disable=redundant-u-string-prefix
+            except:  # pylint: disable=bare-except
                 logger.info("__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))  # Python 3 no unicode cast needed.
         except AttributeError:
             #  Thread race condition on windows os will occasionally be None
@@ -359,9 +359,9 @@ class Executor(object):
         if self.work_request.environment:
             for key, value in self.work_request.environment.items():
                 try:
-                    if type(key) != str:
+                    if not isinstance(key, str):
                         key = key.decode('utf-8')
-                    if type(value) != str:
+                    if not isinstance(value, str):
                         value = value.decode('utf-8')
 
                     env[key] = value
@@ -401,7 +401,7 @@ class Executor(object):
         config_path = os.path.join(self.workspace, 'rapid_config') if filename is None else filename
         if os.path.isfile(config_path):
             try:
-                with(open(config_path, 'r')) as tmp_file:
+                with(open(config_path, 'r', encoding='utf-8')) as tmp_file:
                     self.verify_file_lines(tmp_file.readlines(), self.logger)
             except Exception:
                 pass
@@ -461,7 +461,7 @@ class Executor(object):
                                   logger)
                     true_file_name = Executor._get_executable_name(file_name)
                     files_downloaded.append(file_name)
-                    with open(communicator.get_file(self.workspace, true_file_name, logger), 'r') as tmp_file:
+                    with open(communicator.get_file(self.workspace, true_file_name, logger), 'r', encoding='utf-8') as tmp_file:
                         lines = tmp_file.readlines()
                         self._download_by_lines(lines,
                                                 communicator,

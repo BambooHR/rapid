@@ -21,7 +21,7 @@ except ImportError:
     import json
 
 
-class WorkRequest(object):
+class WorkRequest(object):  #pylint: disable=too-many-instance-attributes
     def __init__(self, data=None):
         self._grain = None
         self.cmd = None

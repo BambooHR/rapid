@@ -13,13 +13,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-# pylint: disable=singleton-comparison,broad-except
+# pylint: disable=singleton-comparison,broad-except,unused-variable
 import logging
 import datetime
 import random
 
 import time
-from typing import Union
 
 from sqlalchemy import func, and_, asc
 from sqlalchemy.orm import joinedload, aliased
@@ -90,7 +89,7 @@ class ActionDal(GeneralDal, Injectable):
                           PipelineInstance.created_date.asc(),
                           PipelineInstance.id.asc(),
                           ActionInstance.order.asc(),
-                          ActionInstance.slice.asc()).all():
+                          ActionInstance.slice.asc()).all():  #pylint: disable=unused-variable
             self.configure_work_request(action_instance, pipeline_parameters, work_requests, results)
 
     def _get_stalled_work_requests(self, session, work_requests, results):
@@ -298,7 +297,7 @@ class ActionDal(GeneralDal, Injectable):
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
 
-    def reconcile_pipeline_instances(self):
+    def reconcile_pipeline_instances(self):  #pylint: disable=too-many-locals
         for session in get_db_session():
             action_query = session.query(ActionInstance).filter(ActionInstance.status_id <= StatusConstants.INPROGRESS).subquery('ai')
             pipeline_instances = session.query(PipelineInstance).filter(PipelineInstance.status_id == StatusConstants.INPROGRESS)\

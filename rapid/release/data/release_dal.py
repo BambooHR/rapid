@@ -44,13 +44,11 @@ class ReleaseDal(Injectable):
             for session in get_db_session():
                 if with_for_update:
                     return session.query(Release).with_for_update().filter(Release.id == release_id).first().serialize()
-                else:
-                    return session.query(Release).with_for_update().filter(Release.id == release_id).first().serialize()
+                return session.query(Release).with_for_update().filter(Release.id == release_id).first().serialize()
         else:
             if with_for_update:
                 return in_session.query(Release).with_for_update().filter(Release.id == release_id).first()
-            else:
-                return in_session.query(Release).with_for_update().filter(Release.id == release_id).first()
+            return in_session.query(Release).with_for_update().filter(Release.id == release_id).first()
 
     def set_release_step(self, release_id, step_id, status, session=None):
         assert release_id is not None
@@ -107,7 +105,7 @@ class ReleaseDal(Injectable):
             if step and step.id:
                 step.status_id = status_entry.id
                 return step
-        raise Exception("Something didn't work!")
+        raise Exception("Something didn't work!")  #pylint: disable=broad-exception-raised
 
     def get_step_by_release_and_step_id(self, release_id, step_id, in_session=None):
         if in_session is not None:

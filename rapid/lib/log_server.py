@@ -40,7 +40,7 @@ class LogServer(object):
             if log_files:
                 for check in [{'cmd': 'grep -a {} {}', 'files': ' '.join(log_files)}, {'cmd': 'zgrep -a {} {}', 'files': ' '.join(gz_files)}]:
                     cmd = check['cmd'].format(string_grep, check['files'])
-                    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)  #pylint: disable=consider-using-with
                     for line in iter(process.stdout.readline, b''):
                         found_output = True
                         yield line
