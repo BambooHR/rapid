@@ -93,6 +93,7 @@ def configure_application(flask_app, args, manual_db_upgrade=False):
 
 
 def load_extensions(flask_app):
+    from rapid.lib.framework.ioc import IOC
     from rapid.extensions.extension_loader import ExtensionLoader
     extension_loader = IOC.get_class_instance(ExtensionLoader)
     extension_loader.load_extensions(flask_app)
@@ -147,7 +148,7 @@ def run_queue(flask_app):
             clients = []
             try:
                 clients = StoreService.get_clients(flask_app)
-            except Exception:  #pylint: disable=broad-exception-caught
+            except:
                 pass
 
             try:

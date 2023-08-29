@@ -43,18 +43,18 @@ class QaTestFile(object):
 
     @abstractmethod
     def is_reversed(self):
-        raise Exception("Should implement this.")  #pylint: disable=broad-exception-raised
+        raise Exception("Should implement this.")
 
     @property
     @abstractmethod
     def regex(self):
-        raise Exception("Should implement regex.")  #pylint: disable=broad-exception-raised
+        raise Exception("Should implement regex.")
 
     def get_results(self):
         return self._areas
 
     def parse_file(self, name_map=None):
-        with open(self._filename, encoding='utf-8') as file:
+        with open(self._filename) as file:
             for line in file.readlines():
                 try:
                     action = self.parse_action(line)

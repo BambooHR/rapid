@@ -106,7 +106,7 @@ class UtilityRouter(object):
                     is_ssl = True
 
                 if not api_key:
-                    raise Exception("NO API KEY!") #pylint: disable=broad-exception-raised
+                    raise Exception("NO API KEY!")
                 client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
 
                 if HeaderConstants.SINGLE_USE not in in_request.headers:
@@ -116,7 +116,7 @@ class UtilityRouter(object):
                                 content_type='application/json', headers={'Content-Type': 'application/json',
                                                                           'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key,
                                                                           Version.HEADER: Version.get_version()})
-        raise Exception('Not Allowed')  #pylint: disable=broad-exception-raised
+        raise Exception('Not Allowed')
 
     def store_client(self, remote_addr, definition):
         clients = self._get_clients()

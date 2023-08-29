@@ -90,7 +90,7 @@ class MasterCommunicator(Communicator):
     def is_still_working_on(action_instance_id, client, verify_certs=True):
         is_still_working = False
         try:
-            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs, timeout=10)
+            response = requests.get(client.get_availability_uri(), headers=client.get_headers(), verify=verify_certs)
             try:
                 if 'current_work' in response.json():
                     for instance in response.json()['current_work']:

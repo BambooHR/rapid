@@ -72,7 +72,7 @@ class TestClientCommunicator(UnitTest):
         communicator._default_send('bogus', None)
 
         store_service.get_master_key.assert_called_with(mock_app)
-        requests.put.assert_called_with('bogus', data=None, json=None, headers={'X-Rapidci-Api-Key': 'bogus_key'}, verify=False, timeout=30)
+        requests.put.assert_called_with('bogus', data=None, json=None, headers={'X-Rapidci-Api-Key': 'bogus_key'}, verify=False)
 
     @patch('rapid.client.communicator.client_communicator.StoreService')
     @patch('rapid.client.communicator.client_communicator.requests')

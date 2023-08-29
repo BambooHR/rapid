@@ -2,7 +2,7 @@ import logging
 import datetime
 import random
 
-from requests import ConnectTimeout, ReadTimeout
+from requests import ConnectTimeout, ReadTimeout, ConnectionError
 
 from rapid.lib.constants import StatusConstants
 from rapid.lib.framework.injectable import Injectable
@@ -55,7 +55,7 @@ class StandardQueueHandler(QueueHandler, Injectable):
                             logger.info("Client didn't respond right: {} returned {}".format(client.ip_address, response.status_code))
 
                         break  # Break, we sent work to the other client
-                    except Exception as exception:  # pylint: disable=broad-exception-caught
+                    except Exception as exception:
                         logger.error("Could not send work to worker: [{}]".format(str(exception)))
                         self.action_instance_service.edit_action_instance(work_request.action_instance_id, {"status_id": StatusConstants.READY,
                                                                                                             "start_date": None,
@@ -71,7 +71,7 @@ class StandardQueueHandler(QueueHandler, Injectable):
                 except ConnectionError as error:
                     logger.error(error)
                     logger.error(client.get_work_uri())
-                except Exception as exception:  #pylint: disable=broad-exception-caught
+                except Exception as exception:
                     logger.error(exception)
                     logger.error(client.get_work_uri())
         pages = None

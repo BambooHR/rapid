@@ -21,15 +21,17 @@ import logging
 import requests
 from requests.exceptions import ConnectionError  # pylint: disable=redefined-builtin
 
+from rapid.client.client_configuration import ClientConfiguration
+from rapid.lib.constants import HeaderConstants
+from rapid.lib.utils import OSUtil
+
+from rapid.lib.version import Version
+
 try:
     import simplejson as json
 except ImportError:
     import json
 
-from rapid.client.client_configuration import ClientConfiguration
-from rapid.lib.constants import HeaderConstants
-from rapid.lib.utils import OSUtil
-from rapid.lib.version import Version
 from rapid.lib.communicator import Communicator
 from rapid.lib.store_service import StoreService
 
@@ -77,7 +79,6 @@ class ClientCommunicator(Communicator):
             import traceback
             traceback.print_exc()
             logger_in.error("unable to download file: {}".format(uri))
-        return None
 
     def send_parameters(self, pipeline_instance_id, parameters, logger_in):
         if parameters:
@@ -142,7 +143,7 @@ class ClientCommunicator(Communicator):
             message = "Master not available, storing for later: {}".format(action_instance_id)
             logger_in.error(message)
 
-            with open('{}/{}'.format(self.quarantine_directory, action_instance_id), 'w', encoding='utf-8') as tmp_file:
+            with open('{}/{}'.format(self.quarantine_directory, action_instance_id), 'w') as tmp_file:
                 tmp_file.writelines(pickle.dumps(data))
                 tmp_file.flush()
 
@@ -183,7 +184,6 @@ class ClientCommunicator(Communicator):
             return {'master_version': response.headers[Version.HEADER]}
         except Exception as exception:
             logger.error(exception)
-            return {}
 
     def _string_header_values(self, headers):
         _headers = {}
@@ -202,7 +202,7 @@ class ClientCommunicator(Communicator):
         if master_key is not None:
             headers['X-Rapidci-Api-Key'] = master_key
 
-        return requests.get(uri, headers=headers, timeout=30)
+        return requests.get(uri, headers=headers)
 
     def _default_send(self, uri, data, in_type='put', headers=None, in_json=None):
         master_key = StoreService.get_master_key(self.flask_app)
@@ -213,9 +213,9 @@ class ClientCommunicator(Communicator):
 
         request = None
         if in_type == 'put':
-            request = requests.put(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs, timeout=30)
+            request = requests.put(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs)
         elif in_type == 'post':
-            request = requests.post(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs, timeout=30)
+            request = requests.post(uri, data=data, json=in_json, headers=headers, verify=self.verify_certs)
 
         if request.status_code != 200:
             raise Exception("Status Code Failure: {}".format(request.status_code))
@@ -228,15 +228,15 @@ class ClientCommunicator(Communicator):
         real_file_name = self._get_real_file_name(directory, file_name)
         try:
             os.makedirs(os.path.dirname(real_file_name))
-        except Exception:  #pylint: disable=broad-except
+        except Exception:
             pass
 
         with open(real_file_name, 'wb') as handle:
             response = None
             if self.get_files_auth is not None:
-                response = requests.get(self.server_uri + "/get_file/{}".format(file_name), verify=self.verify_certs, auth=self.get_files_auth, timeout=10)
+                response = requests.get(self.server_uri + "/get_file/{}".format(file_name), verify=self.verify_certs, auth=self.get_files_auth)
             else:
-                response = requests.get(self.server_uri + "/get_file/{}".format(file_name), verify=self.verify_certs, timeout=10)
+                response = requests.get(self.server_uri + "/get_file/{}".format(file_name), verify=self.verify_certs)
 
             if not response.ok:
                 raise BaseException("File '{}' did not download".format(file_name))

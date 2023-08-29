@@ -41,7 +41,7 @@ class Main(BaseController):
                                 headers={'content-type': 'application/json',
                                          'X-RapidCI-Port': '8002',
                                          'X-RapidCI-Time': str(time.time() * 1000)},
-                                verify=self.flask_app.rapid_config.ignore_cert_verify, timeout=10)
+                                verify=self.flask_app.rapid_config.ignore_cert_verify)
         if request.status_code == 200:
             return "Success!"
 

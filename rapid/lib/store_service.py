@@ -69,7 +69,7 @@ class StoreService(object):
     @staticmethod
     def save_executor(executor):
         try:
-            with open(StoreService._get_tempfile_name(executor), 'w', encoding='utf-8') as file_out:
+            with open(StoreService._get_tempfile_name(executor), 'w') as file_out:
                 file_out.write("{}".format(executor.pid))
         except IOError as exception:
             logger.exception(exception)

@@ -235,7 +235,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 break
 
             status = self._get_status(instance.status_id)
-            if status.type in (StatusTypes.FAILED, StatusTypes.CANCELED):
+            if status.type == StatusTypes.FAILED or status.type == StatusTypes.CANCELED:
                 all_passed = False
                 failed_type = status
 

@@ -37,7 +37,7 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
 
-        (grain_type, image) = self._get_grain_type_split(work_request.grain)  #pylint: disable=unused-variable
+        (grain_type, image) = self._get_grain_type_split(work_request.grain)
 
         command = "docker run {} {}".format(
             self._get_docker_parameters(work_request),
@@ -48,8 +48,8 @@ class DockerQueueHandler(ContainerHandler, Injectable):
             'status_id': StatusConstants.INPROGRESS
         }
         try:
-            child_process = subprocess.Popen(command.split(' '), stderr=stderr, stdout=stdout) #pylint: disable=consider-using-with
-            if child_process.poll(): #pylint: disable=consider-using-with
+            child_process = subprocess.Popen(command.split(' '), stderr=stderr, stdout=stdout)
+            if child_process.poll():
                 raise OSError('Something went wrong')
         except OSError:
             assignment['status_id'] = StatusConstants.FAILED
