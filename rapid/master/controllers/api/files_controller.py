@@ -1,6 +1,6 @@
-from flask import send_from_directory, current_app
+from flask import send_from_directory
 
-from rapid.lib import api_key_required, basic_auth
+from rapid.lib import basic_auth
 
 
 class FilesController(object):

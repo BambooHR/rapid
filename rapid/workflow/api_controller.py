@@ -14,15 +14,13 @@
  limitations under the License.
 """
 # pylint: disable=broad-except,too-many-public-methods
-from rapid.lib.version import Version
-from rapid.release.release_service import ReleaseService
-
+import logging
 try:
     import simplejson as json
 except ImportError:
     import json
 
-import logging
+
 from werkzeug.exceptions import BadRequestKeyError
 from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
@@ -32,9 +30,11 @@ from rapid.lib import json_response, api_key_required, get_declarative_base, get
 from rapid.lib.constants import ModuleConstants
 from rapid.lib.utils import ORMUtil
 from rapid.lib.store_service import StoreService
+from rapid.lib.version import Version
 from rapid.lib.work_request import WorkRequestEncoder
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database.dal import get_dal
+from rapid.release.release_service import ReleaseService
 from rapid.workflow.action_instances_service import ActionInstanceService
 from rapid.workflow.queue_service import QueueService
 from rapid.workflow.workflow_service import WorkflowService
@@ -84,7 +84,7 @@ class APIRouter(Injectable):
         flask_app.add_url_rule('/api/action_instances/<int:_id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
-        flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/work_request', 'action_instance_work_request', api_key_required(self.action_instance_work_request), methods=['GET']),
+        flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/work_request', 'action_instance_work_request', api_key_required(self.action_instance_work_request), methods=['GET'])
 
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/is_completing', 'action_instance_is_completing', api_key_required(self.action_instance_is_completing), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/clear_completing', 'action_instance_clear_completing', api_key_required(self.action_instance_clear_completing), methods=['GET'])
@@ -376,7 +376,7 @@ class APIRouter(Injectable):
         self.table_names = []
 
         _base = get_declarative_base()
-        registry = _base.registry._class_registry if hasattr(_base, 'registry') else _base._decl_class_registry
+        registry = _base.registry._class_registry if hasattr(_base, 'registry') else _base._decl_class_registry  # pylint: disable=protected-access
         for clazz in list(registry.values()):  # pylint: disable=protected-access
             try:
                 self.table_names.append(clazz.__tablename__)

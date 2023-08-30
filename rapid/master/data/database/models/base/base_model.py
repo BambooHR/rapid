@@ -37,7 +37,7 @@ class BaseModel(object):
         elif name.endswith('y'):
             name = name[:-1] + "ies"
         elif not name.endswith('s'):
-            name = "%s%s" % (name, "s"[2 == 1:])
+            name = "%s%s" % (name, "s"[2 == 1:])  #pylint: disable=comparison-of-constants
         return name
 
     __table_args__ = {'mysql_engine': 'InnoDB'}
@@ -83,7 +83,7 @@ class BaseModel(object):
                             continue
                 else:
                     continue
-            value = self.__getattribute__(field)
+            value = getattr(self, field)
 
             if isinstance(value, list):
                 value = [item.serialize(allowed_filter, previous_relationship=field) for item in value]
