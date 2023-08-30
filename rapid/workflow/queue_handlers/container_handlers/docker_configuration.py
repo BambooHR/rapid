@@ -34,6 +34,6 @@ class DockerConfiguration(object):
                         string = string.replace(match, '{}={}'.format(token, getattr(work_request, token)))
                     except AttributeError:
                         pass
-            except (TypeError, AttributeError) as exception:
+            except (TypeError, AttributeError):
                 pass
         return string

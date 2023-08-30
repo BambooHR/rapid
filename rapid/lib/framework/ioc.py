@@ -34,6 +34,7 @@ class IOC(object):
                 real_args.extend(args)
                 return clzz(*real_args)
             return clzz(*args)
+        return None
 
     @staticmethod
     def get_instance():

@@ -122,7 +122,7 @@ class QaDal(GeneralDal):
 
     def _get_feature_mapper(self, session, json):
         feature_mapper = {}
-        feature_keys = list()
+        feature_keys = []
 
         for area, features in json.items():
             feature_keys.extend(list(features.keys()))

@@ -86,6 +86,7 @@ status_type_severity_mapping = {
 }
 
 
+#pylint: disable=invalid-name
 class EventTypes(Enum):
     RemoteNotification = 1
 

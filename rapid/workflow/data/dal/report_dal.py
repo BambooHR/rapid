@@ -40,7 +40,6 @@ class ReportDal(Injectable):
         try:
             report = self._canned_reports[report_name]
             results = []
-            count = 0
             for row in execute_db_query(report['sql']):
                 column_count = 0
                 result = {}
@@ -59,10 +58,12 @@ class ReportDal(Injectable):
                 for filename in files:
                     try:
                         basename = os.path.splitext(filename)
-                        with open("{}/{}".format(root, filename)) as tmp_file:
-                            self._canned_reports[basename[0]] = json.load(tmp_file)
-                            self._canned_reports[basename[0]]['sql'] = self._canned_reports[basename[0]]['sql'].replace('%', '%%')
+                        if '.json' in filename:
+                            with open("{}/{}".format(root, filename), encoding='utf-8') as tmp_file:
+                                self._canned_reports[basename[0]] = json.load(tmp_file)
+                                self._canned_reports[basename[0]]['sql'] = self._canned_reports[basename[0]]['sql'].replace('%', '%%')
                     except Exception as exception:
+                        logger.error(exception)
                         logger.error("Was Unable to process the directory defined. {}".format(exception))
         except Exception:
             pass

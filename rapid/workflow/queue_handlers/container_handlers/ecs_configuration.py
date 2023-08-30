@@ -1,8 +1,9 @@
+#pylint: disable=invalid-name
 import json
 from rapid.lib.configuration import Configuration, ConfigurationDefaults
 
 
-class ECSConfiguration(Configuration):
+class ECSConfiguration(Configuration):  #pylint: disable=too-many-instance-attributes
     NOT_SET = "__NOT_SET__"
 
     def __init__(self, file_name=None):

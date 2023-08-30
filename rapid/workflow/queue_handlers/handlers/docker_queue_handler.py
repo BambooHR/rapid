@@ -30,7 +30,6 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         self.action_instance_service = action_instance_service
 
     def process_action_instance(self, action_instance, clients):
-        # TODO - Still don't know how to verify this is working.
         pass
 
     def process_work_request(self, work_request, clients):
