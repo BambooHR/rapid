@@ -83,7 +83,7 @@ class BaseModel(object):
                             continue
                 else:
                     continue
-            value = getattr(self, field)
+            value = self.__getattribute__(field)
 
             if isinstance(value, list):
                 value = [item.serialize(allowed_filter, previous_relationship=field) for item in value]
