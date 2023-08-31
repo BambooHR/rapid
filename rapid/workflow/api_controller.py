@@ -376,7 +376,7 @@ class APIRouter(Injectable):
         self.table_names = []
 
         _base = get_declarative_base()
-        registry = _base.registry._class_registry if hasattr(_base, 'registry') else _base._decl_class_registry  # pylint: disable=protected-access
+        registry = _base.registry._class_registry if hasattr(_base, 'registry') else _base._decl_class_registry
         for clazz in list(registry.values()):  # pylint: disable=protected-access
             try:
                 self.table_names.append(clazz.__tablename__)

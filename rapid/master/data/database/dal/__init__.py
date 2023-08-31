@@ -20,6 +20,7 @@ registered_dals = []
 
 
 def get_dal(model):
+    global registered_dals  # pylint: disable=global-statement
     for dal in registered_dals:
         if dal.is_serviceable(model):
             return dal
