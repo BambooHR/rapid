@@ -40,7 +40,7 @@ class ReportDal(Injectable):
         try:
             report = self._canned_reports[report_name]
             results = []
-            for row in execute_db_query(report['sql']):
+            for row in execute_db_query(report['sql'], bind_params=report['bindparams'] if 'bindparams' in report else None):
                 column_count = 0
                 result = {}
                 for header in report['headers']:

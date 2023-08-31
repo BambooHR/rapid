@@ -14,8 +14,12 @@
  limitations under the License.
 """
 
-def execute_db_query(query):
+def execute_db_query(query, bind_params=None):
+    bind_params = {} if not bind_params else bind_params
+
     from rapid.lib import get_db_session
-    from sqlalchemy.sql import text
+    from sqlalchemy.sql import text, bindparam
+    t = text(query)
+    t.bindparams(*[bindparam(key, expanding=True) for key, value in bind_params.items()])
     for session in get_db_session():
-        return session.execute(text(query))
+        return session.execute(t, bind_params)
