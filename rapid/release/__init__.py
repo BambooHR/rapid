@@ -26,7 +26,7 @@ def register_ioc_globals(flask_app):
 def configure_module(flask_app):
     load_model_layers()
     try:
-        IOC.get_class_instance(ReleaseRouter, flask_app).configure_urls()
+        IOC.get_class_instance(ReleaseRouter).configure_urls()
     except:
         import traceback
         traceback.print_exc()

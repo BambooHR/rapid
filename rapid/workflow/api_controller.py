@@ -26,8 +26,8 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
 from flask import Response, request
 
+from rapid.lib.modules import QaModule
 from rapid.lib import json_response, api_key_required, get_declarative_base, get_db_session
-from rapid.lib.constants import ModuleConstants
 from rapid.lib.utils import ORMUtil
 from rapid.lib.store_service import StoreService
 from rapid.lib.version import Version
@@ -43,15 +43,10 @@ logger = logging.getLogger("rapid")
 
 
 class APIRouter(Injectable):
-    __injectables__ = {'action_instance_service': ActionInstanceService,
-                       'queue_service': QueueService,
-                       ModuleConstants.QA_MODULE: None,
-                       'workflow_service': WorkflowService,
-                       'release_service': ReleaseService}
     classes, models, table_names = None, None, None
     class_map = {}
 
-    def __init__(self, action_instance_service, queue_service, qa_module, workflow_service, release_service):
+    def __init__(self, action_instance_service: ActionInstanceService, queue_service: QueueService, qa_module: QaModule, workflow_service: WorkflowService, release_service: ReleaseService):
         """
 
         :param action_instance_service:

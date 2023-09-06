@@ -16,6 +16,7 @@
 import logging
 from datetime import datetime
 
+from lib.queue_handler_constants import QueueHandlerConstants
 from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable
@@ -29,22 +30,11 @@ logger = logging.getLogger("rapid")
 
 
 class Queue(Injectable):
-    __injectables__ = {'queue_service': QueueService,
-                       'action_instance_service': ActionInstanceService,
-                       'rapid_config': MasterConfiguration,
-                       'queue_constants': None,
-                       'release_service': ReleaseService}
-
-    def __init__(self, queue_service, action_instance_service, rapid_config, queue_constants, release_service):
-        """
-        :param queue_service:
-        :type queue_service:
-        :param action_instance_service:
-        :type action_instance_service: rapid.workflow.action_instances_service.ActionInstanceService
-        :type rapid_config: rapid.master.master_configuration.MasterConfiguration
-        :type handler_constants: QueueHandlerConstants
-        :type release_service: ReleaseService
-        """
+    def __init__(self, queue_service: QueueService,
+                 action_instance_service: ActionInstanceService,
+                 rapid_config: MasterConfiguration,
+                 queue_constants: QueueHandlerConstants,
+                 release_service: ReleaseService):
         self.queue_service = queue_service
         self.action_instance_service = action_instance_service
         self.rapid_config = rapid_config

@@ -13,6 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from flask import Flask
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.constants import Constants
@@ -21,13 +22,8 @@ from rapid.release.data.release_dal import ReleaseDal
 
 
 class ReleaseController(Injectable):
-    __injectables__ = {'release_dal': ReleaseDal}
 
-    def __init__(self, release_dal):
-        """
-        :type release_dal: :class:`rapid.release.data.release_dal.ReleaseDal`
-        :return:
-        """
+    def __init__(self, release_dal: ReleaseDal):
         self.release_dal = release_dal
 
     def set_status_step(self, release_id, step_id, status):
@@ -38,9 +34,8 @@ class ReleaseController(Injectable):
 
 
 class ReleaseRouter(Injectable):
-    __injectables__ = {'release_controller': ReleaseController}
 
-    def __init__(self, release_controller, flask_app):
+    def __init__(self, release_controller: ReleaseController, flask_app: Flask):
         self.flask_app = flask_app
         self.release_controller = release_controller
 

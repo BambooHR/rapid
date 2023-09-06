@@ -15,7 +15,7 @@
 """
 
 
-class GeneralDal(object):
+class GeneralDal:
 
     def is_serviceable(self, model):  # pylint: disable=unused-argument
         return True

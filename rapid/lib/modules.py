@@ -14,11 +14,10 @@
  limitations under the License.
 """
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class QaModule(object):
-    __metaclass__ = ABCMeta
+class QaModule(ABC):
 
     @abstractmethod
     def save_results(self, action_instance, session, post_data):
@@ -65,8 +64,7 @@ class QaModule(object):
         yield
 
 
-class WorkflowModule(object):
-    __metaclass__ = ABCMeta
+class WorkflowModule(ABC):
 
     @abstractmethod
     def start_pipeline_via_repo(self, repo_name, parameters):
