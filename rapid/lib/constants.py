@@ -94,3 +94,15 @@ class EventTypes(Enum):
 class VcsReleaseStepType(Enum):
     PRE = 'PRE'
     POST = 'POST'
+
+
+class FrameworkConstants:
+    PRIMITIVES = (str, list, int, float, bool)
+
+    @staticmethod
+    def is_primitive(value):
+        return isinstance(value, FrameworkConstants.PRIMITIVES) or value in FrameworkConstants.PRIMITIVES or hasattr(value, '__iter__')
+
+    @staticmethod
+    def is_structure(value):
+        return value in [list, dict]
