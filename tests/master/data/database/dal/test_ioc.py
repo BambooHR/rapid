@@ -39,6 +39,8 @@ class TestClass(Injectable):
 
 
 class TestIOC(UnitTest):
+    def setUp(self) -> None:
+        self.setup_ioc()
 
     def test_multi_dependency(self):
         testclass = IOC.get_class_instance(TestClass, "Something")
