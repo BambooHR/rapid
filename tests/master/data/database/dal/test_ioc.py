@@ -31,9 +31,8 @@ class OtherClass(object):
 
 
 class TestClass(Injectable):
-    __injectables__ = {"trial": TrialClass, "other": OtherClass}
 
-    def __init__(self, trial, other, oneMore):
+    def __init__(self, trial: TrialClass, other: OtherClass, oneMore):
         self.trial = trial
         self.other = other
         self.oneMore = oneMore

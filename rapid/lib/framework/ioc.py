@@ -58,9 +58,6 @@ class IOC:
             if self.is_cached and clzz in self._cache:
                 return self._cache[clzz]
 
-            if hasattr(clzz, '__injectables__'):
-                return DeprecatedIOC.get_class_instance(clzz, *args)
-
             if clzz in IOC._overrides:
                 return IOC._overrides[clzz]
 
@@ -151,7 +148,6 @@ class IOC:
     @classmethod
     def register_global(cls, name: Any, value: Any):
         cls.override(name, value)
-        DeprecatedIOC.register_global(name, value)
 
     @classmethod
     def set_injectable(cls, injectable: Type[OB]):
@@ -165,36 +161,3 @@ class IOC:
     def set_no_cacheable(cls, no_cacheable: Type[OB]):
         cls._no_cacheable = no_cacheable
 
-
-class DeprecatedIOC(object):
-    instance = None
-    global_registers = {}
-
-    def get_instance_of(self, clzz, *args):
-        if clzz is not None:
-            if issubclass(clzz, Injectable):
-                real_args = []
-                for param in clzz.__init__.__code__.co_varnames:
-                    if param in clzz.__injectables__:
-                        if param in self.global_registers:
-                            real_args.append(self.global_registers[param])
-                        else:
-                            real_args.append(self.get_instance_of(clzz.__injectables__[param]))
-                real_args.extend(args)
-                return clzz(*real_args)
-            return clzz(*args)
-        return None
-
-    @staticmethod
-    def get_instance():
-        if DeprecatedIOC.instance is None:
-            DeprecatedIOC.instance = DeprecatedIOC()
-        return DeprecatedIOC.instance
-
-    @staticmethod
-    def get_class_instance(clzz, *args):
-        return DeprecatedIOC.get_instance().get_instance_of(clzz, *args)
-
-    @staticmethod
-    def register_global(name, value):
-        DeprecatedIOC.get_instance().global_registers[name] = value
