@@ -19,9 +19,8 @@ from rapid.workflow.action_dal import ActionDal
 
 
 class QueueService(Injectable):
-    __injectables__ = {"action_dal": ActionDal}
 
-    def __init__(self, action_dal):
+    def __init__(self, action_dal: ActionDal):
         self.action_dal = action_dal
 
     def get_current_work(self):

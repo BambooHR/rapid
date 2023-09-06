@@ -21,12 +21,11 @@ logger = logging.getLogger('rapid')
 
 @register_queue_handler
 class ECSQueueHandler(ContainerHandler, Injectable):
-    __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
     @property
     def container_identifier(self):
         return 'ecs'
 
-    def __init__(self, rapid_config, action_instance_service):
+    def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService):
         """
         Parameters
         ----------

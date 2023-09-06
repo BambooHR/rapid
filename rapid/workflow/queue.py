@@ -16,7 +16,7 @@
 import logging
 from datetime import datetime
 
-from lib.queue_handler_constants import QueueHandlerConstants
+from rapid.lib.queue_handler_constants import QueueHandlerConstants
 from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import QueueHandlerShouldSleep
 from rapid.lib.framework.injectable import Injectable

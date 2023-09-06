@@ -18,6 +18,7 @@ import os
 import json
 import logging
 
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.lib.exceptions import InvalidReportException
 from rapid.lib.framework.injectable import Injectable
 from rapid.master.data.database import execute_db_query
@@ -26,9 +27,8 @@ logger = logging.getLogger('rapid')
 
 
 class ReportDal(Injectable):
-    __injectables__ = {'rapid_config': None}
 
-    def __init__(self, rapid_config):
+    def __init__(self, rapid_config: MasterConfiguration):
         self._rapid_config = rapid_config
         self._canned_reports = {}
         self._read_report_files()

@@ -21,13 +21,8 @@ from rapid.workflow.events.event_handler import EventHandlerFactory
 
 
 class EventDal(GeneralDal, Injectable):
-    __injectables__ = {'pipeline_dal': PipelineDal}
 
-    def __init__(self, pipeline_dal):
-        """
-        :param pipeline_dal:
-        :type pipeline_dal: PipelineDal
-        """
+    def __init__(self, pipeline_dal: PipelineDal):
         self.pipeline_dal = pipeline_dal
 
     def trigger_possible_event(self, pipeline_instance, action_instance, session=None):

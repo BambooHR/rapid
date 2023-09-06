@@ -87,7 +87,6 @@ class IOC:
                 self._cache_value(clzz, clzz_instance)
             return clzz_instance
         except TypeError:
-            print(f"FAILED: {clzz} ==> ({args}) ==> {{{kwargs}}}")
             pass
         return None
 

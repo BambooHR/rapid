@@ -1,12 +1,16 @@
-from rapid.lib.framework.injectable import Injectable
 
 
-class QueueHandlerConstants(Injectable):
+class QueueHandlerConstants:
     queue_handler_classes = []
 
     def __init__(self):
-        self.queue_handlers = []
-        self.load_handlers()
+        self._queue_handlers = None
+
+    @property
+    def queue_handlers(self):
+        if self._queue_handlers is None:
+            self.load_handlers()
+        return self._queue_handlers
 
     def load_handlers(self):
         from rapid.lib import IOC
