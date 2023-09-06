@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 
 
 class QaModule(object):
@@ -85,8 +85,7 @@ class WorkflowModule(object):
         yield
 
 
-class CiModule(object):
-    __metaclass__ = ABCMeta
+class CiModule(ABC):
 
     @abstractmethod
     def get_vcs_by_repo_name(self, repo_name):

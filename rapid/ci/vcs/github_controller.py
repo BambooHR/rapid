@@ -17,12 +17,13 @@ import logging
 
 from functools import wraps
 
+from flask import Flask
 from flask.globals import request
 from flask.wrappers import Response
 
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.ci.data.github_dal import GithubHelper
 from rapid.lib import json_response, HttpException
-from rapid.lib.constants import ModuleConstants
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules import WorkflowModule
 
@@ -30,23 +31,8 @@ logger = logging.getLogger("rapid")
 
 
 class GithubController(Injectable):
-    __injectables__ = {'github_helper': GithubHelper,
-                       ModuleConstants.WORKFLOW_MODULE: WorkflowModule,
-                       'rapid_config': 'rapid_config'}
 
-    def __init__(self, github_helper, rapid_config, workflow_module, flask_app):
-        """
-
-        :param github_helper:
-        :type github_helper: GithubHelper
-        :param rapid_config:
-        :type rapid_config: master.MasterConfiguration.MasterConfiguration
-        :param workflow_module:
-        :type workflow_module: WorkflowModule
-        :param flask_app:
-        :type flask_app: flask.app.Flask
-        """
-        self.flask_app = flask_app
+    def __init__(self, github_helper: GithubHelper, rapid_config: MasterConfiguration, workflow_module: WorkflowModule):
         self.github_helper = github_helper
         self.rapid_config = rapid_config
         self.workflow_module = workflow_module

@@ -22,6 +22,7 @@ from hashlib import sha1
 from github import Github
 from github.GithubException import GithubException
 
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.lib.features import Features
 from rapid.lib.framework.injectable import Injectable
 
@@ -30,13 +31,12 @@ logger = logging.getLogger("rapid")
 
 
 class GithubHelper(Injectable):
-    __injectables__ = {'rapid_config': 'rapid_config'}
     STATUS_PENDING = "pending"
     STATUS_SUCCESS = "success"
     STATUS_ERROR = "error"
     STATUS_FAILURE = "failure"
 
-    def __init__(self, rapid_config):
+    def __init__(self, rapid_config: MasterConfiguration):
         self.user = rapid_config.github_user
         self.password = rapid_config.github_pass
 

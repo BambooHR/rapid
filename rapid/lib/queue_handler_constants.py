@@ -2,7 +2,6 @@ from rapid.lib.framework.injectable import Injectable
 
 
 class QueueHandlerConstants(Injectable):
-    __injectables__ = {}
     queue_handler_classes = []
 
     def __init__(self):

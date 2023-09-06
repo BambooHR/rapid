@@ -13,7 +13,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+from rapid.lib.modules import CiModule
 from rapid.ci.ci_controller import CIController
 from rapid.ci.services.vcs_service import VcsService
 from rapid.ci.vcs.github_controller import GithubController
@@ -21,14 +21,16 @@ from rapid.lib.framework.ioc import IOC
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
-    IOC.register_global('ci_module', IOC.get_class_instance(VcsService))
+    vcs_service = IOC.get_class_instance(VcsService)
+    IOC.register_global('ci_module', vcs_service)
+    IOC.register_global(CiModule, vcs_service)
 
 
 def configure_module(flask_app):
     load_model_layers()
 
     try:
-        IOC.get_class_instance(GithubController, flask_app).register_url_rules(flask_app)
+        IOC.get_class_instance(GithubController).register_url_rules(flask_app)
         IOC.get_class_instance(CIController).register_url_rules()
     except Exception: # pylint: disable=broad-except
         import traceback
