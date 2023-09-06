@@ -15,7 +15,7 @@
 """
 # pylint: disable=broad-except
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import os
 
 import re
@@ -25,8 +25,7 @@ from rapid.lib.utils import deep_merge
 logger = logging.getLogger("rapid")
 
 
-class QaTestFile(object):
-    __metaclass__ = ABCMeta
+class QaTestFile(ABC):
 
     AREA = "area"
     FEATURE = "feature"

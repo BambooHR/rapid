@@ -1,11 +1,10 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 from rapid.lib.work_request import WorkRequest
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 
 
-class ContainerHandler(QueueHandler):
-    __metaclass__ = ABCMeta
+class ContainerHandler(QueueHandler, ABC):
 
     @property
     @abstractmethod
