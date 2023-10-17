@@ -104,7 +104,6 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 tasks = self._get_ecs_client().list_tasks(cluster=cluster,
                                                           desiredStatus='RUNNING',
                                                           nextToken=next_token)
-                print(tasks, arn)
                 if tasks and 'taskArns' in tasks:
                     if arn in tasks['taskArns']:
                         return True
