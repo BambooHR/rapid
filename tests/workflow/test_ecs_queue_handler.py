@@ -228,3 +228,15 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_action_instance({}, [])
 
         self.handler.action_instance_service.reset_action_instance.assert_not_called()
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_ecs_client.__name__)
+    def test_process_action_instance_contract(self, mock_ecs_client):
+        self.handler._ecs_configuration = Mock(default_task_definition={'cluster': 'foobar'})
+
+        mock_ecs_client().list_tasks.side_effect = [{'taskArns': ['0998776543'], 'nextToken': '1'},
+                                                    {'taskArns': ['arn:12345678']}]
+        self.handler.process_action_instance({'id': 12345, 'assigned_to': "--ecs--arn:12345678"}, None)
+
+        mock_ecs_client().list_tasks.assert_has_calls([call(cluster='foobar', desiredStatus='RUNNING', nextToken=''),
+                                                       call(cluster='foobar', desiredStatus='RUNNING', nextToken='1')])
+
