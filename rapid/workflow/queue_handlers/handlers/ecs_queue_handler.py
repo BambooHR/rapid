@@ -97,13 +97,19 @@ class ECSQueueHandler(ContainerHandler, Injectable):
     def process_action_instance(self, action_instance, clients):
         # 1. Look at the assigned_to for the specific ARN
         arn = action_instance['assigned_to'].split('--ecs--')[1] if action_instance and 'assigned_to' in action_instance and action_instance['assigned_to'] else None
-        task = self._get_ecs_client().list_tasks(cluster=self._ecs_configuration.default_task_definition['cluster'],
-                                                 desiredStatus='RUNNING')
+        next_token = ''
+        cluster = self._ecs_configuration.default_task_definition['cluster']
+        if arn:
+            while next_token is not None:
+                tasks = self._get_ecs_client().list_tasks(cluster=cluster,
+                                                          desiredStatus='RUNNING',
+                                                          nextToken=next_token)
+                if tasks and 'taskArns' in tasks:
+                    if arn in tasks['taskArns']:
+                        return True
 
-        # 2. Verify that the assigned_to ARN is running.
-        if arn and task and 'taskArns' in task:
-            if arn in task['taskArns']:
-                return True
+                next_token = tasks['nextToken'] if 'nextToken' in tasks else None
+
             self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
