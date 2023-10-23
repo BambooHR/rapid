@@ -254,9 +254,9 @@ class TestECSQueueHandler(TestCase):
 
     @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
     def test_verify_still_working_no_running_tasks_when_no_action_instances(self, mock_process):
-        self.handler.verify_still_working([], [])
+        self.assertEqual(self.handler.verify_still_working([], []), [])
 
-        self.assertEqual(mock_process.assert_not_called(), [])
+        mock_process.assert_not_called(), []
 
     @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
     @patch.object(ECSQueueHandler, ECSQueueHandler._get_running_tasks.__name__)
@@ -265,13 +265,14 @@ class TestECSQueueHandler(TestCase):
         mock_running.return_value = ['123456789', '987654321']
         valid_instance = {'id': 2, 'assigned_to': '--ecs--123456789'}
         dead_instance = {'id': 3, 'assigned_to': '--ecs--arn.1.2.3.4'}
-        mock_instances = [{'id': 1, 'assigned_to': '10.0.0.0'},
+        invalid_instance = {'id': 1, 'assigned_to': '10.0.0.0'}
+        mock_instances = [invalid_instance,
                           valid_instance, dead_instance]
 
         self.handler.action_instance_service.reset_action_instance.side_effect = [Exception("foobar")]
         self.assertEqual([dead_instance], self.handler.verify_still_working(mock_instances, []))
 
-        mock_process.has_calls(call(valid_instance), call(dead_instance))
+        mock_process.assert_has_calls([call(invalid_instance), call(valid_instance), call(dead_instance)])
         mock_running.assert_called_once_with()
         self.handler.action_instance_service.reset_action_instance.assert_called_with(3, check_status=True)
 
