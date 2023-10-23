@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from typing import Dict, List
 
 
 class QueueHandler(object):
@@ -23,9 +24,8 @@ class QueueHandler(object):
         yield
 
     @abstractmethod
-    def process_action_instance(self, action_instance, clients):
-        # type: (dict, list) -> bool
-        yield
+    def verify_still_working(self, action_instances: List[Dict], clients) -> List[Dict]:
+        ...
 
     @abstractmethod
     def can_process_action_instance(self, action_instance):

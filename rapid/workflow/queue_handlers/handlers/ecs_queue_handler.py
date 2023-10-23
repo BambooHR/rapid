@@ -2,6 +2,7 @@ import datetime
 import logging
 import json
 import re
+from typing import Dict, List, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -21,6 +22,7 @@ logger = logging.getLogger('rapid')
 
 @register_queue_handler
 class ECSQueueHandler(ContainerHandler, Injectable):
+    _ASSIGNED_TO_PREFIX='--ecs--'
     __injectables__ = {'rapid_config': None, 'action_instance_service': ActionInstanceService}
     @property
     def container_identifier(self):
@@ -94,27 +96,56 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 raise
         return True
 
-    def process_action_instance(self, action_instance, clients):
-        # 1. Look at the assigned_to for the specific ARN
-        arn = action_instance['assigned_to'].split('--ecs--')[1] if action_instance and 'assigned_to' in action_instance and action_instance['assigned_to'] else None
+    def _get_arn(self, action_instance: dict) -> Union[str, None]:
+        try:
+            if action_instance and 'assigned_to' in action_instance and action_instance['assigned_to']:
+                assigned_to = action_instance['assigned_to']
+                if self._ASSIGNED_TO_PREFIX in assigned_to:
+                    return assigned_to.split(self._ASSIGNED_TO_PREFIX, 1)[1]
+        except (ValueError, TypeError, KeyError, IndexError):
+            pass
+        return None
+
+    def verify_still_working(self, action_instances: List[Dict], clients):
+        failed_instances = []
+        tasks = self._get_running_tasks()
+        if tasks is not None:
+            for action_instance in action_instances:
+                if self.can_process_action_instance(action_instance):
+                    try:
+                        arn = self._get_arn(action_instance)
+                        if arn and arn not in tasks:
+                            self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
+                    except Exception as exception:
+                        logger.error(exception)
+                        failed_instances.append(action_instance)
+        return failed_instances
+
+    def _get_running_tasks(self) -> Union[List[str], None]:
         next_token = ''
         cluster = self._ecs_configuration.default_task_definition['cluster']
-        if arn:
-            while next_token is not None:
-                tasks = self._get_ecs_client().list_tasks(cluster=cluster,
-                                                          desiredStatus='RUNNING',
-                                                          nextToken=next_token)
-                if tasks and 'taskArns' in tasks:
-                    if arn in tasks['taskArns']:
-                        return True
+        _running_tasks = None
+        while next_token is not None:
+            tasks = self._get_ecs_client().list_tasks(cluster=cluster,
+                                                      desiredStatus='RUNNING',
+                                                      nextToken=next_token)
+            if 'taskArns' in tasks:
+                if _running_tasks is None:
+                    _running_tasks = []
+                _running_tasks.append(*tasks['taskArns'])
+            next_token = tasks['nextToken'] if 'nextToken' in tasks else None
+        return _running_tasks
 
-                next_token = tasks['nextToken'] if 'nextToken' in tasks else None
-
+    def process_action_instance(self, action_instance, clients):
+        # 1. Look at the assigned_to for the specific ARN
+        arn = self._get_arn(action_instance)
+        tasks = self._get_running_tasks()
+        if arn and tasks is not None and arn not in tasks:
             self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         try:
-            arn = action_instance['assigned_to'].split('--ecs--')[1] if action_instance and action_instance['assigned_to'] else None
+            arn = action_instance['assigned_to'].split(self._ASSIGNED_TO_PREFIX)[1] if action_instance and action_instance['assigned_to'] else None
             if not arn:
                 return False
 
@@ -193,7 +224,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None, end_date=None):
         # type: (int, int, str, datetime.datetime or None, datetime.datetime or None) -> None
-        assigned_to = '--ecs--{}'.format(assigned_to) if '--ecs--' not in assigned_to else assigned_to
+        assigned_to = f'{self._ASSIGNED_TO_PREFIX}{assigned_to}' if self._ASSIGNED_TO_PREFIX not in assigned_to else assigned_to
         changes = {'status_id': status_id, 'assigned_to': assigned_to}
         if start_date:
             changes['start_date'] = start_date
@@ -225,7 +256,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 status_id = StatusConstants.READY
             elif response_dict['tasks']:
                 for task in response_dict['tasks']:
-                    assigned_to = '--ecs--{}'.format(task['taskArn'])
+                    assigned_to = f'{self._ASSIGNED_TO_PREFIX}{task["taskArn"]}'
         except (KeyError, ClientError, IndexError) as exception:
             logger.error(exception)
             status_id = StatusConstants.FAILED

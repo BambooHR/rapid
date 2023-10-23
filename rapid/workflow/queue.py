@@ -75,17 +75,12 @@ class Queue(Injectable):
                     break
 
     def verify_still_working(self, clients):
-        for action_instance in self.queue_service.get_verify_working(self.rapid_config.queue_consider_late_time):
-            for queue_handler in self.queue_handlers:
-                if queue_handler.can_process_action_instance(action_instance):
-                    try:
-                        queue_handler.process_action_instance(action_instance, clients)
-                    except Exception as exception:
-                        logger.error(exception)
-                        self.action_instance_service.edit_action_instance(action_instance['id'], {'status_id': StatusConstants.FAILED,
+        action_instances = self.queue_service.get_verify_working(self.rapid_config.queue_consider_late_time)
+        for queue_handler in self.queue_handlers:
+            for failed_instance in queue_handler.verify_still_working(action_instances, clients):
+                self.action_instance_service.edit_action_instance(failed_instance['id'], {'status_id': StatusConstants.FAILED,
                                                                                                   'start_date': datetime.utcnow(),
                                                                                                   'end_date': datetime.utcnow()})
-                    break
 
     def reconcile_pipeline_instances(self):
         self.action_instance_service.reconcile_pipeline_instances()

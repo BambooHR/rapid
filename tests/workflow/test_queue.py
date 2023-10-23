@@ -1,3 +1,4 @@
+from typing import Dict, List
 from unittest import TestCase
 
 from mock import patch, Mock
@@ -69,13 +70,15 @@ class TestQueue(TestCase):
         mock_handler = Mock()
         queue.queue_handlers[0].check = check
         queue.queue_handlers[0].process = mock_handler.mock
+        mock_handler.verify.return_value = []
+        queue.queue_handlers[0].verify = mock_handler.verify
 
         queue.verify_still_working([])
-        mock_handler.mock.assert_called_with(good_mock)
+        mock_handler.verify.assert_called_with([{'foo': 'bad'}, {'foo': 'good'}], [])
 
     @patch('rapid.workflow.queue.logger')
     @patch('rapid.workflow.queue.datetime')
-    def test_verify_still_workign_when_exception_raises(self, datetime, logger):
+    def test_verify_still_working_when_exception_raises(self, datetime, logger):
         mock_queue_service = Mock()
         good_mock = {'foo': 'good', 'action_instance_id': '1234', 'id': '4321'}
         bad_mock = {'foo': 'bad', 'id': 'foo_id'}
@@ -91,14 +94,13 @@ class TestQueue(TestCase):
 
         queue.queue_handlers[0].check = check
         queue.queue_handlers[0].process = mock_handler.mock
+        mock_handler.verify.return_value = []
+        queue.queue_handlers[0].verify = mock_handler.verify
 
         datetime.utcnow.return_value = 'you_did_what?'
 
         queue.verify_still_working([])
-        check.assert_called_with(bad_mock)
-        mock_action_service.edit_action_instance.assert_called_with('4321', {'status_id': StatusConstants.FAILED,
-                                                                             'start_date': 'you_did_what?',
-                                                                             'end_date': 'you_did_what?'})
+        mock_handler.verify.assert_called_with([good_mock, bad_mock], [])
 
     def test_queue_handlers_can_be_slept(self):
         mock_handler = Mock(handler=1)
@@ -126,6 +128,7 @@ class TestQueueHandler(QueueHandler, Injectable):
         self.action_instance_service = action_instance_service
         self.check = None
         self.process = None
+        self.verify = None
 
     def process_work_request(self, work_request, clients):
         self.process(work_request)
@@ -138,3 +141,6 @@ class TestQueueHandler(QueueHandler, Injectable):
 
     def can_process_action_instance(self, action_instance):
         return self.check(action_instance)
+
+    def verify_still_working(self, action_instances: List[Dict], clients) -> List[Dict]:
+        return self.verify(action_instances, clients)
