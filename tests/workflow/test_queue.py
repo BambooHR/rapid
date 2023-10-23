@@ -102,6 +102,22 @@ class TestQueue(TestCase):
         queue.verify_still_working([])
         mock_handler.verify.assert_called_with([good_mock, bad_mock], [])
 
+    @patch('rapid.workflow.queue.datetime')
+    def test_verify_still_working_contract(self, mock_datetime):
+        handlers = [Mock()]
+        queue = Queue(Mock(), Mock(), Mock(), Mock(queue_handlers=handlers), None)
+        handlers[0].verify_still_working.return_value = [{'id': 12345}]
+        mock_action = Mock()
+        queue.queue_service.get_verify_working.return_value = [mock_action]
+
+        queue.verify_still_working([])
+
+        queue.queue_service.get_verify_working.assert_called_with(queue.rapid_config.queue_consider_late_time)
+        handlers[0].verify_still_working.assert_called_with([mock_action], [])
+        queue.action_instance_service.edit_action_instance.assert_called_with(12345, {'status_id': StatusConstants.FAILED,
+                                                                                      'start_date': mock_datetime.utcnow(),
+                                                                                      'end_date': mock_datetime.utcnow()})
+
     def test_queue_handlers_can_be_slept(self):
         mock_handler = Mock(handler=1)
         mock_handler.can_process_work_request.return_value = True

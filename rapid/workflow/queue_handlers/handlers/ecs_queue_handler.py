@@ -108,17 +108,19 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def verify_still_working(self, action_instances: List[Dict], clients):
         failed_instances = []
-        tasks = self._get_running_tasks()
-        if tasks is not None:
-            for action_instance in action_instances:
-                if self.can_process_action_instance(action_instance):
-                    try:
-                        arn = self._get_arn(action_instance)
-                        if arn and arn not in tasks:
-                            self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
-                    except Exception as exception:
-                        logger.error(exception)
-                        failed_instances.append(action_instance)
+        tasks = -1
+        for action_instance in action_instances:
+            if self.can_process_action_instance(action_instance):
+                if tasks == -1:
+                    tasks = self._get_running_tasks()
+
+                try:
+                    arn = self._get_arn(action_instance)
+                    if arn and arn not in tasks:
+                        self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
+                except Exception as exception:
+                    logger.error(exception)
+                    failed_instances.append(action_instance)
         return failed_instances
 
     def _get_running_tasks(self) -> Union[List[str], None]:

@@ -240,3 +240,43 @@ class TestECSQueueHandler(TestCase):
         mock_ecs_client().list_tasks.assert_has_calls([call(cluster='foobar', desiredStatus='RUNNING', nextToken=''),
                                                        call(cluster='foobar', desiredStatus='RUNNING', nextToken='1')])
 
+    def test_get_arn_invalid_states_return_None(self):
+        self.assertIsNone(self.handler._get_arn(None))
+        self.assertIsNone(self.handler._get_arn({}))
+        self.assertIsNone(self.handler._get_arn({'assigned_to': None}))
+        self.assertIsNone(self.handler._get_arn({'assigned_to': ''}))
+
+    def test_get_arn_invalid_prefix_returns_None(self):
+        self.assertIsNone(self.handler._get_arn({'assigned_to': 'prefix--123456789'}))
+
+    def test_get_arn_valid_prefix_returns_split_value(self):
+        self.assertEqual('123456789', self.handler._get_arn({'assigned_to': f'{self.handler._ASSIGNED_TO_PREFIX}123456789'}))
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
+    def test_verify_still_working_no_running_tasks_when_no_action_instances(self, mock_process):
+        self.handler.verify_still_working([], [])
+
+        self.assertEqual(mock_process.assert_not_called(), [])
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_running_tasks.__name__)
+    def test_verify_still_working_dont_process_what_you_shouldnt_contract(self, mock_running, mock_process):
+        mock_process.return_value = True
+        mock_running.return_value = ['123456789', '987654321']
+        valid_instance = {'id': 2, 'assigned_to': '--ecs--123456789'}
+        dead_instance = {'id': 3, 'assigned_to': '--ecs--arn.1.2.3.4'}
+        mock_instances = [{'id': 1, 'assigned_to': '10.0.0.0'},
+                          valid_instance, dead_instance]
+
+        self.handler.action_instance_service.reset_action_instance.side_effect = [Exception("foobar")]
+        self.assertEqual([dead_instance], self.handler.verify_still_working(mock_instances, []))
+
+        mock_process.has_calls(call(valid_instance), call(dead_instance))
+        mock_running.assert_called_once_with()
+        self.handler.action_instance_service.reset_action_instance.assert_called_with(3, check_status=True)
+
+
+        
+    
+
+
