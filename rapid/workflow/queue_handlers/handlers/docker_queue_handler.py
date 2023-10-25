@@ -1,6 +1,7 @@
 import subprocess
 
 import os
+from typing import Dict, List
 
 import yaml
 from yaml.scanner import ScannerError
@@ -31,6 +32,9 @@ class DockerQueueHandler(ContainerHandler, Injectable):
 
     def process_action_instance(self, action_instance, clients):
         pass
+
+    def verify_still_working(self, action_instances: List[Dict], clients) -> List[Dict]:
+        return []
 
     def process_work_request(self, work_request, clients):
         # type: (WorkRequest, list) -> bool
