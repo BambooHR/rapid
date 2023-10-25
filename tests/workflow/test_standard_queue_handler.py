@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from mock import Mock
 
@@ -27,3 +28,16 @@ class TestStandardQueueHandler(TestCase):
 
     def test_can_process_action_instance_fails_with_split(self):
         self.assertFalse(self.handler.can_process_action_instance({'grain': 'a{}b'.format(self.handler._GRAIN_SPLIT)}))
+
+    @patch.object(StandardQueueHandler, StandardQueueHandler.can_process_action_instance.__name__)
+    @patch.object(StandardQueueHandler, StandardQueueHandler.process_action_instance.__name__)
+    def test_verify_still_working_contract(self, mock_process, mock_can_process):
+        instances = [Mock(), Mock()]
+        mock_can_process.side_effect = [False, True]
+        mock_process.side_effect = Exception()
+
+        self.assertEqual([instances[1]], self.handler.verify_still_working(instances, []))
+
+        mock_process.assert_called_with(instances[1], [])
+        mock_can_process.assert_called_with(instances[1])
+

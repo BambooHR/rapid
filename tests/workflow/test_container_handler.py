@@ -1,3 +1,4 @@
+from typing import Dict, List
 from unittest import TestCase
 
 from mock import Mock
@@ -29,6 +30,9 @@ class TestContainerHandler(TestCase):
 
 
 class TestingContainerHandler(ContainerHandler):
+    def verify_still_working(self, action_instances: List[Dict], clients) -> List[Dict]:
+        return []
+
     def cancel_worker(self, action_instance):
         pass
 
