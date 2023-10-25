@@ -276,7 +276,13 @@ class TestECSQueueHandler(TestCase):
         mock_running.assert_called_once_with()
         self.handler.action_instance_service.reset_action_instance.assert_called_with(3, check_status=True)
 
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_ecs_client.__name__)
+    def test_get_running_tasks_contract(self, mock_ecs_client):
+        self.handler._ecs_configuration = Mock(default_task_definition={'cluster': 'foo'})
+        mock_ecs_client().list_tasks.side_effect = [{'taskArns': [1,2,3,4,5], 'nextToken': 1},
+                                                    {'taskArns': [10,11,12]}]
 
+        self.assertEqual(self.handler._get_running_tasks(), [1,2,3,4,5,10,11,12])
         
     
 

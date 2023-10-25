@@ -134,7 +134,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             if 'taskArns' in tasks:
                 if _running_tasks is None:
                     _running_tasks = []
-                _running_tasks.append(*tasks['taskArns'])
+                _running_tasks.extend(tasks['taskArns'])
             next_token = tasks['nextToken'] if 'nextToken' in tasks else None
         return _running_tasks
 
