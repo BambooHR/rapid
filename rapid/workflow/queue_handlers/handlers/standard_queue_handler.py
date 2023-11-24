@@ -1,6 +1,7 @@
 import logging
 import datetime
 import random
+from typing import Dict, List
 
 from flask import Flask
 from requests import ConnectTimeout, ReadTimeout, ConnectionError
@@ -19,6 +20,17 @@ logger = logging.getLogger('rapid')
 
 @register_queue_handler
 class StandardQueueHandler(QueueHandler, Injectable):
+
+    def verify_still_working(self, action_instances: List[Dict], clients):
+        failed_instances = []
+        for action_instance in action_instances:
+            if self.can_process_action_instance(action_instance):
+                try:
+                    self.process_action_instance(action_instance, clients)
+                except Exception as exception:
+                    logger.error(exception)
+                    failed_instances.append(action_instance)
+        return failed_instances
 
     def process_work_request(self, work_request, clients):
         """

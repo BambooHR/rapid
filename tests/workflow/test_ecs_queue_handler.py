@@ -228,3 +228,62 @@ class TestECSQueueHandler(TestCase):
         self.handler.process_action_instance({}, [])
 
         self.handler.action_instance_service.reset_action_instance.assert_not_called()
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_ecs_client.__name__)
+    def test_process_action_instance_contract(self, mock_ecs_client):
+        self.handler._ecs_configuration = Mock(default_task_definition={'cluster': 'foobar'})
+
+        mock_ecs_client().list_tasks.side_effect = [{'taskArns': ['0998776543'], 'nextToken': '1'},
+                                                    {'taskArns': ['arn:12345678']}]
+        self.handler.process_action_instance({'id': 12345, 'assigned_to': "--ecs--arn:12345678"}, None)
+
+        mock_ecs_client().list_tasks.assert_has_calls([call(cluster='foobar', desiredStatus='RUNNING', nextToken=''),
+                                                       call(cluster='foobar', desiredStatus='RUNNING', nextToken='1')])
+
+    def test_get_arn_invalid_states_return_None(self):
+        self.assertIsNone(self.handler._get_arn(None))
+        self.assertIsNone(self.handler._get_arn({}))
+        self.assertIsNone(self.handler._get_arn({'assigned_to': None}))
+        self.assertIsNone(self.handler._get_arn({'assigned_to': ''}))
+
+    def test_get_arn_invalid_prefix_returns_None(self):
+        self.assertIsNone(self.handler._get_arn({'assigned_to': 'prefix--123456789'}))
+
+    def test_get_arn_valid_prefix_returns_split_value(self):
+        self.assertEqual('123456789', self.handler._get_arn({'assigned_to': f'{self.handler._ASSIGNED_TO_PREFIX}123456789'}))
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
+    def test_verify_still_working_no_running_tasks_when_no_action_instances(self, mock_process):
+        self.assertEqual(self.handler.verify_still_working([], []), [])
+
+        mock_process.assert_not_called(), []
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler.can_process_action_instance.__name__)
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_running_tasks.__name__)
+    def test_verify_still_working_dont_process_what_you_shouldnt_contract(self, mock_running, mock_process):
+        mock_process.return_value = True
+        mock_running.return_value = ['123456789', '987654321']
+        valid_instance = {'id': 2, 'assigned_to': '--ecs--123456789'}
+        dead_instance = {'id': 3, 'assigned_to': '--ecs--arn.1.2.3.4'}
+        invalid_instance = {'id': 1, 'assigned_to': '10.0.0.0'}
+        mock_instances = [invalid_instance,
+                          valid_instance, dead_instance]
+
+        self.handler.action_instance_service.reset_action_instance.side_effect = [Exception("foobar")]
+        self.assertEqual([dead_instance], self.handler.verify_still_working(mock_instances, []))
+
+        mock_process.assert_has_calls([call(invalid_instance), call(valid_instance), call(dead_instance)])
+        mock_running.assert_called_once_with()
+        self.handler.action_instance_service.reset_action_instance.assert_called_with(3, check_status=True)
+
+    @patch.object(ECSQueueHandler, ECSQueueHandler._get_ecs_client.__name__)
+    def test_get_running_tasks_contract(self, mock_ecs_client):
+        self.handler._ecs_configuration = Mock(default_task_definition={'cluster': 'foo'})
+        mock_ecs_client().list_tasks.side_effect = [{'taskArns': [1,2,3,4,5], 'nextToken': 1},
+                                                    {'taskArns': [10,11,12]}]
+
+        self.assertEqual(self.handler._get_running_tasks(), [1,2,3,4,5,10,11,12])
+        
+    
+
+
