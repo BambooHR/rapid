@@ -89,7 +89,10 @@ class IOC:
 
     def _get_dynamic_args(self, clzz, kwargs: dict):
         dynamic_args = []
-        arg_spec = inspect.getfullargspec(clzz.__init__).annotations
+        _signature = inspect.signature(clzz.__init__).parameters
+        _full_argspec = inspect.getfullargspec(clzz.__init__)
+        arg_spec = _full_argspec.annotations
+
         if clzz.__init__ and hasattr(clzz.__init__, '__code__'):
             for param in clzz.__init__.__code__.co_varnames:
                 if param == 'self':
@@ -124,6 +127,9 @@ class IOC:
                         self._cache_value(arg, arg_instance)
 
                         dynamic_args.append(arg_instance)
+                    elif param in _signature and _signature[param].default is not inspect.Parameter.empty:
+                        dynamic_args.append(_signature[param].default)
+
             dynamic_args.reverse()
         return dynamic_args
 
