@@ -20,10 +20,8 @@ import time
 
 from flask import Flask, Response
 
-from rapid.lib.framework.injectable import Injectable
-from rapid.lib.framework.injector import Injector
 from rapid.master.data import run_db_downgrade, configure_db
-from rapid.lib import setup_config_from_file, is_primary_worker, setup_status_route
+from rapid.lib import setup_ioc, setup_config_from_file, is_primary_worker, setup_status_route
 from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
@@ -71,12 +69,8 @@ def _to_dict(exception):
 
 
 def configure_application(flask_app, args, manual_db_upgrade=False):
-    IOC.set_injector(Injector)
-    IOC.set_injectable(Injectable)
-    IOC.get_instance().is_cached = True
-    
-    IOC.register_global('flask_app', flask_app)
-    IOC.register_global(Flask, flask_app)
+    setup_ioc(flask_app)
+
     setup_config_from_file(flask_app, args)
     configure_db()
     configure_sub_modules(flask_app, args)

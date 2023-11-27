@@ -14,8 +14,9 @@ class QueueHandlerConstants:
 
     def load_handlers(self):
         from rapid.lib import IOC
+        self._queue_handlers = []
         for handler_class in self.queue_handler_classes:
-            self.queue_handlers.append(IOC.get_class_instance(handler_class))
+            self._queue_handlers.append(IOC.get_class_instance(handler_class))
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         for handler in self.queue_handlers:

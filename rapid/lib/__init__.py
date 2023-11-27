@@ -16,13 +16,16 @@
 
 import logging
 
+from .framework.injectable import Injectable
+from .framework.injector import Injector
+
 try:
     import simplejson as json
 except ImportError:
     import json
 
 from functools import wraps
-from flask import Response
+from flask import Flask, Response
 
 from rapid.lib.exceptions import HttpException
 from rapid.lib.utils import RoutingUtil
@@ -79,6 +82,15 @@ def setup_config_from_file(app, args):
     IOC.register_global('rapid_config', app.rapid_config)
 
 
+def setup_ioc(flask_app):
+    IOC.set_injector(Injector)
+    IOC.set_injectable(Injectable)
+    IOC.get_instance().is_cached = True
+
+    IOC.register_global('flask_app', flask_app)
+    IOC.register_global(Flask, flask_app)
+
+
 def api_key_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
@@ -123,8 +135,6 @@ def json_response(exception_class=None, message=None):
                 response = _f(*args, **kwargs)
                 return Response(json.dumps(response), content_type="application/json")
             except Exception as exception_stuff:  # pylint: disable=broad-except
-                import traceback
-                traceback.print_exc()
                 if hasattr(exception_stuff, 'get_body'):
                     return exception_stuff
                 exception = exception_class(message) if exception_class is not None else Exception(str(exception_stuff))
