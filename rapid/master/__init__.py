@@ -31,25 +31,8 @@ app.rapid_config = {'_is': 'master'}
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-# app.logger.addHandler(handler)  # pylint: disable=no-member
-# app.logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 logger = logging.getLogger("rapid")
-logger.addHandler(handler)  # pylint: disable=no-member
-logger.setLevel(logging.INFO)  # pylint: disable=no-member
-
-
-# pylint: disable=broad-except
-
-# Debug Code for sniffing out nplus one code!
-# try:
-#     # app.config['NPLUSONE_LOGGER'] = logging.getLogger('app.nplusone')
-#     app.config['NPLUSONE_LOG_LEVEL'] = logging.ERROR
-#     app.config['NPLUSONE_RAISE'] = True
-#     from nplusone.ext.flask_sqlalchemy import NPlusOne
-#     NPlusOne(app)
-# except Exception:
-#     pass
 
 
 @app.errorhandler(500)
