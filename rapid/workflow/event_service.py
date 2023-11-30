@@ -18,13 +18,7 @@ from rapid.workflow.events.event_dal import EventDal
 
 
 class EventService(Injectable):
-    __injectables__ = {'event_dal': EventDal}
-
-    def __init__(self, event_dal=None):
-        """
-        :param event_dal:
-        :type event_dal: workflow.events.EventDal.EventDal
-        """
+    def __init__(self, event_dal: EventDal=None):
         self.event_dal = event_dal
 
     def trigger_possible_event(self, pipeline_instance, action_instance, session=None):

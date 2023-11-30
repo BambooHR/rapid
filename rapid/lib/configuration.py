@@ -15,7 +15,7 @@
 """
 
 import socket
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import os
 try:
     from ConfigParser import SafeConfigParser as ConfigParser
@@ -38,8 +38,7 @@ class ConfigurationDefaults(object):
         return [self._default, self._type_cast, self._delim]
 
 
-class Configuration(object):
-    __metaclass__ = ABCMeta
+class Configuration(ABC):
 
     def __init__(self, file_name=None):
         self.hostname = socket.gethostname()

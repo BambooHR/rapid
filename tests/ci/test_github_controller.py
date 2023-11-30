@@ -23,16 +23,16 @@ class TestGithubController(UnitTest):
 
     def test_get_json_value(self):
         mock_config = MagicMock()
-        controller = GithubController(MagicMock(), MagicMock(), mock_config, MagicMock())
+        controller = GithubController(MagicMock(), MagicMock(), mock_config)
 
         self.assertEqual('something', controller._get_json_value({'test': {'trial': {'value': 'something'}}}, 'test.trial.value'))
 
     def test_process_webhooks_wraps_properly(self):
-        controller = GithubController(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        controller = GithubController(MagicMock(), MagicMock(), MagicMock())
 
         self.assertEqual('wrapped_json_response', controller.process_webhooks.__func__.__name__)
 
     def test_process_webhooks_pipeline_wraps_properly(self):
-        controller = GithubController(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        controller = GithubController(MagicMock(), MagicMock(), MagicMock())
 
         self.assertEqual('wrapped_json_response', controller.process_webhooks_pipeline.__func__.__name__)

@@ -137,9 +137,7 @@ class TestQueueHandler(QueueHandler, Injectable):
     def cancel_worker(self, action_instance):
         pass
 
-    __injectables__ = {'rapid_config': Mock, 'action_instance_service': Mock}
-
-    def __init__(self, rapid_config, action_instance_service):
+    def __init__(self, rapid_config: Mock, action_instance_service: Mock):
         super(TestQueueHandler, self).__init__(rapid_config)
         self.action_instance_service = action_instance_service
         self.check = None

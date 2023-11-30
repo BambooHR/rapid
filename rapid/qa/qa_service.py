@@ -20,9 +20,8 @@ from rapid.qa.data.dals.qa_dal import QaDal
 
 
 class QaService(Injectable, QaModule):
-    __injectables__ = {'qa_dal': QaDal}
 
-    def __init__(self, qa_dal):
+    def __init__(self, qa_dal: QaDal):
         """
 
         :param qa_dal:

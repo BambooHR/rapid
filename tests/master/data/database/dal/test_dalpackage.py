@@ -28,6 +28,9 @@ from tests.framework.unit_test import UnitTest
 
 class TestDalPackage(UnitTest):
 
+    def setUp(self) -> None:
+        self.setup_ioc()
+
     def test_setup_dals(self):
         mock_app = Mock()
         IOC.register_global(ModuleConstants.CI_MODULE, Mock())

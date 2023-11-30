@@ -26,9 +26,8 @@ logger = logging.getLogger("rapid")
 
 
 class QAController(Injectable):
-    __injectables__ = {'qa_service': QaService}
 
-    def __init__(self, qa_service):
+    def __init__(self, qa_service: QaService):
         """
 
         :param qa_service:

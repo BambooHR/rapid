@@ -15,12 +15,13 @@
 """
 from sqlalchemy.sql.expression import desc
 
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.exceptions import DatabaseException, InvalidObjectException
 from rapid.lib import get_db_session
 from rapid.ci.data.models import Commit, CommitParameters, Version, PipelineInstanceCommit, Vcs
 
 
-class CommitDal(object):
+class CommitDal(Injectable):
     def get_by_identifier(self, commit_identifier):
         for session in get_db_session():
             try:

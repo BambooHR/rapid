@@ -21,7 +21,7 @@ import time
 from flask import Flask, Response
 
 from rapid.master.data import run_db_downgrade, configure_db
-from rapid.lib import setup_config_from_file, is_primary_worker, setup_status_route
+from rapid.lib import setup_ioc, setup_config_from_file, is_primary_worker, setup_status_route
 from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
@@ -31,25 +31,8 @@ app.rapid_config = {'_is': 'master'}
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-# app.logger.addHandler(handler)  # pylint: disable=no-member
-# app.logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 logger = logging.getLogger("rapid")
-logger.addHandler(handler)  # pylint: disable=no-member
-logger.setLevel(logging.INFO)  # pylint: disable=no-member
-
-
-# pylint: disable=broad-except
-
-# Debug Code for sniffing out nplus one code!
-# try:
-#     # app.config['NPLUSONE_LOGGER'] = logging.getLogger('app.nplusone')
-#     app.config['NPLUSONE_LOG_LEVEL'] = logging.ERROR
-#     app.config['NPLUSONE_RAISE'] = True
-#     from nplusone.ext.flask_sqlalchemy import NPlusOne
-#     NPlusOne(app)
-# except Exception:
-#     pass
 
 
 @app.errorhandler(500)
@@ -69,7 +52,8 @@ def _to_dict(exception):
 
 
 def configure_application(flask_app, args, manual_db_upgrade=False):
-    IOC.register_global('flask_app', flask_app)
+    setup_ioc(flask_app)
+
     setup_config_from_file(flask_app, args)
     configure_db()
     configure_sub_modules(flask_app, args)
@@ -114,6 +98,7 @@ def configure_sub_modules(flask_app, args):  # pylint: disable=unused-argument
             module.register_ioc_globals(flask_app)
             logger.info("    Registered: {}".format(name))
         except Exception:
+            raise
             import traceback
             traceback.print_exc()
 

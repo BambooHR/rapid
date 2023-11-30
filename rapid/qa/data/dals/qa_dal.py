@@ -18,6 +18,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import func
 
+from rapid.lib.framework.injectable import Injectable
 from rapid.lib.results_serializer import ResultsSerializer
 from rapid.qa.data.models import QaProduct
 from rapid.lib.utils import ORMUtil
@@ -30,7 +31,7 @@ from rapid.ci.data.models import Vcs
 from rapid.workflow.data.models import PipelineInstance
 
 
-class QaDal(GeneralDal):
+class QaDal(GeneralDal, Injectable):
     def reset_results(self, action_instance_id, session):
         """
 
