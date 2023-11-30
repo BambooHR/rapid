@@ -18,6 +18,7 @@ import logging
 
 from .framework.injectable import Injectable
 from .framework.injector import Injector
+from .framework.no_cache import NoCache
 
 try:
     import simplejson as json
@@ -85,6 +86,7 @@ def setup_config_from_file(app, args):
 def setup_ioc(flask_app):
     IOC.set_injector(Injector)
     IOC.set_injectable(Injectable)
+    IOC.set_no_cacheable(NoCache)
     IOC.get_instance().is_cached = True
 
     IOC.register_global('flask_app', flask_app)
