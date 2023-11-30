@@ -80,7 +80,11 @@ def setup_config_from_file(app, args):
         from ..master import master_configuration
         app.rapid_config = master_configuration.MasterConfiguration(args.config_file)
         IOC.register_global(master_configuration.MasterConfiguration, app.rapid_config)
+
+    from .configuration import Configuration
+
     IOC.register_global('rapid_config', app.rapid_config)
+    IOC.register_global(Configuration, app.rapid_config)
 
 
 def setup_ioc(flask_app):
