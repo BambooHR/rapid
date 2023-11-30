@@ -9,3 +9,6 @@ class UnitTest(TestCase):
     def setup_ioc(self):
         IOC.set_injector(Injector)
         IOC.set_injectable(Injectable)
+
+    def teardown_ioc(self):
+        IOC.reset_ioc()

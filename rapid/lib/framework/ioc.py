@@ -17,7 +17,6 @@
 import inspect
 from typing import Type, Any, TypeVar
 
-from .injectable import Injectable
 from ..constants import FrameworkConstants
 
 T = TypeVar('T')  # pylint: disable=invalid-name
