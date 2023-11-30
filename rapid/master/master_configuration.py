@@ -14,12 +14,14 @@
  limitations under the License.
 """
 import uuid
+
+from ..lib.framework.injectable import Injectable
 from ..lib.configuration import Configuration
 
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
 
 
-class MasterConfiguration(Configuration):
+class MasterConfiguration(Configuration, Injectable):
     def __init__(self, file_name=None):
         self.port = None
         self.queue_time = None
@@ -30,6 +32,7 @@ class MasterConfiguration(Configuration):
         self.register_api_key = None
         self.api_key = None
         self.github_user = None
+        self.github_pass = None
         self.github_webhooks_key = None
         self.github_default_parameters = None
         self.install_uri = None

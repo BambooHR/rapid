@@ -13,7 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
 from rapid.lib.framework.ioc import IOC
 
 
@@ -24,10 +23,17 @@ def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
     from rapid.workflow.queue_handlers import setup_queue_handlers
 
     setup_queue_handlers()
+    constants = IOC.get_class_instance(QueueHandlerConstants)
 
-    IOC.register_global('queue_constants', IOC.get_class_instance(QueueHandlerConstants))
-    IOC.register_global('workflow_module', IOC.get_class_instance(WorkflowService))
-    IOC.register_global('action_module', IOC.get_class_instance(ActionService))
+    workflow_service = IOC.get_class_instance(WorkflowService)
+    action_service = IOC.get_class_instance(ActionService)
+
+    # IOC.register_global(QueueHandlerConstants, constants)
+    # IOC.register_global(WorkflowService, workflow_service)
+    # IOC.register_global(ActionService, action_service)
+    IOC.register_global('queue_constants', constants)
+    IOC.register_global('workflow_module', workflow_service)
+    IOC.register_global('action_module', action_service)
 
 
 def configure_module(flask_app):

@@ -15,12 +15,12 @@
 """
 
 import abc
+from abc import ABC
 
 from rapid.lib.constants import Constants
 
 
-class AbstractParser(object):
-    __metaclass__ = abc.ABCMeta
+class AbstractParser(ABC):
 
     def __init__(self, workspace='', failures_only=False, failures_count=False):
         self.workspace = workspace

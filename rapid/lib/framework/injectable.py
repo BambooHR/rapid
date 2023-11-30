@@ -14,11 +14,8 @@
  limitations under the License.
 """
 
-from abc import ABCMeta
+from abc import ABC
 
 
-class Injectable(object):
-    __metaclass__ = ABCMeta
-
-    __injected__ = []
-    __injectables__ = {}
+class Injectable(ABC):
+    ...

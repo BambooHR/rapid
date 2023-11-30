@@ -25,9 +25,8 @@ except ImportError:
 
 from flask import Flask
 
-from rapid.lib import is_primary_worker, setup_logging, setup_status_route
+from rapid.lib import setup_ioc, is_primary_worker, setup_logging, setup_status_route, setup_config_from_file
 from .parsers import load_parsers
-from ..lib import setup_config_from_file
 from .communicator.client_communicator import ClientCommunicator
 from .controllers import register_controllers
 
@@ -56,6 +55,7 @@ def load_extensions(flask_app):
 
 
 def configure_application(flask_app, args):
+    setup_ioc(flask_app)
     setup_status_route(flask_app)
     setup_config_from_file(flask_app, args)
     setup_logger(flask_app)

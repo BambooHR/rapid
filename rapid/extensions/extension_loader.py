@@ -1,14 +1,13 @@
 import logging
 import importlib
 
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.lib.framework.injectable import Injectable
 logger = logging.getLogger('rapid')
 
 
 class ExtensionLoader(Injectable):
-    __injectables__ = {'rapid_config': None}
-
-    def __init__(self, rapid_config):
+    def __init__(self, rapid_config: MasterConfiguration):
         self.rapid_config = rapid_config
 
     def load_extensions(self, flask_app):

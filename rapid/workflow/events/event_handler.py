@@ -15,13 +15,13 @@ limitations under the License.
 """
 # pylint: disable=broad-except
 import re
-from abc import abstractmethod, ABCMeta
+from abc import ABC, abstractmethod
 
 import pkgutil
 from simpleeval import simple_eval
 
 
-class EventHandlerFactory(object):
+class EventHandlerFactory:
 
     @staticmethod
     def get_event_handler(in_type):
@@ -45,8 +45,7 @@ class EventHandlerFactory(object):
         return None
 
 
-class EventHandler(object):
-    __metaclass__ = ABCMeta
+class EventHandler(ABC):
 
     @staticmethod
     @abstractmethod

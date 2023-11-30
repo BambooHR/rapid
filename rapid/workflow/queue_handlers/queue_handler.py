@@ -1,17 +1,13 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Dict, List
 
+from rapid.master.master_configuration import MasterConfiguration
 
-class QueueHandler(object):
+
+class QueueHandler(ABC):
     _GRAIN_SPLIT = '://'
-    __metaclass__ = ABCMeta
 
-    def __init__(self, rapid_config):
-        """
-        Parameters
-        ----------
-        rapid_config: rapid.master.master_configuration.MasterConfiguration
-        """
+    def __init__(self, rapid_config: MasterConfiguration):
         self.rapid_config = rapid_config
 
     @abstractmethod

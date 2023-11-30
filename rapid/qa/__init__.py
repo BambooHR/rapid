@@ -13,13 +13,15 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+from rapid.lib.modules import QaModule
 from rapid.lib.framework.ioc import IOC
 from rapid.qa.qa_service import QaService
 
 
 def register_ioc_globals(flask_app):  # pylint: disable=unused-argument
-    IOC.register_global('qa_module', IOC.get_class_instance(QaService))
+    qa_service = IOC.get_class_instance(QaService)
+    IOC.register_global(QaModule, qa_service)
+    IOC.register_global('qa_module', qa_service)
 
 
 def configure_module(flask_app):
