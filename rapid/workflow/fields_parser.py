@@ -80,7 +80,7 @@ class FieldsParser:
                     self._fields_mapping[self._root_class.__tablename__].append(field)
 
     def _parse_relationship_fields(self, parser: RelationshipParser):
-        try:
+        if parser.relationship in self._mappings:
             relationship_mapping = self._mappings[parser.relationship]
 
             for field in parser.fields:
@@ -93,8 +93,6 @@ class FieldsParser:
                         self._fields_mapping[parser.relationship] = []
                     if parser.relationship in self._mappings and hasattr(self._mappings[parser.relationship], field):
                         self._fields_mapping[parser.relationship].append(field)
-        except KeyError:
-            raise InvalidProcessError('The relationship must first be selected prior to nesting.')
 
     def _parse_fields(self):
         if self._fields:

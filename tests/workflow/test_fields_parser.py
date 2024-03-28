@@ -42,6 +42,7 @@ class TestFieldsParser(UnitTest):
         self.assertEqual({'pipeline_instances': ['stage_instances'], 'stage_instances': ['workflow_instances', 'status']}, parser.fields_mapping())
 
     def test_nested_relationship_without_first_field_definition_raises_error(self):
-        with self.assertRaises(InvalidProcessError):
-            FieldsParser(PipelineInstance, 'stage_instances=workflow_instances')
+        parser = FieldsParser(PipelineInstance, 'stage_instances=workflow_instances')
 
+        self.assertEqual([], parser.field_joins())
+        self.assertEqual({'pipeline_instances': []}, parser.fields_mapping())
