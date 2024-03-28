@@ -93,3 +93,7 @@ class ECSConnectionError(Exception):
 
 class QueueHandlerShouldSleep(Exception):
     pass
+
+
+class InvalidProcessError(HTTPException):
+    pass
