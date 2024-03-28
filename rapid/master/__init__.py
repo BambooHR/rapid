@@ -33,7 +33,8 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 
 logger = logging.getLogger("rapid")
-
+logger.addHandler(handler)  # pylint: disable=no-member
+logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
 @app.errorhandler(500)
 def internal_error(exception):
