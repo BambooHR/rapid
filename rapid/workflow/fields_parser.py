@@ -2,6 +2,8 @@ from typing import Dict, List, Type, Union
 
 from sqlalchemy.orm import Load, joinedload
 
+from rapid.lib.exceptions import InvalidProcessError
+
 
 class RelationshipParser:
     def __init__(self, relationship_str: str):
@@ -46,7 +48,7 @@ class FieldsParser:
     def __init__(self, root_class: Type[any], fields: str):
         self._root_class = root_class
         self._fields:str = fields
-        self._fields_mapping:Dict[str, List[str]] = {root_class.__tablename__: []}
+        self._fields_mapping:Dict[str, List[str]] = {root_class.__tablename__: []} if root_class else {}
         self._mappings:Dict[str, Type[any]] = {}
         self._field_loads:Dict[Type[any], any] = {}
         self._attribute_mapping = {}
@@ -70,23 +72,29 @@ class FieldsParser:
         for field in parser.fields:
             if field:
                 self._add_field_mapping(self._root_class, field)
-                field_mapping = self._mappings[field]
-                if field_mapping not in self._field_loads:
-                    self._field_loads[field_mapping] = joinedload(getattr(self._root_class, field))
-                self._fields_mapping[self._root_class.__tablename__].append(field)
+                if field in self._mappings:
+                    field_mapping = self._mappings[field]
+                    if field_mapping not in self._field_loads:
+                        self._field_loads[field_mapping] = joinedload(getattr(self._root_class, field))
+                if hasattr(self._root_class, field):
+                    self._fields_mapping[self._root_class.__tablename__].append(field)
 
     def _parse_relationship_fields(self, parser: RelationshipParser):
-        relationship_mapping = self._mappings[parser.relationship]
+        try:
+            relationship_mapping = self._mappings[parser.relationship]
 
-        for field in parser.fields:
-            if field:
-                self._add_field_mapping(relationship_mapping, field)
-                if parser.relationship in self._mappings:
-                    _joined = self._field_loads[relationship_mapping].joinedload(getattr(relationship_mapping, field))
-                    self._field_loads[self._mappings[field]] = _joined
-                if parser.relationship not in self._fields_mapping:
-                    self._fields_mapping[parser.relationship] = []
-                self._fields_mapping[parser.relationship].append(field)
+            for field in parser.fields:
+                if field:
+                    self._add_field_mapping(relationship_mapping, field)
+                    if parser.relationship in self._mappings:
+                        _joined = self._field_loads[relationship_mapping].joinedload(getattr(relationship_mapping, field))
+                        self._field_loads[self._mappings[field]] = _joined
+                    if parser.relationship not in self._fields_mapping:
+                        self._fields_mapping[parser.relationship] = []
+                    if parser.relationship in self._mappings and hasattr(self._mappings[parser.relationship], field):
+                        self._fields_mapping[parser.relationship].append(field)
+        except KeyError:
+            raise InvalidProcessError('The relationship must first be selected prior to nesting.')
 
     def _parse_fields(self):
         if self._fields:

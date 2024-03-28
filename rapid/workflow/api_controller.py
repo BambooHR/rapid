@@ -15,7 +15,7 @@
 """
 # pylint: disable=broad-except,too-many-public-methods
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from flask_sqlalchemy.query import Query
 
@@ -231,10 +231,12 @@ class APIRouter(Injectable):
         except:
             ...
 
-    def _get_additional_fields(self, clazz, query: Query)->Dict[str, List[str]]:
+    def _get_additional_fields(self, clazz, query: Query)->Tuple[Dict[str, List[str]], Query]:
         args = self._get_args()
         parser = FieldsParser(clazz, args['fields'] if args and 'fields' in args else '')
-        query = query.options(parser.field_joins())
+        field_joins = parser.field_joins()
+        if field_joins:
+            query = query.options(*field_joins)
         return parser.fields_mapping(), query
 
     def _get_additional_fields_legacy(self, clazz, query, fields=None):
