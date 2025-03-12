@@ -15,7 +15,7 @@
 """
 import datetime
 
-from sqlalchemy import Column, String, Integer, ForeignKey, desc, DateTime, Boolean
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 
 from rapid.lib import get_declarative_base
@@ -29,8 +29,8 @@ class Commit(BaseModel, Base):
     commit_identifier = Column(String(255), nullable=False, index=True)
     vcs_id = Column(Integer, ForeignKey('vcs.id'), nullable=False, index=True)
 
-    pipeline_instances = relationship("PipelineInstance", backref="commit", secondary="pipeline_instance_commits", order_by=desc("created_date"))
-    versions = relationship('Version', backref="commit", order_by=desc('date_created'))
+    pipeline_instances = relationship("PipelineInstance", backref="commit", secondary="pipeline_instance_commits", order_by='PipelineInstance.created_date.desc()')
+    versions = relationship('Version', backref="commit", order_by='Version.date_created.desc()')
     vcs = relationship('Vcs')
 
 

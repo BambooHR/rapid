@@ -15,6 +15,12 @@
 """
 # pylint: disable=broad-except,too-many-public-methods
 import logging
+from typing import Dict, List, Tuple
+
+from flask_sqlalchemy.query import Query
+
+from rapid.workflow.fields_parser import FieldsParser
+
 try:
     import simplejson as json
 except ImportError:
@@ -127,7 +133,7 @@ class APIRouter(Injectable):
             for session in get_db_session():
                 clazz = self.class_map[endpoint]
                 query = session.query(clazz).filter(clazz.id == _id)
-                allowed_fields = self._get_additional_fields(clazz)
+                allowed_fields, query = self._get_additional_fields(clazz, query)
                 instance = query.one()
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
         return Response("Not Valid", status=404)
@@ -179,7 +185,7 @@ class APIRouter(Injectable):
                 query = self._set_joins(query)
                 query = self._set_cursor(query, clazz)
                 query = query.limit(query_limit)
-                fields= self._get_additional_fields(clazz)
+                fields, query = self._get_additional_fields(clazz, query)
 
                 results = []
                 for result in query.all():
@@ -253,22 +259,54 @@ class APIRouter(Injectable):
                     traceback.print_exc()
         return query
 
-    def _get_additional_fields(self, clazz, fields=None):
-        fields = {clazz.__tablename__: []} if fields is None else fields
+    def _process_single_field(self, clazz, field, mapping: Dict):
         try:
+            attr = getattr(clazz, field)
+            mapping[field] = attr.mapper.class_
+        except:
+            ...
+
+    def _get_additional_fields(self, clazz, query: Query)->Tuple[Dict[str, List[str]], Query]:
+        args = self._get_args()
+        parser = FieldsParser(clazz, args['fields'] if args and 'fields' in args else '')
+        field_joins = parser.field_joins()
+        if field_joins:
+            query = query.options(*field_joins)
+        return parser.fields_mapping(), query
+
+    def _get_additional_fields_legacy(self, clazz, query, fields=None):
+        fields = {clazz.__tablename__: []} if fields is None else fields
+        _mappings = {}
+        try:
+            _field_loads = {}
+            _current_load = None
             for tmp_string in self._get_args()['fields'].split(';'):
                 relation_split = tmp_string.split('=')
                 if len(relation_split) == 1:
                     for field in relation_split[0].split(','):
-                        fields[clazz.__tablename__].append(field)
+                        if field:
+                            self._process_single_field(clazz, field, _mappings)
+                            if _mappings[field] not in _field_loads:
+                                _field_loads[_mappings[field]] = joinedload(getattr(clazz, field))
+                            else:
+                                _field_loads[_mappings[field]].joinedload(getattr(clazz, field))
+                            fields[clazz.__tablename__].append(field)
                 else:
                     table_name = relation_split[0]
+                    field_cls = _mappings[table_name]
                     for field in relation_split[1].split(','):
+                        self._process_single_field(field_cls, field, _mappings)
                         try:
+                            if table_name in _mappings:
+                                if field_cls in _field_loads:
+                                    _joined = _field_loads[field_cls].joinedload(getattr(field_cls, field))
+                                    _field_loads[_mappings[field]] = _joined
                             fields[table_name].append(field)
                         except (AttributeError, TypeError, KeyError):
                             fields[table_name] = []
                             fields[table_name].append(field)
+                if _field_loads:
+                    query = query.options(list(_field_loads.values()))
         except Exception:
             pass
         return fields
