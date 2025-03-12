@@ -1,6 +1,6 @@
 import flask
 
-from lib import Injectable
+from rapid.lib import Injectable
 
 
 class HTTPWrapper(Injectable):

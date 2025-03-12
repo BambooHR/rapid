@@ -1,8 +1,8 @@
 from mock.mock import MagicMock, patch
 
-from lib.constants import Constants
+from rapid.lib.constants import Constants
 from tests.framework.unit_test import UnitTest
-from workflow.api_controller import APIRouter
+from rapid.workflow.api_controller import APIRouter
 
 
 class TestAPIController(UnitTest):
