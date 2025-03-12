@@ -51,6 +51,11 @@ def deep_merge(_a, _b, path=None):
 
 
 class RoutingUtil(object):
+    digit_to_letter = {
+        '0': 'X', '1': 'P', '2': 'A', '3': 'J', '4': 'l',
+        '5': 'R', '6': 'U', '7': 'W', '8': 'Q', '9': 'Z'
+    }
+    letter_to_digit = {v: k for k, v in digit_to_letter.items()}
 
     @staticmethod
     def is_valid_request(sent_api_key, api_key):
@@ -59,6 +64,14 @@ class RoutingUtil(object):
     @staticmethod
     def get_cihub_signature(secret_key, data):
         return hmac.new(secret_key.encode('ascii', 'ignore'), data, sha1).hexdigest()
+
+    @staticmethod
+    def obfuscate_id(model_id: int) -> str:
+        return ''.join(RoutingUtil.digit_to_letter[char] for char in str(model_id))
+
+    @staticmethod
+    def deobfuscate_id(obfuscated_id: str) -> int:
+        return int(''.join(RoutingUtil.letter_to_digit[char] for char in obfuscated_id))
 
 
 class ORMUtil(object):

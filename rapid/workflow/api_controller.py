@@ -24,11 +24,13 @@ except ImportError:
 from werkzeug.exceptions import BadRequestKeyError
 from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
-from flask import Response, request
+from flask import Response
 
+from rapid.lib.http_wrapper import HTTPWrapper
+from rapid.lib.constants import Constants
 from rapid.lib.modules import QaModule
 from rapid.lib import json_response, api_key_required, get_declarative_base, get_db_session
-from rapid.lib.utils import ORMUtil
+from rapid.lib.utils import ORMUtil, RoutingUtil
 from rapid.lib.store_service import StoreService
 from rapid.lib.version import Version
 from rapid.lib.work_request import WorkRequestEncoder
@@ -46,25 +48,19 @@ class APIRouter(Injectable):
     classes, models, table_names = None, None, None
     class_map = {}
 
-    def __init__(self, action_instance_service: ActionInstanceService, queue_service: QueueService, qa_module: QaModule, workflow_service: WorkflowService, release_service: ReleaseService):
-        """
-
-        :param action_instance_service:
-        :type action_instance_service: ActionInstanceService
-        :param queue_service:
-        :type queue_service:
-        :param qa_module:
-        :type qa_module: rapid.lib.modules.modules.QaModule
-        :param workflow_service:
-        :type workflow_service: WorkflowService
-        :type release_service: ReleaseService
-        """
+    def __init__(self, action_instance_service: ActionInstanceService,
+                 queue_service: QueueService,
+                 qa_module: QaModule,
+                 workflow_service: WorkflowService,
+                 release_service: ReleaseService,
+                 http_wrapper: HTTPWrapper):
         self.app = None
         self.action_instance_service = action_instance_service
         self.queue_service = queue_service
         self.qa_module = qa_module
         self.workflow_service = workflow_service
         self.release_service = release_service
+        self.http_wrapper = http_wrapper
 
     def register_url_rules(self, flask_app):
         flask_app.add_url_rule('/api/<path:endpoint>', 'api_list', api_key_required(self.list), methods=['GET', 'POST'])
@@ -101,11 +97,11 @@ class APIRouter(Injectable):
 
     def _get_args(self):
         try:
-            if request.content_type == 'application/json':
-                return request.get_json()
+            if self.http_wrapper.current_request().content_type == 'application/json':
+                return self.http_wrapper.current_request().get_json()
         except Exception:
             pass
-        return request.args
+        return self.http_wrapper.current_request().args
 
     def reset_pipeline_instance(self, _id):
         response = self.action_instance_service.reset_pipeline_instance(_id)
@@ -136,20 +132,59 @@ class APIRouter(Injectable):
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
         return Response("Not Valid", status=404)
 
-    def list(self, endpoint):
+    def _get_cursor(self) -> int:
+        cursor = None
+
+        try:
+            # Check the headers first, use that if set.
+            header = self.http_wrapper.current_request().headers.get(Constants.CONTINUATION_HEADER, None)
+            if header:
+                cursor = header
+            else:
+                _json = self.http_wrapper.current_request().get_json(silent=True)
+                if _json is not None:
+                    cursor = _json['continuation_token'] if 'continuation_token' in _json else None
+                else:
+                    cursor = self._get_args()['continuation_token']
+
+        except (KeyError, TypeError, AttributeError, ValueError):
+            pass
+
+        if cursor:
+            return self._de_obfuscate_id(cursor)
+        return -1
+
+    def _de_obfuscate_id(self, cursor: str) -> int:
+        return RoutingUtil.deobfuscate_id(cursor)
+
+    def _set_cursor(self, query, clazz):
+        cursor = self._get_cursor()
+        if cursor > -1:
+            query = query.filter(clazz.id > cursor)
+        return query
+
+    def _get_pagination_header(self, results: list, limit: int) -> dict:
+        if results and len(results) == limit:
+            return {Constants.CONTINUATION_HEADER: RoutingUtil.obfuscate_id(results[-1]['id'])}
+        return {}
+
+    def list(self, endpoint, version2: bool = False, version_obj = None):
         if self._is_valid(endpoint):
             for session in get_db_session():
+                query_limit = self._get_limit()
                 clazz = self._get_clazz(endpoint)
                 query = self._get_query(session, clazz)
                 query = self._set_filter(clazz, query)
                 query = self._set_orderby_direction(query, clazz)
                 query = self._set_joins(query)
-                query = self._set_limit(query)
-                fields = self._get_additional_fields(clazz)
+                query = self._set_cursor(query, clazz)
+                query = query.limit(query_limit)
+                fields= self._get_additional_fields(clazz)
+
                 results = []
                 for result in query.all():
                     results.append(result.serialize(fields))
-                return Response(json.dumps(results), content_type='application/json')
+                return Response(json.dumps(results), content_type='application/json', headers=self._get_pagination_header(results, query_limit))
         else:
             return Response(status=404)
 
@@ -238,18 +273,15 @@ class APIRouter(Injectable):
             pass
         return fields
 
-    def _set_limit(self, query):
-        limit = 100
-
+    def _get_limit(self) -> int:
         try:
-            limit = int(self._get_args()['limit'])
+            return int(self._get_args()['limit'])
         except (AttributeError, TypeError, ValueError, BadRequestKeyError, KeyError):
-            pass
-        return query.limit(limit)
+            return 100
 
     def bulk_create(self):
         result = {}
-        for (endpoint, objects) in request.get_json().items():
+        for (endpoint, objects) in self.http_wrapper.current_request().get_json().items():
             if self._is_valid(endpoint):
                 clazz = self.class_map[endpoint]
                 result[endpoint] = []
@@ -260,7 +292,7 @@ class APIRouter(Injectable):
     def create(self, endpoint):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
-            return Response(json.dumps(self._create_from_request(clazz, request.get_json())), content_type="application/json")
+            return Response(json.dumps(self._create_from_request(clazz, self.http_wrapper.current_request().get_json())), content_type="application/json")
         return Response(status=404)
 
     def edit_object(self, endpoint, _id):
@@ -268,7 +300,7 @@ class APIRouter(Injectable):
             clazz = self.class_map[endpoint]
             for session in get_db_session():
                 dal = self._retrieve_dal(clazz)
-                instance = dal.edit_object(session, clazz, _id, request.json)
+                instance = dal.edit_object(session, clazz, _id, self.http_wrapper.current_request().json)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
         return Response(status=404)
 
@@ -283,7 +315,7 @@ class APIRouter(Injectable):
 
     def reset_action_instance(self, _id):
         try:
-            _json = request.get_json(silent=True)
+            _json = self.http_wrapper.current_request().get_json(silent=True)
             if self.action_instance_service.reset_action_instance(_id, _json['complete_reset'] if _json and 'complete_reset' in _json else False):
                 return Response(json.dumps({"message": "Action instance reset"}), content_type='application/json')
             return Response(json.dumps({"message": "Unable to reset instance"}), content_type='application/json', status=505)
@@ -293,11 +325,11 @@ class APIRouter(Injectable):
         return Response(json.dumps({"message": "Something was wrong"}), content_type='application/json', status=500)
 
     def callback_action_instance(self, _id):
-        return Response(json.dumps(self.action_instance_service.callback(_id, request.get_json())), content_type='application/json')
+        return Response(json.dumps(self.action_instance_service.callback(_id, self.http_wrapper.current_request().get_json())), content_type='application/json')
 
     def finish_action_instance(self, _id):
         try:
-            return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, request.get_json())), content_type='application/json')
+            return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, self.http_wrapper.current_request().get_json())), content_type='application/json')
         except Exception as exception:
             logger.error(exception)
             return Response("Something went wrong!", status=500)

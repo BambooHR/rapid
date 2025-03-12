@@ -34,6 +34,7 @@ class Constants(object):
     API_PREFIX = "/api/"
     FAILURES = 'failures'
     FAILURES_COUNT = 'failures_count'
+    CONTINUATION_HEADER = 'X-Rapid-Continuation-Token'
 
     @staticmethod
     def get_api_url(uri):
