@@ -47,7 +47,7 @@ function setup() {
         fail "Failed to generate build version"
     fi
 
-    perl -p -i -e "s/^(version\s+=\s+)'.*'/\1'${BUILD_ID}'/" ./pyproject.toml    
+    perl -p -i -e "s/^(version\s+=\s+)'.*'/\1'${BUILD_VERSION}'/" ./pyproject.toml    
     if [[ $? -ne 0 ]]
     then
         fail "Failed to generate build version"
