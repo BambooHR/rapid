@@ -83,16 +83,23 @@ class Configuration(ABC):
                 except AttributeError:
                     self._set_parser_value(parser, section, key, *value)
 
-    def _handle_normal_value(self, parser, key, section, type_cast):
-        setattr(self, key, type_cast(parser.get(section, key)))
+    def _handle_normal_value(self, key, value, type_cast):
+        setattr(self, key, type_cast(value))
 
     def _set_parser_value(self, parser, section, key, default=None, type_cast=str, delim=','):
         try:
+            local_value = Configuration._get_environ_default(key, None)
+            local_value = parser.get(section, key) if local_value is None else local_value
+
             if type_cast == bool:
-                setattr(self, key, parser.get(section, key).lower().strip() == 'true')
+                setattr(self, key, local_value.lower().strip() == 'true')
             elif type_cast == list:
-                setattr(self, key, parser.get(section, key).split(delim))
+                setattr(self, key, local_value.split(delim))
             else:
-                self._handle_normal_value(parser, key, section, type_cast)
+                self._handle_normal_value(key, local_value, type_cast)
         except Exception:  # pylint: disable=broad-except
             setattr(self, key, default)
+
+    @staticmethod
+    def _get_environ_default(key, default):
+        return os.environ[key] if key in os.environ else default

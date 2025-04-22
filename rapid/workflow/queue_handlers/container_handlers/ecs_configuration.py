@@ -61,24 +61,21 @@ class ECSConfiguration(Configuration):  #pylint: disable=too-many-instance-attri
         }
 
     @property
-    def aws_credentials(self):
-        # type: () -> dict
+    def aws_credentials(self) -> dict:
         return self._get_section_values('aws_credentials')
 
     @property
-    def default_task_definition(self):
-        # type: () -> dict
+    def default_task_definition(self) -> dict:
         return self._get_section_values('task_defaults')
 
     def _get_section_values(self, section):
         return {key: getattr(self, key) for key in list(self.section_mapping[section].keys()) if getattr(self, key) != self.NOT_SET}
 
-    def _handle_normal_value(self, parser, key, section, type_cast):
-        new_value = parser.get(section, key)
+    def _handle_normal_value(self, key, value, type_cast):
         try:
             if type_cast in [list, dict]:
-                setattr(self, key, type_cast(json.loads(new_value)))
+                setattr(self, key, type_cast(json.loads(value)))
             else:
-                setattr(self, key, type_cast(new_value))
+                setattr(self, key, type_cast(value))
         except ValueError:
-            setattr(self, key, type_cast(new_value))
+            setattr(self, key, type_cast(value))
