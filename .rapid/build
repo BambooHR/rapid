@@ -66,6 +66,7 @@ function setup() {
 
     pip install --upgrade pip
     pip install --upgrade setuptools==70.3.0
+    pip install -U build
 
     setRapidAnalyzeTests "code/tests"
     setRapidResultsFiles "XUnit#nosetests.xml"
