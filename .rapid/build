@@ -114,7 +114,7 @@ function release_build() {
             if [[ "${modified_code}" != "" ]]
             then
             #              This just pushes to the package cloud
-                release_python_internal dist/rapid-framework-${version}.tar.gz
+                release_python_internal dist/rapid_framework-${version}.tar.gz
                 if [[ $? -ne 0 ]]
                 then
                     fail "Internal Release failed"
