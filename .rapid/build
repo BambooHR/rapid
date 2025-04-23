@@ -64,6 +64,9 @@ function setup() {
         fail "Failed to install tox"
     fi
 
+    pip install --upgrade pip
+    pip install --upgrade setuptools==70.3.0
+
     setRapidAnalyzeTests "code/tests"
     setRapidResultsFiles "XUnit#nosetests.xml"
 }
@@ -75,6 +78,7 @@ function run_tox_tests() {
         fail "Failed to run tox tests"
     fi
 }
+
 
 
 function release_build() {
