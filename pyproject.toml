@@ -126,7 +126,7 @@ classifiers = [
 # referred to as "extras". For a more extensive definition see:
 # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras
 [dependency-groups]
-dev = ["nose", "ddt", "mock", "MagicMock", "uwsgi", "coverage", "tox"]
+dev = ["nose", "ddt", "mock", "MagicMock", "uwsgi", "coverage", "tox", "build"]
 
 [project.optional-dependencies]
 test = ["coverage", "nose", "ddt", "mock", "MagicMock", "tox"]
@@ -157,7 +157,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ['']
-include = ['rapid']
+include = ['rapid*']
 exclude = ['docs', 'tests*', 'contrib']
 namespaces = false
 
