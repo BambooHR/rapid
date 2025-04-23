@@ -47,7 +47,7 @@ function setup() {
         fail "Failed to generate build version"
     fi
 
-    perl -p -i -e "s/^__version__ = .*/__version__ = '${BUILD_VERSION}'/" rapid/lib/version.py
+    perl -p -i -e "s/^(version\s+=\s+)'.*'/\1'${BUILD_VERSION}'/" ./pyproject.toml    
     if [[ $? -ne 0 ]]
     then
         fail "Failed to generate build version"
@@ -64,6 +64,10 @@ function setup() {
         fail "Failed to install tox"
     fi
 
+    pip install --upgrade pip
+    pip install --upgrade setuptools==70.3.0
+    pip install -U build
+
     setRapidAnalyzeTests "code/tests"
     setRapidResultsFiles "XUnit#nosetests.xml"
 }
@@ -77,6 +81,7 @@ function run_tox_tests() {
 }
 
 
+
 function release_build() {
     if [[ ${is_release_branch} -eq 1 ]]
     then
@@ -87,12 +92,13 @@ function release_build() {
 
         rm -rf ./dist/*
 
-        version=`python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}'`
+        python -m build --sdist
         if [[ $? -ne 0 ]]
         then
-            fail "Something failed to roll"
+            fail "Failed to build sdist"
         fi
 
+        version=${BUILD_VERSION}
         set_build_version "${version}" "${commit}"
 
         commit_is_head_of_release ${commit}
@@ -108,7 +114,7 @@ function release_build() {
             if [[ "${modified_code}" != "" ]]
             then
             #              This just pushes to the package cloud
-                release_python_internal dist/rapid-framework-${version}.tar.gz
+                release_python_internal dist/rapid_framework-${version}.tar.gz
                 if [[ $? -ne 0 ]]
                 then
                     fail "Internal Release failed"
@@ -124,7 +130,7 @@ function release_build() {
     elif [[ ${push_live} -eq 1 ]]
     then
         echo "Pushing to live..."
-        version=`twine upload dist/* |grep 'Uploading'| awk '{print $2}' | awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}'`
+        version=$(twine upload dist/* |grep 'Uploading'| awk '{print $2}' | awk -F'.tar.gz' '{print $1}'|awk -F'-' '{print $3}')
         if [[ ${PIPESTATUS[0]} -ne 0 ]]
         then
             fail "Failed to release to pypi"

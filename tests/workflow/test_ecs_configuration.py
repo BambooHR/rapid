@@ -27,7 +27,7 @@ class TestECSConfiguration(TestCase):
         mock = Mock()
         mock.get.return_value = 'foobar'
         config = ECSConfiguration()
-        config._handle_normal_value(mock, 'key', 'section', list)
+        config._handle_normal_value('key', 'foobar', list)
         mock_json.loads.assert_called_with('foobar')
 
     @patch('rapid.workflow.queue_handlers.container_handlers.ecs_configuration.json')
@@ -35,13 +35,12 @@ class TestECSConfiguration(TestCase):
         mock = Mock()
         mock.get.return_value = 'foobar'
         config = ECSConfiguration()
-        config._handle_normal_value(mock, 'key', 'section', dict)
+        config._handle_normal_value('key', 'foobar', dict)
         mock_json.loads.assert_called_with('foobar')
 
     def test_handle_normal_value_error_calls_standard_set_value(self):
         mock = Mock()
         mock.side_effect = [ValueError(), 'oh-yeah']
         config = ECSConfiguration()
-        config._handle_normal_value(Mock(), 'foo', 'bar', mock)
+        config._handle_normal_value('foo', 'bar', mock)
         self.assertEqual('oh-yeah', config.foo)
-

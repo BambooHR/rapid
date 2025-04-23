@@ -15,6 +15,13 @@
 """
 __version__ = '0.0.0'
 
+try:
+    from importlib_metadata import version
+    __version__ = version('rapid-framework')
+except ImportError:
+    ...
+
+
 
 class Version(object):
     HEADER = 'X-RAPIDCI-VERSION'
