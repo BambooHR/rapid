@@ -84,7 +84,7 @@ keywords = ["CI", "CD", "Continuous Integration", "Continuous Delivery", "Contin
 # authored the project, and a valid email address corresponding to the name
 # listed.
 authors = [
-    {name = "Michael Bright", email = "mbribght@bamboohr.com" },
+    {name = "Michael Bright", email = "mbright@bamboohr.com" },
 ]
 
 # Classifiers help users find your project by categorizing it.

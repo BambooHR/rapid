@@ -25,6 +25,6 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 here = path.abspath(path.dirname(__file__))
 
-setup(
-)
+if __name__ == '__main__':
+    setup()
 

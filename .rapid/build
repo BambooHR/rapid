@@ -87,7 +87,7 @@ function release_build() {
 
         rm -rf ./dist/*
 
-        version=$(python setup.py sdist build |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}')
+        version=$(python -m build --sdist |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}')
         if [[ $? -ne 0 ]]
         then
             fail "Something failed to roll"
