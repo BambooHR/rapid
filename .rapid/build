@@ -92,12 +92,13 @@ function release_build() {
 
         rm -rf ./dist/*
 
-        version=$(python -m build --sdist |grep "removing 'rapid-framework-"| awk '{print $2}'|awk -F"'" '{print $2}'|awk -F'-' '{print $3}')
+        python -m build --sdist
         if [[ $? -ne 0 ]]
         then
-            fail "Something failed to roll"
+            fail "Failed to build sdist"
         fi
 
+        version=${BUILD_VERSION}
         set_build_version "${version}" "${commit}"
 
         commit_is_head_of_release ${commit}
