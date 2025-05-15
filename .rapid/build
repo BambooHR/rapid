@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 args=${1}
 export push_live=0
 export is_release_branch=0
@@ -23,7 +25,13 @@ function setup() {
     then
         export is_release_branch=1;
 
-        export modified_code=`git diff master.. --name-only | grep 'rapid/'`
+        if [[ -f ${script_dir}/releases_offline ]]
+        then
+            export modified_code=''
+        else
+            modified_code=$(git diff master.. --name-only | grep 'rapid/')
+            export modified_code
+        fi
 
         if [[ "${modified_code}" != "" ]]
         then
@@ -104,27 +112,25 @@ function release_build() {
         commit_is_head_of_release ${commit}
         if [[ $? == 1 ]]
         then
-            # Move The AppSpec and Release Files into s3
-            prepare_rapid_release "${version}"
-            if [[ $? -ne 0 ]]
-            then
-                fail "Unable to prepare rapid release"
-            fi
-
             if [[ "${modified_code}" != "" ]]
             then
-            #              This just pushes to the package cloud
+                # Move The AppSpec and Release Files into s3
+                prepare_rapid_release "${version}"
+                if [[ $? -ne 0 ]]
+                then
+                    fail "Unable to prepare rapid release"
+                fi
+
                 release_python_internal dist/rapid_framework-${version}.tar.gz
                 if [[ $? -ne 0 ]]
                 then
                     fail "Internal Release failed"
                 fi
 
-                buildStepNotify "rapidbuild" '{"status": "pending", "version": "'${version}'"}'
+                buildStepNotify "rapidbuild" '{"status": "success", "version": "'${version}'"}'
             else
                 buildStepNotify "rapidbuild"
                 buildStepNotify 'deploypackage'
-
             fi
         fi
     elif [[ ${push_live} -eq 1 ]]

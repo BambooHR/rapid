@@ -23,10 +23,14 @@ class DockerQueueHandler(ContainerHandler, Injectable):
     def container_identifier(self):
         return 'docker'
 
+    @property
+    def assigned_to_prefix(self):
+        return '--docker--'
+
     def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService):
         # type: (MasterConfiguration, ActionInstanceService) -> None
-        super(DockerQueueHandler, self).__init__(rapid_config)
-        self.action_instance_service = action_instance_service
+        super(DockerQueueHandler, self).__init__(rapid_config, action_instance_service)
+
 
     def process_action_instance(self, action_instance, clients):
         pass

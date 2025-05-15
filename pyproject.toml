@@ -129,9 +129,11 @@ classifiers = [
 dev = ["nose", "ddt", "mock", "MagicMock", "uwsgi", "coverage", "tox", "build"]
 
 [project.optional-dependencies]
-test = ["coverage", "nose", "ddt", "mock", "MagicMock", "tox"]
-master = ['alembic', 'SQLAlchemy>=1.0.6', 'Flask-SQLAlchemy>=2.3.0', 'mysql-connector', 'pygithub']
+test = ["coverage", "nose", "ddt", "mock", "MagicMock", "tox", "pytest", "pytest-xdist"]
+master = ['alembic', 'SQLAlchemy>=1.0.6', 'Flask-SQLAlchemy>=2.3.0', 'mysql-connector', 'pygithub==1.54.1']
 windows-client = ['waitress==1.4.4']
+k8s = ['kubernetes']
+ecs = ['boto3==1.16.13']
 client = []
 
 # List URLs that are relevant to your project

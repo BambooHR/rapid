@@ -1,4 +1,6 @@
+import logging
 
+logger = logging.getLogger("rapid")
 
 class QueueHandlerConstants:
     queue_handler_classes = []
@@ -16,7 +18,11 @@ class QueueHandlerConstants:
         from rapid.lib import IOC
         self._queue_handlers = []
         for handler_class in self.queue_handler_classes:
-            self._queue_handlers.append(IOC.get_class_instance(handler_class))
+            handler = IOC.get_class_instance(handler_class)
+            if handler is not None:
+                self._queue_handlers.append(handler)
+            else:
+                logger.info("Failed to load handler: {}".format(handler_class))
 
     def cancel_worker(self, action_instance):  # type: (dict) -> bool
         for handler in self.queue_handlers:
