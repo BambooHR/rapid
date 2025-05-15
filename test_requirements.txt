@@ -1,0 +1,5 @@
+ddt
+mock
+pytest==7.1.1
+pytest-xdist
+pyyaml
