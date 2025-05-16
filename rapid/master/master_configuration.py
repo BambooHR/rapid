@@ -15,8 +15,8 @@
 """
 import uuid
 
-from ..lib.framework.injectable import Injectable
-from ..lib.configuration import Configuration
+from rapid.lib.framework.injectable import Injectable
+from rapid.lib.configuration import Configuration
 
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
 
@@ -44,6 +44,7 @@ class MasterConfiguration(Configuration, Injectable):
         self.basic_auth_pass = None
         self.basic_auth = None
         self.ecs_config_file = None
+        self.k8s_config_dir: str = None
 
         super(MasterConfiguration, self).__init__(file_name)
 
@@ -84,5 +85,8 @@ class MasterConfiguration(Configuration, Injectable):
             },
             'ecs': {
                 'ecs_config_file': [None]
+            },
+            'k8s': {
+                'k8s_config_dir': [None]
             }
         }

@@ -27,6 +27,10 @@ class ECSQueueHandler(ContainerHandler, Injectable):
     def container_identifier(self):
         return 'ecs'
 
+    @property
+    def assigned_to_prefix(self) -> str:
+        return self._ASSIGNED_TO_PREFIX
+
     def __init__(self, rapid_config: MasterConfiguration, action_instance_service: ActionInstanceService):
         """
         Parameters
@@ -34,8 +38,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
         rapid_config: MasterConfiguration
         action_instance_service: ActionInstanceService
         """
-        super(ECSQueueHandler, self).__init__(rapid_config)
-        self.action_instance_service = action_instance_service
+        super(ECSQueueHandler, self).__init__(rapid_config, action_instance_service)
         self._ecs_client = None
         self._ecs_configuration = None  # type: ECSConfiguration or None
 
@@ -185,9 +188,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _inject_work_request_parameters(self, task_definition, work_request):
         # type:(dict, WorkRequest) -> None
-        environment_default = [{'name': 'action_instance_id', 'value': str(work_request.action_instance_id)},
-                               {'name': 'workflow_instance_id', 'value': str(work_request.workflow_instance_id)},
-                               {'name': 'pipeline_instance_id', 'value': str(work_request.pipeline_instance_id)}]
+        environment_default = self.get_default_environment(work_request)
 
         (grain_type, image) = self._get_grain_type_split(work_request.grain)
         container_overrides = self._get_task_definition_key(task_definition, 'overrides:dict.containerOverrides:list')
@@ -223,16 +224,6 @@ class ECSQueueHandler(ContainerHandler, Injectable):
                 pass
         return current_pointer
 
-    def _set_task_status(self, action_instance_id, status_id, assigned_to='', start_date=None, end_date=None):
-        # type: (int, int, str, datetime.datetime or None, datetime.datetime or None) -> None
-        assigned_to = f'{self._ASSIGNED_TO_PREFIX}{assigned_to}' if self._ASSIGNED_TO_PREFIX not in assigned_to else assigned_to
-        changes = {'status_id': status_id, 'assigned_to': assigned_to}
-        if start_date:
-            changes['start_date'] = start_date
-        if end_date:
-            changes['end_date'] = end_date
-        self.action_instance_service.edit_action_instance(action_instance_id, changes)
-        
     def _run_task(self, task_definition):
         ecs_client = self._get_ecs_client()
         status_id = StatusConstants.INPROGRESS
