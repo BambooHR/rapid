@@ -17,7 +17,7 @@ class ContainerHandler(QueueHandler, ABC):
     @property
     @abstractmethod
     def container_identifier(self):
-        yield
+        pass
 
     @property
     def assigned_to_prefix(self) -> str:

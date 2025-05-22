@@ -921,7 +921,7 @@ class TestK8SQueueHandler(UnitTest):
     @patch.object(K8SQueueHandler, K8SQueueHandler._get_running_pods.__name__)
     @patch.object(K8SQueueHandler, K8SQueueHandler._job_name.__name__)
     @patch.object(K8SQueueHandler, K8SQueueHandler.can_process_action_instance.__name__)
-    def test_verify_still_working_resets_action_instance_for_each_non_matching_pod(self, mock_can_process, mock_job_name, mock_get_pods, mock_load_client):
+    def test_verify_still_working_resets_action_instance_if_no_matching_pods(self, mock_can_process, mock_job_name, mock_get_pods, mock_load_client):
         """Test that verify_still_working resets action instances for each non-matching pod."""
         # Setup action instance
         action_instance = {
@@ -952,9 +952,8 @@ class TestK8SQueueHandler(UnitTest):
         self.handler.verify_still_working([action_instance], [])
         
         # Verify reset_action_instance was called for each pod
-        self.assertEqual(2, self.action_instance_service.reset_action_instance.call_count)
+        self.assertEqual(1, self.action_instance_service.reset_action_instance.call_count)
         self.action_instance_service.reset_action_instance.assert_has_calls([
-            call(123, check_status=True),
             call(123, check_status=True)
         ])
     
@@ -1179,8 +1178,7 @@ class TestK8SQueueHandler(UnitTest):
         mock_grain_split.return_value = ('k8s', 'non-existent-job')
         
         # Call the method and verify it raises FileNotFoundError
-        with self.assertRaises(FileNotFoundError):
-            self.handler._get_job_definition(work_request)
+        self.assertIsNone(self.handler._get_job_definition(work_request))
         
         mock_grain_split.assert_called_with('k8s://non-existent-job')
 

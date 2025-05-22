@@ -89,7 +89,7 @@ class K8SQueueHandler(ContainerHandler, Injectable):
                 job = yaml.safe_load(f)
                 return job
         except FileNotFoundError:
-            raise
+            return None
 
     def _job_name(self, grain_name: str, pipeline_instance_id: int, action_instance_id: int) -> str:
         # Kubernetes job names are limited to 63 characters
@@ -184,9 +184,12 @@ class K8SQueueHandler(ContainerHandler, Injectable):
                 running_pods = self._get_running_pods()
             try:
                 job_name = self._job_name(action_instance['grain'], action_instance['pipeline_instance_id'], action_instance['id'])
+                pod_found = False
                 for pod in running_pods:
                     if pod.metadata.labels and job_name in pod.metadata.labels.values():
+                        pod_found = True
                         break
+                if not pod_found:
                     self.action_instance_service.reset_action_instance(action_instance['id'], check_status=True)
             except Exception as exception:
                 failed_instances.append(action_instance)
