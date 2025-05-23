@@ -97,3 +97,13 @@ class QueueHandlerShouldSleep(Exception):
 
 class InvalidProcessError(HTTPException):
     pass
+
+class K8SConnectionError(Exception):
+    """Exception raised for errors in the Kubernetes connection."""
+    def __init__(self, message="Kubernetes connection error occurred."):
+        super().__init__(message)
+
+class K8SServiceUnavailable(Exception):
+    """Exception raised when a Kubernetes service is unavailable."""
+    def __init__(self, message="Kubernetes service is unavailable."):
+        super().__init__(message)

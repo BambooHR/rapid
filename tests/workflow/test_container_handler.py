@@ -8,7 +8,7 @@ from rapid.workflow.queue_handlers.container_handlers.container_handler import C
 
 class TestContainerHandler(TestCase):
     def setUp(self):
-        self.container_handler = TestingContainerHandler(Mock())
+        self.container_handler = TestingContainerHandler(Mock(), Mock())
 
     def test_get_grain_type_split_non_splitter(self):
         self.assertEqual(['not splittable'], self.container_handler._get_grain_type_split('not splittable'))
