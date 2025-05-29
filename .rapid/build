@@ -127,7 +127,8 @@ function release_build() {
                     fail "Internal Release failed"
                 fi
 
-                buildStepNotify "rapidbuild" '{"status": "success", "version": "'${version}'"}'
+                # We set status to pending as we will wait for codedeploy to call back.
+                buildStepNotify "rapidbuild" '{"status": "pending", "version": "'${version}'"}'
             else
                 buildStepNotify "rapidbuild"
                 buildStepNotify 'deploypackage'
