@@ -303,7 +303,6 @@ class QaDal(GeneralDal, Injectable):
 
                 status_cache = {}
                 for test, value in results.items():
-                    print(f"test: {test}, value: {value}")
                     status_id = None
                     if 'status' not in value:
                         status_id = StatusConstants.UNKNOWN
