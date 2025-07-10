@@ -16,6 +16,8 @@ then
 fi
 
 function setup() {
+    use_python_version '3.9.20'
+
     if [[ "${branch}" == "" ]]
     then
         export branch=`git branch | grep '*'|awk '{print $2}'`
