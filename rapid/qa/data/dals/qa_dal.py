@@ -308,11 +308,12 @@ class QaDal(GeneralDal, Injectable):
                         status_id = StatusConstants.UNKNOWN
 
                     if 'status' in value:
-                        if value['status'] not in status_cache:
-                            status = session.query(Status).filter(func.lower(Status.name) == func.lower(value['status'])).first()
+                        _check_status = value['status'].lower()
+                        if _check_status not in status_cache:
+                            status = session.query(Status).filter(func.lower(Status.name) == func.lower(_check_status)).first()
                             if status:
                                 status_id = status.id
-                                status_cache[status.name] = status
+                                status_cache[status.name.lower()] = status
                             else:
                                 status_id = StatusConstants.UNKNOWN
                         else:
