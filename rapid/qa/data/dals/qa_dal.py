@@ -303,16 +303,19 @@ class QaDal(GeneralDal, Injectable):
 
                 status_cache = {}
                 for test, value in results.items():
+                    print(f"test: {test}, value: {value}")
                     status_id = None
                     if 'status' not in value:
                         status_id = StatusConstants.UNKNOWN
 
                     if 'status' in value:
-                        if value['status'] not in status_cache:
-                            status = session.query(Status).filter(func.lower(Status.name) == func.lower(value['status'])).first()
+                        _check_status = value['status'].lower()
+                        if _check_status not in status_cache:
+                            print("Status: %s" % _check_status)
+                            status = session.query(Status).filter(func.lower(Status.name) == func.lower(_check_status)).first()
                             if status:
                                 status_id = status.id
-                                status_cache[status.name] = status
+                                status_cache[status.name.lower()] = status
                             else:
                                 status_id = StatusConstants.UNKNOWN
                         else:
