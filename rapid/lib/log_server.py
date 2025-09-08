@@ -60,4 +60,4 @@ class LogServer(object):
             flask_app.log_dir = self.log_dir
 
     def grep_log(self, grep):
-        return Response(self._read_log(grep), content_type='text/plain')
+        return Response(self._read_log(grep), content_type='application/octet-stream')
