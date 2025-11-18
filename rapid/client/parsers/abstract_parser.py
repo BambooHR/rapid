@@ -29,12 +29,12 @@ class AbstractParser(ABC):
 
     @abc.abstractmethod
     def _parse_lines(self, lines):
-        yield
+        ...
 
     @staticmethod
     @abc.abstractmethod
     def get_type():
-        yield
+        ...
 
     def prepare_summary(self):
         return {Constants.STATUS_FAILED: 0, Constants.STATUS_SUCCESS: 0, Constants.STATUS_SKIPPED: 0, Constants.FAILURES_COUNT: self.failures_count}

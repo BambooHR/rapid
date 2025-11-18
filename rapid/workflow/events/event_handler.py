@@ -50,7 +50,7 @@ class EventHandler(ABC):
     @staticmethod
     @abstractmethod
     def get_event_type():
-        yield
+        ...
 
     @abstractmethod
     def handle_event(self, pipeline_instance, action_instance, event):
@@ -64,7 +64,7 @@ class EventHandler(ABC):
         :return:
         :rtype:
         """
-        yield
+        ...
 
     def passes_conditional(self, pipeline_instance, action_instance, conditional):
         """

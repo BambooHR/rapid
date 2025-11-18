@@ -67,7 +67,7 @@ class Configuration(ABC):
         dict
             dict of key, dict of key value mappings.
         """
-        yield
+        ...
 
     def get_section(self, key):
         for section, value in self.section_mapping.items():
