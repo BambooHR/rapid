@@ -115,7 +115,7 @@ class QaTestFile(ABC):
 
     @abstractmethod
     def _get_comment_characters(self):
-        yield
+        ...
 
     def _get_behavior_point_map(self, area, feature, behavior_point):
         area_map = self.__check_area(area)
