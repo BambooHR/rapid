@@ -12,12 +12,12 @@ class QueueHandler(ABC):
 
     @abstractmethod
     def process_work_request(self, work_request, clients):
-        yield
+        ...
 
     @abstractmethod
     def can_process_work_request(self, work_request):
         # type: (WorkRequest) -> bool
-        yield
+        ...
 
     @abstractmethod
     def verify_still_working(self, action_instances: List[Dict], clients) -> List[Dict]:
@@ -26,12 +26,12 @@ class QueueHandler(ABC):
     @abstractmethod
     def can_process_action_instance(self, action_instance):
         # type: (dict) -> bool
-        yield
+        ...
 
     @abstractmethod
     def cancel_worker(self, action_instance):
         # type: (dict) -> bool
-        yield
+        ...
 
     def _get_grain_type_split(self, grain):
         return grain.split(self._GRAIN_SPLIT, 1)

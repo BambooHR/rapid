@@ -127,7 +127,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _get_running_tasks(self) -> Union[List[str], None]:
         next_token = ''
-        cluster = self._ecs_configuration.default_task_definition['cluster']
+        cluster = self.ecs_configuration.default_task_definition['cluster']
         _running_tasks = None
         while next_token is not None:
             tasks = self._get_ecs_client().list_tasks(cluster=cluster,
@@ -176,7 +176,7 @@ class ECSQueueHandler(ContainerHandler, Injectable):
 
     def _get_overridden_task_definition(self, configuration):
         # type: (str) -> dict
-        task_definition = self._ecs_configuration.default_task_definition
+        task_definition = self.ecs_configuration.default_task_definition
         try:
             if configuration:
                 for key, value in json.loads(configuration).items():
@@ -274,6 +274,11 @@ class ECSQueueHandler(ContainerHandler, Injectable):
             self._ecs_client = self._load_aws_config()
         return self._ecs_client
 
+    @property
+    def ecs_configuration(self) -> ECSConfiguration:
+        if self._ecs_configuration is None:
+            self._ecs_configuration = ECSConfiguration(self.rapid_config.ecs_config_file)
+        return self._ecs_configuration
+
     def _load_aws_config(self):
-        self._ecs_configuration = ECSConfiguration(self.rapid_config.ecs_config_file)
-        return boto3.client('ecs', **self._ecs_configuration.aws_credentials)
+        return boto3.client('ecs', **self.ecs_configuration.aws_credentials)

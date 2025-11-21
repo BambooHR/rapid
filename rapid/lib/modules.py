@@ -21,7 +21,7 @@ class QaModule(ABC):
 
     @abstractmethod
     def save_results(self, action_instance, session, post_data):
-        yield
+        ...
 
     @abstractmethod
     def reset_results(self, action_instance_id, session):
@@ -31,7 +31,7 @@ class QaModule(ABC):
         :param session:
         :return:
         """
-        yield
+        ...
 
     @abstractmethod
     def analyze_tests(self, pipeline_instance_id, json):
@@ -44,7 +44,7 @@ class QaModule(ABC):
         :return: dictionary
         :rtype: dict
         """
-        yield
+        ...
 
     @abstractmethod
     def get_test_results(self, action_instance_id, filters=None):
@@ -57,46 +57,46 @@ class QaModule(ABC):
         :return:
         :rtype: dict
         """
-        yield
+        ...
 
     @abstractmethod
     def get_qa_testmap_coverage(self, pipeline_instance_id):
-        yield
+        ...
 
 
 class WorkflowModule(ABC):
 
     @abstractmethod
     def start_pipeline_via_repo(self, repo_name, parameters):
-        yield
+        ...
 
     @abstractmethod
     def get_status_by_name(self, status_name, session=None):
-        yield
+        ...
 
     @abstractmethod
     def start_pipeline_by_id(self, pipeline_id, json_data=None):
-        yield
+        ...
 
     @abstractmethod
     def get_pipeline_instance_by_id(self, pipeline_instance_id):
-        yield
+        ...
 
 
 class CiModule(ABC):
 
     @abstractmethod
     def get_vcs_by_repo_name(self, repo_name):
-        yield
+        ...
 
     @abstractmethod
     def create_git_commit(self, commit_identifier, vcs_id, pipeline_instance_id=None, additional_parameters=None, session=None):
-        yield
+        ...
 
     @abstractmethod
     def get_by_identifier(self, commit_identifier):
-        yield
+        ...
 
     @abstractmethod
     def get_vcs_by_pipeline_id(self, pipeline_id, session=None):
-        yield
+        ...
