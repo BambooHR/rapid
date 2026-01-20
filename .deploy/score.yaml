@@ -1,0 +1,102 @@
+# Workload 1: rapidmaster (with traffic, no queue)
+apiVersion: score.dev/v1b1
+metadata:
+  name: rapidmaster
+
+service:
+  ports:
+    http:
+      port: 80
+
+containers:
+  rapid:
+    image: ghcr.io/bamboohr/rapid:${IMAGE_TAG}
+
+    resources:
+      requests:
+        cpu: "300m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1024Mi"
+
+    variables:
+      # Non-secrets inlined
+      RAPID_QUEUE_MANAGER: "false"
+      RAPID_PORT: "80"
+
+      # Datadog agent
+      DD_AGENT_HOST: ${resources.dd-agent.host}
+      DD_AGENT_PORT: ${resources.dd-agent.trace_port}
+
+      # Secrets from Vault
+      GITHUB_TOKEN: ${resources.secrets.github_token}
+      GITHUB_APP_ID: ${resources.secrets.github_app_id}
+      GITHUB_APP_INSTALLATION_ID: ${resources.secrets.github_app_installation_id}
+      GITHUB_APP_PRIVATE_KEY: ${resources.secrets.github_app_private_key}
+      RAPIDCI_API_KEY: ${resources.secrets.rapidci_api_key}
+      AWS_ACCESS_KEY_ID: ${resources.secrets.aws_access_key_id}
+      AWS_SECRET_ACCESS_KEY: ${resources.secrets.aws_secret_access_key}
+      SLACK_TOKEN: ${resources.secrets.slack_token}
+      SLACK_SIGNING_SECRET: ${resources.secrets.slack_signing_secret}
+
+resources:
+  secrets:
+    type: secrets
+    class: vault-kv
+    id: rapid-secrets
+
+  dd-agent:
+    type: datadog-agent
+    id: cluster
+
+---
+# Workload 2: rapidmaster-queue (no traffic, queue enabled)
+apiVersion: score.dev/v1b1
+metadata:
+  name: rapidmaster-queue
+
+# No service - this is a worker that processes the queue
+
+containers:
+  rapid:
+    image: ghcr.io/bamboohr/rapid:${IMAGE_TAG}
+
+    resources:
+      requests:
+        cpu: "300m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1024Mi"
+
+    variables:
+      # Non-secrets inlined - queue manager enabled
+      RAPID_QUEUE_MANAGER: "true"
+      RAPID_PORT: "80"
+
+      # Datadog agent
+      DD_AGENT_HOST: ${resources.dd-agent.host}
+      DD_AGENT_PORT: ${resources.dd-agent.trace_port}
+
+      # Secrets from Vault (shared with rapidmaster)
+      GITHUB_TOKEN: ${resources.secrets.github_token}
+      GITHUB_APP_ID: ${resources.secrets.github_app_id}
+      GITHUB_APP_INSTALLATION_ID: ${resources.secrets.github_app_installation_id}
+      GITHUB_APP_PRIVATE_KEY: ${resources.secrets.github_app_private_key}
+      RAPIDCI_API_KEY: ${resources.secrets.rapidci_api_key}
+      AWS_ACCESS_KEY_ID: ${resources.secrets.aws_access_key_id}
+      AWS_SECRET_ACCESS_KEY: ${resources.secrets.aws_secret_access_key}
+      SLACK_TOKEN: ${resources.secrets.slack_token}
+      SLACK_SIGNING_SECRET: ${resources.secrets.slack_signing_secret}
+
+resources:
+  # Shared secrets resource with rapidmaster via id
+  secrets:
+    type: secrets
+    class: vault-kv
+    id: rapid-secrets
+
+  dd-agent:
+    type: datadog-agent
+    id: cluster
