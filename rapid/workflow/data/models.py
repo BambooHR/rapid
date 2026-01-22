@@ -17,7 +17,7 @@
 import datetime
 
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, String, ForeignKey, Integer, Boolean, Text
+from sqlalchemy import Column, String, ForeignKey, Integer, Boolean, Text, UniqueConstraint
 
 from rapid.lib import get_declarative_base
 from rapid.lib.constants import StatusConstants
@@ -230,4 +230,29 @@ class PipelineEvent(BaseModel, Base):
     conditional = Column(Text, nullable=False)
     config = Column(Text, nullable=False)
 
+class PipelineActionCondition(BaseModel, Base):
+    pipeline_id = Column(Integer, ForeignKey('pipelines.id'), nullable=False, index=True)
+    action_id = Column(Integer, ForeignKey('actions.id'), nullable=False, index=True)
+    status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
+    expression = Column(Text, nullable=False)
 
+    pipeline = relationship('Pipeline')
+    action = relationship('Action')
+    status = relationship('Status')
+
+    __table_args__ = (
+        UniqueConstraint('pipeline_id', 'action_id', name='uq_pipeline_action_condition'),
+    )
+
+
+class ActionInstanceCondition(BaseModel, Base):
+    action_instance_id = Column(Integer, ForeignKey('action_instances.id'), nullable=False, index=True)
+    pipeline_id = Column(Integer, ForeignKey('pipelines.id'), nullable=False, index=True)
+    action_id = Column(Integer, ForeignKey('actions.id'), nullable=False, index=True)
+    status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
+    expression = Column(Text, nullable=False)
+
+    action_instance = relationship('ActionInstance')
+    pipeline = relationship('Pipeline')
+    action = relationship('Action')
+    status = relationship('Status')
