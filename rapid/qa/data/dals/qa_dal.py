@@ -317,7 +317,7 @@ class QaDal(GeneralDal, Injectable):
                             else:
                                 status_id = StatusConstants.UNKNOWN
                         else:
-                            status_id = status_cache[value['status']].id
+                            status_id = status_cache[_check_status].id
 
                     if not failures_count or status_id == StatusConstants.FAILED:
                         qa_test_history = QaTestHistory(test_id=test_cache[test].id,
