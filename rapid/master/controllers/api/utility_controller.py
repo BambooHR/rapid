@@ -92,7 +92,7 @@ class UtilityRouter(object):
         if 'Content-Type' in in_request.headers and in_request.headers['Content-Type'] == 'application/json':
             if 'X-Rapidci-Register-Key' in in_request.headers and in_request.headers['X-Rapidci-Register-Key'] == self.flask_app.rapid_config.register_api_key:
                 remote_addr = in_request.remote_addr
-                remote_port = in_request.headers['X-Rapidci-port'] if 'X-Rapidci-port' in in_request.headers else None
+                remote_port = int(in_request.headers['X-Rapidci-port']) if 'X-Rapidci-port' in in_request.headers else None
                 time_elapse = max((time.time() * 1000) - float(in_request.headers['X-Rapidci-time']), 1) if 'X-Rapidci-time' in in_request.headers else None
 
                 grains = in_request.json['grains'] if 'grains' in in_request.json else ''
@@ -100,14 +100,14 @@ class UtilityRouter(object):
                 grain_restrict = in_request.json['grain_restrict'] if 'grain_restrict' in in_request.json else False
 
                 api_key = in_request.headers['X-Rapidci-Client-Key'] if 'X-Rapidci-Client-Key' in in_request.headers else False
-                is_ssl = in_request.headers['X-Is-Ssl'].lower() == 'true' if 'X-is_ssl' in in_request.headers else False
+                is_ssl = in_request.headers['X-is_ssl'].lower() == 'true' if 'X-is_ssl' in in_request.headers else False
 
                 if remote_port == 443:
                     is_ssl = True
 
                 if not api_key:
                     raise Exception("NO API KEY!")
-                client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
+                client = Client(remote_addr, remote_port, grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
 
                 if HeaderConstants.SINGLE_USE not in in_request.headers:
                     self.store_client(remote_addr, client)
