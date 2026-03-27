@@ -161,7 +161,7 @@ class ClientCommunicator(Communicator):
                    'X-RAPIDCI-TIME': str(time.time() * 1000),
                    'X-RAPIDCI-CLIENT-KEY': client_config.api_key if hasattr(client_config, 'api_key') else ''}
         if hasattr(client_config, 'use_ssl') and client_config.use_ssl:
-            headers['X-is_ssl'] = 'true'
+            headers['X-Is-Ssl'] = 'true'
 
         try:
             if client_config.is_single_use:

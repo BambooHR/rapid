@@ -100,7 +100,7 @@ class UtilityRouter(object):
                 grain_restrict = in_request.json['grain_restrict'] if 'grain_restrict' in in_request.json else False
 
                 api_key = in_request.headers['X-Rapidci-Client-Key'] if 'X-Rapidci-Client-Key' in in_request.headers else False
-                is_ssl = in_request.headers['X-is_ssl'].lower() == 'true' if 'X-is_ssl' in in_request.headers else False
+                is_ssl = in_request.headers['X-Is-Ssl'].lower() == 'true' if 'X-is_ssl' in in_request.headers else False
 
                 if remote_port == 443:
                     is_ssl = True
