@@ -24,7 +24,7 @@ COPY ./setup.py ./pyproject.toml uv.lock README.rst /setup/
 ARG EXTRAS=""
 RUN apt-get update -y && \
     apt-get install -y pkg-config libexpat1 openssl libssl-dev && \
-    cd /setup/ && pip install uv && UWSGI_PROFILE_OVERRIDE=ssl=true uv add uwsgi mysqlclient mysql-connector-python==8.3.0 &&  \
+    cd /setup/ && pip install uv && UWSGI_PROFILE_OVERRIDE=ssl=true uv add uwsgi mysqlclient mysql-connector-python==8.4.0 &&  \
     uv sync --extra master ${EXTRAS} && \
     mv /setup/.venv /opt/venv && \
     apt-get purge -y --auto-remove build-essential gcc python3-dev default-libmysqlclient-dev libpcre3-dev
