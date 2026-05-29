@@ -6,7 +6,7 @@ requests==2.32.0
 futures;python_version<'3.9'
 psutil
 jsonpickle
-mysql-connector-python
+mysqlclient
 pygithub
 simplejson==3.10.0
 simpleeval
