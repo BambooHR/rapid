@@ -36,6 +36,8 @@ FROM python:3.10.19-slim AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
 COPY --from=compile-image /usr/lib/ /usr/lib/
 COPY ./configs /configs
+# libmariadb3 is the runtime lib mysqlclient links against (compile stage's --auto-remove purges it)
+RUN apt-get update && apt-get install -y --no-install-recommends libmariadb3 && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 80
 # Make sure we use the virtualenv:
