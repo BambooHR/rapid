@@ -34,9 +34,9 @@ class Action(BaseModel, Base):
     executable = Column(String(100), nullable=False)
     args = Column(String(255), nullable=False)
     order = Column(Integer, nullable=False, index=True)
-    # quote=True: `manual` is a reserved word in MySQL 8.0+; without quoting,
-    # generated SQL fails with ER_PARSE_ERROR on MySQL 8.4.
-    manual = Column("manual", Boolean, default=False, nullable=False, quote=True)
+    # `manual` is a MySQL 8.4 reserved word; auto-quoted globally via
+    # rapid.mysql_reserved_words (registered in rapid/__init__.py).
+    manual = Column(Boolean, default=False, nullable=False)
     callback_required = Column(Boolean, default=False, nullable=False)
     grain = Column(String(100))
     slices = Column(Integer, default=0)
@@ -70,8 +70,8 @@ class ActionInstance(DateModel, BaseModel, Base):
     executable = Column(String(100), nullable=False)
     args = Column(String(255), nullable=False)
     order = Column(Integer, nullable=False, default=0, index=True)
-    # quote=True: see note on Action.manual above — required for MySQL 8.0+.
-    manual = Column("manual", Boolean, nullable=False, default=False, quote=True)
+    # `manual` is a MySQL 8.4 reserved word; auto-quoted globally (see Action.manual).
+    manual = Column(Boolean, nullable=False, default=False)
     callback_required = Column(Boolean, nullable=False, default=False)
     grain = Column(String(100))
     assigned_to = Column(String(150), nullable=True)

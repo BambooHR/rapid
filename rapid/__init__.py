@@ -13,3 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+# Register MySQL 8.4 reserved words (e.g. `manual`) so SQLAlchemy auto-quotes them across
+# all tables, queries, and migrations. Done at the package root -- the earliest point that
+# runs in every DB entry point (master app + alembic env.py) before any engine/compilation.
+# Guarded for environments without SQLAlchemy (the rapid client has no DB dependency).
+import importlib.util as _importlib_util
+
+if _importlib_util.find_spec("sqlalchemy") is not None:
+    from rapid.mysql_reserved_words import register_mysql_reserved_words
+
+    register_mysql_reserved_words()
