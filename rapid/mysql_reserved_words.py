@@ -16,25 +16,45 @@
  Register MySQL reserved words that SQLAlchemy's MySQL dialect does not yet quote.
 
  MySQL 8.4 promoted MANUAL to a reserved word, but SQLAlchemy's RESERVED_WORDS_MYSQL set
- has not caught up. Without this registration SQLAlchemy emits the `manual` column
- unquoted and MySQL 8.4 rejects it with ER_PARSE_ERROR (1064) -- in both ORM queries and
- Alembic-generated DDL (op.create_table references the bare column too, which per-column
- quote=True on the model does NOT fix).
+ has not caught up. Without this, SQLAlchemy emits the `manual` column unquoted and MySQL
+ 8.4 rejects it with ER_PARSE_ERROR (1064) -- in both ORM queries and Alembic DDL
+ (op.create_table references the bare column, which per-column quote=True does NOT fix).
 
- Registering the word in the dialect's reserved-word set auto-quotes the identifier across
- every table, query, and migration -- no per-column annotation required. It mutates a
- process-global SQLAlchemy set, so it must run BEFORE any engine/dialect is created or any
- statement is compiled; it is invoked from rapid/__init__.py (the package root, the
- earliest point that runs in every DB entry point).
+ register_if_mysql() detects the backend from the connection string and only imports/
+ registers for MySQL, so non-MySQL deployments (e.g. SQLite, which the tests use) never
+ import the MySQL dialect or touch its reserved-word set. It must be called BEFORE the
+ engine / identifier-preparer is created -- registering afterward has no effect, due to
+ dialect/statement caching -- so it is wired into configure_data_layer() (master app) and
+ the Alembic env.py, each of which knows the connection string before building the engine.
 """
-from sqlalchemy.dialects.mysql import reserved_words
 
 # MySQL 8.4 reserved words absent from SQLAlchemy's RESERVED_WORDS_MYSQL. Only `manual` is
-# used as an identifier in rapid today; add others here (e.g. parallel/qualify/tablesample)
-# if a future column reuses them.
+# used as an identifier in rapid today; add others (parallel/qualify/tablesample) here if a
+# future column reuses them.
 _MYSQL_8_4_RESERVED_WORDS = frozenset({"manual"})
 
 
+def is_mysql_url(db_connect_string):
+    """Return True if the connection string targets a MySQL backend (any driver)."""
+    if not db_connect_string:
+        return False
+    from sqlalchemy.engine.url import make_url
+    return make_url(db_connect_string).get_backend_name() == "mysql"
+
+
 def register_mysql_reserved_words():
-    """Add MySQL 8.4 reserved words to SQLAlchemy's MySQL dialect. Idempotent."""
+    """Add the MySQL 8.4 reserved words to SQLAlchemy's MySQL dialect set. Idempotent."""
+    from sqlalchemy.dialects.mysql import reserved_words
     reserved_words.RESERVED_WORDS_MYSQL.update(_MYSQL_8_4_RESERVED_WORDS)
+
+
+def register_if_mysql(db_connect_string):
+    """Register the MySQL 8.4 reserved words only when the DB is MySQL.
+
+    Returns True if registration ran, False otherwise. Detects the backend from the URL so
+    non-MySQL setups never import the MySQL dialect. Must run before the engine is created.
+    """
+    if not is_mysql_url(db_connect_string):
+        return False
+    register_mysql_reserved_words()
+    return True

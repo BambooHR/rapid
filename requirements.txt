@@ -6,6 +6,8 @@ requests==2.32.0
 futures;python_version<'3.9'
 psutil
 jsonpickle
+# mysqlclient is the MySQL driver for the master; production installs the master deps via
+# puppet (rapid_framework::master::install) — see the [master] extra in pyproject.toml.
 mysqlclient
 pygithub
 simplejson==3.10.0
