@@ -26,6 +26,7 @@ except ImportError:
 from flask import Flask, request
 from flask.wrappers import Response
 from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import asc
 
 from rapid.lib.queue_handler_constants import QueueHandlerConstants
@@ -195,6 +196,7 @@ class PipelineDal(GeneralDal, Injectable):
 
     def get_actions_query(self, session, pipeline_id):
         return session.query(Stage, Workflow, Action) \
+            .options(joinedload(Action.configuration)) \
             .filter(Stage.pipeline_id == pipeline_id) \
             .filter(Stage.id == Workflow.stage_id) \
             .filter(Workflow.id == Action.workflow_id) \

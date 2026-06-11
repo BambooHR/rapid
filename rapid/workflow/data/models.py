@@ -49,13 +49,19 @@ class Action(BaseModel, Base):
         action_instance.status_id = StatusConstants.NEW
         action_instance.action_id = self.id
 
-        return ObjectConverter.copy_attributes(self, action_instance, ['cmd',
-                                                                       'executable',
-                                                                       'args',
-                                                                       'order',
-                                                                       'manual',
-                                                                       'callback_required',
-                                                                       'grain'])
+        ObjectConverter.copy_attributes(self, action_instance, ['cmd',
+                                                                'executable',
+                                                                'args',
+                                                                'order',
+                                                                'manual',
+                                                                'callback_required',
+                                                                'grain'])
+
+        if self.configuration is not None:
+            _configuration = ActionInstanceConfig()
+            _configuration.configuration = self.configuration.configuration
+            action_instance.configuration = _configuration
+        return action_instance
 
 
 class ActionConfig(BaseModel, Base):
@@ -80,7 +86,13 @@ class ActionInstance(DateModel, BaseModel, Base):
     workflow_instance_id = Column(Integer, ForeignKey('workflow_instances.id'), nullable=False, index=True)
     pipeline_instance_id = Column(Integer, ForeignKey("pipeline_instances.id"), nullable=False, index=True)
 
-    configuration = relationship('ActionInstanceConfig', lazy='select', uselist=False, backref="parent")
+    configuration = relationship(
+        'ActionInstanceConfig',
+        lazy='select',
+        uselist=False,
+        cascade='save-update, merge, delete, delete-orphan',
+        backref='parent',
+    )
     status = relationship('Status')
     pipeline_instance = relationship('PipelineInstance')
     action = relationship('Action')

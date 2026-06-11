@@ -15,7 +15,7 @@
 """
 from ddt import ddt, data
 
-from rapid.workflow.data.models import Pipeline, Stage, Workflow, PipelineInstance, StageInstance, WorkflowInstance, Action, ActionInstance
+from rapid.workflow.data.models import Pipeline, Stage, Workflow, PipelineInstance, StageInstance, WorkflowInstance, Action, ActionInstance, ActionConfig, ActionInstanceConfig
 from tests.framework.unit_test import UnitTest
 
 
@@ -54,3 +54,20 @@ class TestModels(UnitTest):
         if 'check_fields' in model_map:
             for key, value in model_map['check_fields'].items():
                 self.assertEqual(value, getattr(instance_conversion, key))
+
+    def test_action_convert_to_instance_copies_configuration(self):
+        action = Action(name='Testing', id=1, cmd='bogus', executable='something', args='')
+        action.configuration = ActionConfig(configuration='{"foo": "bar"}')
+
+        action_instance = action.convert_to_instance()
+
+        self.assertIsNotNone(action_instance.configuration)
+        self.assertIsInstance(action_instance.configuration, ActionInstanceConfig)
+        self.assertEqual('{"foo": "bar"}', action_instance.configuration.configuration)
+
+    def test_action_convert_to_instance_without_configuration(self):
+        action = Action(name='Testing', id=1, cmd='bogus', executable='something', args='')
+
+        action_instance = action.convert_to_instance()
+
+        self.assertIsNone(action_instance.configuration)
