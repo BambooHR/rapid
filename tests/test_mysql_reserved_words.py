@@ -27,6 +27,19 @@ from tests.framework.unit_test import UnitTest
 @ddt
 class TestMysqlReservedWords(UnitTest):
 
+    def setUp(self):
+        # RESERVED_WORDS_MYSQL is a process-global set; start each test from a clean
+        # slate so the register assertions are meaningful, and restore on teardown.
+        super().setUp()
+        self._had_manual = "manual" in reserved_words.RESERVED_WORDS_MYSQL
+        reserved_words.RESERVED_WORDS_MYSQL.discard("manual")
+
+    def tearDown(self):
+        reserved_words.RESERVED_WORDS_MYSQL.discard("manual")
+        if self._had_manual:
+            reserved_words.RESERVED_WORDS_MYSQL.add("manual")
+        super().tearDown()
+
     @data(
         ("mysql+mysqldb://root:pw@host/db", True),
         ("mysql://root:pw@host/db", True),
@@ -49,3 +62,4 @@ class TestMysqlReservedWords(UnitTest):
 
     def test_register_if_mysql_skips_non_mysql(self):
         assert register_if_mysql("sqlite:///data.db") is False
+        assert "manual" not in reserved_words.RESERVED_WORDS_MYSQL
