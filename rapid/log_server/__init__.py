@@ -24,6 +24,3 @@ app.rapid_config = {'_is': 'logger'}
 
 def configure_application(flask_app, args):
     setup_logging(flask_app)
-    from rapid.lib.log_server import LogServer
-    log_server = LogServer(args.log_dir)
-    log_server.configure_application(flask_app)
