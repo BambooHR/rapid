@@ -31,6 +31,10 @@ def configure_data_layer(flask_app):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = flask_app.rapid_config.db_connect_string
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     flask_app.db = _db
+    # Register MySQL 8.4 reserved words (e.g. `manual`) before the engine is created, but
+    # only for MySQL backends — non-MySQL setups never import the MySQL dialect.
+    from rapid.mysql_reserved_words import register_if_mysql
+    register_if_mysql(flask_app.rapid_config.db_connect_string)
     _db.init_app(flask_app)
 
     from rapid.master.data.database.dal import setup_dals

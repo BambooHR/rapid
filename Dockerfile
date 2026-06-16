@@ -24,7 +24,7 @@ COPY ./setup.py ./pyproject.toml uv.lock README.rst /setup/
 ARG EXTRAS=""
 RUN apt-get update -y && \
     apt-get install -y pkg-config libexpat1 openssl libssl-dev && \
-    cd /setup/ && pip install uv && UWSGI_PROFILE_OVERRIDE=ssl=true uv add uwsgi mysqlclient mysql-connector-python==8.3.0 &&  \
+    cd /setup/ && pip install uv && UWSGI_PROFILE_OVERRIDE=ssl=true uv add uwsgi mysqlclient &&  \
     uv sync --extra master ${EXTRAS} && \
     mv /setup/.venv /opt/venv && \
     apt-get purge -y --auto-remove build-essential gcc python3-dev default-libmysqlclient-dev libpcre3-dev
@@ -36,6 +36,8 @@ FROM python:3.10.19-slim AS build-image
 COPY --from=compile-image /opt/venv /opt/venv
 COPY --from=compile-image /usr/lib/ /usr/lib/
 COPY ./configs /configs
+# libmariadb3 is the runtime lib mysqlclient links against (compile stage's --auto-remove purges it)
+RUN apt-get update && apt-get install -y --no-install-recommends libmariadb3 && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 80
 # Make sure we use the virtualenv:

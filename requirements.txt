@@ -6,7 +6,9 @@ requests==2.32.0
 futures;python_version<'3.9'
 psutil
 jsonpickle
-mysql-connector-python
+# mysqlclient is the master's MySQL driver — added to the image via the Dockerfile's
+# `uv add` and installed in prod via puppet (rapid_framework::master::install).
+mysqlclient
 pygithub
 simplejson==3.10.0
 simpleeval
