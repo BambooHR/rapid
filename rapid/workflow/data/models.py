@@ -34,6 +34,9 @@ class Action(BaseModel, Base):
     executable = Column(String(100), nullable=False)
     args = Column(String(255), nullable=False)
     order = Column(Integer, nullable=False, index=True)
+    # `manual` is a MySQL 8.4 reserved word; auto-quoted globally via
+    # rapid.mysql_reserved_words.register_if_mysql (called from configure_data_layer
+    # and the Alembic env.py, before the engine is created).
     manual = Column(Boolean, default=False, nullable=False)
     callback_required = Column(Boolean, default=False, nullable=False)
     grain = Column(String(100))
@@ -74,6 +77,7 @@ class ActionInstance(DateModel, BaseModel, Base):
     executable = Column(String(100), nullable=False)
     args = Column(String(255), nullable=False)
     order = Column(Integer, nullable=False, default=0, index=True)
+    # `manual` is a MySQL 8.4 reserved word; auto-quoted globally (see Action.manual).
     manual = Column(Boolean, nullable=False, default=False)
     callback_required = Column(Boolean, nullable=False, default=False)
     grain = Column(String(100))

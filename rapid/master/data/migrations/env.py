@@ -85,6 +85,11 @@ def run_migrations_online():
     finally:
         connection.close()
 
+# Register MySQL 8.4 reserved words (e.g. `manual`) before any DDL is compiled, but only
+# for MySQL backends — non-MySQL setups never import the MySQL dialect.
+from rapid.mysql_reserved_words import register_if_mysql
+register_if_mysql(config.get_main_option("sqlalchemy.url"))
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
