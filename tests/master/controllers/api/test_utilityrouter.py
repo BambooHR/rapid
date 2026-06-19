@@ -18,7 +18,7 @@ from unittest import TestCase
 from flask import Response
 from mock import MagicMock, Mock, patch
 
-from rapid.lib.exceptions import UnAuthorizedException
+from rapid.lib.exceptions import HttpException
 from rapid.master.controllers.api.utility_controller import UtilityRouter
 
 
@@ -67,17 +67,17 @@ class TestUtilityRouter(TestCase):
         self.assertIn(b'"key"', view().data)
 
     def test_register_request_raises_unauthorized_when_content_type_is_not_json(self):
-        with self.assertRaises(UnAuthorizedException):
+        with self.assertRaises(HttpException):
             self.router.register_request(_make_request(content_type='text/plain'))
 
     def test_register_request_raises_unauthorized_when_register_key_is_invalid(self):
-        with self.assertRaises(UnAuthorizedException):
+        with self.assertRaises(HttpException):
             self.router.register_request(_make_request(register_key='bad-key'))
 
     def test_register_request_raises_unauthorized_when_client_api_key_is_missing(self):
         req = _make_request()
         req.headers = {k: v for k, v in req.headers.items() if k != 'X-Rapidci-Client-Key'}
-        with self.assertRaises(UnAuthorizedException):
+        with self.assertRaises(HttpException):
             self.router.register_request(req)
 
     @patch('rapid.master.controllers.api.utility_controller.jsonpickle.encode', return_value='{}')

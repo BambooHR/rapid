@@ -19,7 +19,7 @@ from flask import request, Response
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.constants import HeaderConstants
-from rapid.lib.exceptions import HttpException, UnAuthorizedException, VcsNotFoundException
+from rapid.lib.exceptions import HttpException, VcsNotFoundException
 from rapid.lib.store_service import StoreService
 from rapid.lib.version import Version
 from rapid.master.communicator.client import Client
@@ -50,9 +50,8 @@ class UtilityRouter(object):
         self.flask_app.register_error_handler(VcsNotFoundException, self.http_exception_handler)
 
     def http_exception_handler(self, exception):
-        response = Response(json.dumps(exception.to_dict()))
-        response.status_code = exception.status_code
-        response.content_type = 'application/json'
+        response = Response(exception.get_body(), content_type='application/json')
+        response.status_code = exception.code
         return response
 
     @json_response()
@@ -107,7 +106,7 @@ class UtilityRouter(object):
                     is_ssl = True
 
                 if not api_key:
-                    raise UnAuthorizedException("NO API KEY!")
+                    raise HttpException('Not Allowed', 403)
                 client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
 
                 if HeaderConstants.SINGLE_USE not in in_request.headers:
@@ -117,7 +116,7 @@ class UtilityRouter(object):
                                 content_type='application/json', headers={'Content-Type': 'application/json',
                                                                           'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key,
                                                                           Version.HEADER: Version.get_version()})
-        raise UnAuthorizedException('Not Allowed')
+        raise HttpException('Not Allowed', 403)
 
     def store_client(self, remote_addr, definition):
         clients = self._get_clients()
