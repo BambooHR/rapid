@@ -139,6 +139,8 @@ def json_response(exception_class=None, message=None):
         def wrapped_json_response(*args, **kwargs):
             try:
                 response = _f(*args, **kwargs)
+                if isinstance(response, Response):
+                    return response
                 return Response(json.dumps(response), content_type="application/json")
             except Exception as exception_stuff:  # pylint: disable=broad-except
                 if hasattr(exception_stuff, 'get_body'):

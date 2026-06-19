@@ -19,7 +19,7 @@ from flask import request, Response
 
 from rapid.lib import api_key_required, json_response
 from rapid.lib.constants import HeaderConstants
-from rapid.lib.exceptions import HttpException, VcsNotFoundException
+from rapid.lib.exceptions import HttpException, UnAuthorizedException, VcsNotFoundException
 from rapid.lib.store_service import StoreService
 from rapid.lib.version import Version
 from rapid.master.communicator.client import Client
@@ -82,6 +82,7 @@ class UtilityRouter(object):
                 clients[client['version']].append(client)
         return Response(json.dumps(clients), content_type='application/json')
 
+    @json_response()
     def register_client(self):
         return self.register_request(request)
 
@@ -106,7 +107,7 @@ class UtilityRouter(object):
                     is_ssl = True
 
                 if not api_key:
-                    raise Exception("NO API KEY!")
+                    raise UnAuthorizedException("NO API KEY!")
                 client = Client(remote_addr, int(remote_port), grains, grain_restrict, api_key, is_ssl, hostname, time_elapse)
 
                 if HeaderConstants.SINGLE_USE not in in_request.headers:
@@ -116,7 +117,7 @@ class UtilityRouter(object):
                                 content_type='application/json', headers={'Content-Type': 'application/json',
                                                                           'X-Rapidci-Master-Key': self.flask_app.rapid_config.api_key,
                                                                           Version.HEADER: Version.get_version()})
-        raise Exception('Not Allowed')
+        raise UnAuthorizedException('Not Allowed')
 
     def store_client(self, remote_addr, definition):
         clients = self._get_clients()
