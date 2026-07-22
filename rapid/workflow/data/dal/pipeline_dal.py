@@ -87,7 +87,9 @@ class PipelineDal(GeneralDal, Injectable):
 
     def start_pipeline_instance(self, pipeline_id):
         data = request.get_json()
-        return "It worked!" if self.create_pipeline_instance(pipeline_id, data) else "It Failed!"
+        worked = self.create_pipeline_instance(pipeline_id, data)
+        message = "It worked!" if worked else "It Failed!"
+        return Response(out_json.dumps({"message": message}), status=200 if worked else 500, content_type='application/json')
 
     def get_pipeline_by_id(self, pipeline_id, session=None):
         if session is None:

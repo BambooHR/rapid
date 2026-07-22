@@ -14,6 +14,11 @@
  limitations under the License.
 """
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from flask import Response
 
 from rapid.lib.version import Version
@@ -31,4 +36,5 @@ class UpgradeController(object):
 
     def upgrade_master(self, version):
         worked = UpgradeUtil.upgrade_version(version, self.flask_app.rapid_config)
-        return Response("It worked!" if worked else "It didn't work, version {} restored!".format(Version.get_version()), status=200 if worked else 505)
+        message = "It worked!" if worked else "It didn't work, version {} restored!".format(Version.get_version())
+        return Response(json.dumps({"message": message}), status=200 if worked else 505, content_type='application/json')

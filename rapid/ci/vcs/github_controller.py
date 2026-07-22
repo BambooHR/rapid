@@ -19,11 +19,10 @@ from functools import wraps
 
 from flask import Flask
 from flask.globals import request
-from flask.wrappers import Response
 
 from rapid.master.master_configuration import MasterConfiguration
 from rapid.ci.data.github_dal import GithubHelper
-from rapid.lib import json_response, HttpException
+from rapid.lib import json_response, HttpException, json_error_response
 from rapid.lib.framework.injectable import Injectable
 from rapid.lib.modules import WorkflowModule
 
@@ -47,7 +46,7 @@ class GithubController(Injectable):
             if 'X-Hub-Signature' in request.headers \
                     and GithubHelper.is_valid_request(request.headers['X-Hub-Signature'], self.rapid_config.github_webhooks_key, request.data):
                 return func(*args, **kwargs)
-            return Response("Not authorized", status=401)
+            return json_error_response("Not authorized", 401)
         return decorated_view
 
     def __process_request(self):
