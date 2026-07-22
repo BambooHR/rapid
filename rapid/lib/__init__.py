@@ -97,13 +97,35 @@ def setup_ioc(flask_app):
     IOC.register_global(Flask, flask_app)
 
 
+def json_error_response(message, status=500):
+    return Response(json.dumps({"message": message}), status=status, content_type='application/json')
+
+
+def register_json_error_handlers(flask_app):
+    """Ensure every unhandled error leaves the app as JSON rather than Flask's default HTML page."""
+    from werkzeug.exceptions import HTTPException
+
+    def handle_http_exception(error):
+        # rapid HttpException subclasses already render a JSON body via get_body(); pass them through.
+        if isinstance(error, HttpException):
+            return error
+        return json_error_response(error.description, error.code or 500)
+
+    def handle_uncaught_exception(error):
+        logging.getLogger('rapid').exception(error)
+        return json_error_response("An internal error occurred.", 500)
+
+    flask_app.register_error_handler(HTTPException, handle_http_exception)
+    flask_app.register_error_handler(Exception, handle_uncaught_exception)
+
+
 def api_key_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
         if 'X-Rapidci-Api-Key' in get_current_request().headers \
                 and RoutingUtil.is_valid_request(get_current_request().headers['X-Rapidci-Api-Key'], get_current_app().rapid_config.api_key):
             return func(*args, **kwargs)
-        return Response("Not authorized", status=401)
+        return json_error_response("Not authorized", 401)
     return decorated_view
 
 
@@ -126,7 +148,7 @@ def basic_auth(func):
                 return func(*args, **kwargs)
         except (KeyError, TypeError):
             pass
-        return Response("Invalid Authorization", status=401)
+        return json_error_response("Invalid Authorization", 401)
     return wrapper
 
 
@@ -143,13 +165,13 @@ def json_response(exception_class=None, message=None):
                     return response
                 return Response(json.dumps(response), content_type="application/json")
             except Exception as exception_stuff:  # pylint: disable=broad-except
-                if hasattr(exception_stuff, 'get_body'):
-                    return exception_stuff
-                exception = exception_class(message) if exception_class is not None else Exception(str(exception_stuff))
-                response = Response(json.dumps(exception.to_dict())) if hasattr(exception, 'to_dict') else Response(json.dumps({"message": exception.__dict__}))
-                response.status_code = exception.status_code if hasattr(exception, 'status_code') else 500
-                response.content_type = 'application/json'
-                return response
+                if isinstance(exception_stuff, HttpException):
+                    return exception_stuff  # already renders a JSON body via get_body()
+                if exception_class is not None:
+                    return json_error_response(message, 500)
+                description = getattr(exception_stuff, 'description', None) or str(exception_stuff)
+                status = getattr(exception_stuff, 'code', None) or getattr(exception_stuff, 'status_code', None) or 500
+                return json_error_response(description, status)
         return wrapped_json_response
     return wrap
 
@@ -172,4 +194,4 @@ def setup_logging(flask_app):
 def setup_status_route(flask_app):
     @flask_app.route('/status')
     def status():  # pylint: disable=unused-variable
-        return 'Running'
+        return Response(json.dumps({"status": "Running"}), content_type='application/json')

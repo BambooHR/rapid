@@ -136,7 +136,7 @@ class APIRouter(Injectable):
                 allowed_fields, query = self._get_additional_fields(clazz, query)
                 instance = query.one()
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
-        return Response("Not Valid", status=404)
+        return Response(json.dumps({"message": "Not Valid"}), status=404, content_type='application/json')
 
     def _get_cursor(self) -> int:
         cursor = None
@@ -192,7 +192,7 @@ class APIRouter(Injectable):
                     results.append(result.serialize(fields))
                 return Response(json.dumps(results), content_type='application/json', headers=self._get_pagination_header(results, query_limit))
         else:
-            return Response(status=404)
+            return Response(json.dumps({"message": "Not Found"}), status=404, content_type='application/json')
 
     @json_response()
     def cancel_pipeline_instance(self, pipeline_instance_id):
@@ -331,7 +331,7 @@ class APIRouter(Injectable):
         if self._is_valid(endpoint):
             clazz = self.class_map[endpoint]
             return Response(json.dumps(self._create_from_request(clazz, self.http_wrapper.current_request().get_json())), content_type="application/json")
-        return Response(status=404)
+        return Response(json.dumps({"message": "Not Found"}), status=404, content_type='application/json')
 
     def edit_object(self, endpoint, _id):
         if self._is_valid(endpoint):
@@ -340,7 +340,7 @@ class APIRouter(Injectable):
                 dal = self._retrieve_dal(clazz)
                 instance = dal.edit_object(session, clazz, _id, self.http_wrapper.current_request().json)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
-        return Response(status=404)
+        return Response(json.dumps({"message": "Not Found"}), status=404, content_type='application/json')
 
     def delete_object(self, endpoint, _id):
         if self._is_valid(endpoint):
@@ -349,7 +349,7 @@ class APIRouter(Injectable):
                 dal = self._retrieve_dal(clazz)
                 instance = dal.delete_object(session, clazz, _id)
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
-        return Response(status=404)
+        return Response(json.dumps({"message": "Not Found"}), status=404, content_type='application/json')
 
     def reset_action_instance(self, _id):
         try:
@@ -370,7 +370,7 @@ class APIRouter(Injectable):
             return Response(json.dumps(self.action_instance_service.finish_action_instance(_id, self.http_wrapper.current_request().get_json())), content_type='application/json')
         except Exception as exception:
             logger.error(exception)
-            return Response("Something went wrong!", status=500)
+            return Response(json.dumps({"message": "Something went wrong!"}), status=500, content_type='application/json')
 
     def metadata(self, endpoint=None):
         if self._is_valid(endpoint):

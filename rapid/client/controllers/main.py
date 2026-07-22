@@ -22,7 +22,10 @@ try:
 except ImportError:
     import json
 
+from flask import Response
+
 from rapid.lib import api_key_required
+from rapid.lib.exceptions import HttpException
 from ...lib.base_controller import BaseController
 
 
@@ -43,6 +46,6 @@ class Main(BaseController):
                                          'X-RapidCI-Time': str(time.time() * 1000)},
                                 verify=self.flask_app.rapid_config.ignore_cert_verify)
         if request.status_code == 200:
-            return "Success!"
+            return Response(json.dumps({"message": "Success!"}), content_type='application/json')
 
-        raise BaseException("There was a problem registrating.")
+        raise HttpException("There was a problem registering.", 500)

@@ -18,10 +18,10 @@ import logging
 import threading
 import time
 
-from flask import Flask, Response
+from flask import Flask
 
 from rapid.master.data import run_db_downgrade, configure_db
-from rapid.lib import setup_ioc, setup_config_from_file, is_primary_worker, setup_status_route
+from rapid.lib import setup_ioc, setup_config_from_file, is_primary_worker, setup_status_route, register_json_error_handlers
 from rapid.lib.framework.ioc import IOC
 from .controllers import register_controllers
 from .data import configure_data_layer, run_db_upgrades, create_revision
@@ -36,21 +36,6 @@ logger = logging.getLogger("rapid")
 logger.addHandler(handler)  # pylint: disable=no-member
 logger.setLevel(logging.INFO)  # pylint: disable=no-member
 
-@app.errorhandler(500)
-def internal_error(exception):
-    response = Response(status=500, content_type='application/json')
-    response.data = _to_dict(exception)
-    if hasattr(exception, 'message'):
-        app.logger.error(exception.message)  # pylint: disable=no-member
-    else:
-        app.logger.error(exception)
-    return response
-
-
-def _to_dict(exception):
-    _rv = {'message': exception.message if hasattr(exception, 'message') else 'An exception has occurred'}
-    return _rv
-
 
 def configure_application(flask_app, args, manual_db_upgrade=False):
     setup_ioc(flask_app)
@@ -61,6 +46,7 @@ def configure_application(flask_app, args, manual_db_upgrade=False):
     configure_data_layer(flask_app)
     register_controllers(flask_app)
     setup_status_route(flask_app)
+    register_json_error_handlers(flask_app)
 
     if args.static_file_dir:
         flask_app.rapid_config.static_file_directory = args.static_file_dir

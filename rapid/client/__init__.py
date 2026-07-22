@@ -18,14 +18,9 @@ import os
 import threading
 import time
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from flask import Flask
 
-from rapid.lib import setup_ioc, is_primary_worker, setup_logging, setup_status_route, setup_config_from_file
+from rapid.lib import setup_ioc, is_primary_worker, setup_logging, setup_status_route, setup_config_from_file, register_json_error_handlers
 from .parsers import load_parsers
 from .communicator.client_communicator import ClientCommunicator
 from .controllers import register_controllers
@@ -33,14 +28,6 @@ from .controllers import register_controllers
 app = Flask("rapidci_client")
 app.rapid_config = {'_is': 'client'}
 logger = logging.getLogger("rapid")
-
-
-@app.errorhandler(500)
-def internal_error(exception):
-    response = json.dumps(exception.to_dict())
-    response.status_code = exception.status_code
-    response.content_type = 'application/json'
-    return response
 
 
 def setup_logger(flask_app):
@@ -61,6 +48,7 @@ def configure_application(flask_app, args):
     setup_logger(flask_app)
     load_parsers()
     register_controllers(flask_app)
+    register_json_error_handlers(flask_app)
     if is_primary_worker() and not args.run and not args.upgrade:
         setup_client_register_thread()
         clean_workspace()

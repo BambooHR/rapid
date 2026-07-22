@@ -16,10 +16,10 @@ limitations under the License.
 import logging
 
 from flask.globals import request
-from werkzeug.exceptions import HTTPException
 
 from rapid.qa.qa_service import QaService
 from rapid.lib import api_key_required, json_response
+from rapid.lib.exceptions import HttpException
 from rapid.lib.framework.injectable import Injectable
 
 logger = logging.getLogger("rapid")
@@ -50,7 +50,7 @@ class QAController(Injectable):
             except Exception as exception:  # pylint: disable=broad-except
                 logger.exception(exception)
                 
-        raise HTTPException("Missing Pipeline Instance Id")
+        raise HttpException("Missing Pipeline Instance Id", 400)
 
     @json_response()
     def get_qa_testmap_coverage(self, pipeline_instance_id):
