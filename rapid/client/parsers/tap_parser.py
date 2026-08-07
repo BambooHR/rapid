@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import logging
+import traceback
 from rapid.lib.constants import Constants
 from rapid.client.parsers.abstract_parser import AbstractParser
 
@@ -31,25 +33,39 @@ class TapParser(AbstractParser):
 
         for line in lines:
             line = line.rstrip()
-            if line.startswith("ok"):
-                if self.failures_only:
-                    continue
-                split = line.split(" ", 2)
-                results[split[2]] = {'status': Constants.STATUS_SUCCESS}
-                summary[Constants.STATUS_SUCCESS] += 1
-            elif line.startswith('not ok'):
-                check_stacktrace = True
-                split = line.split(' ', 4)
-                current_failure = split[4]
-                stacktrace = ""
-            elif line.endswith('...'):
-                results[current_failure] = {'status': Constants.STATUS_FAILED, 'stacktrace': stacktrace}
-                stacktrace = None
-                current_failure = None
-                check_stacktrace = False
+            try:
+                if line.startswith("ok"):
+                    if self.failures_only:
+                        continue
+                    split = line.split(" ", 2)
+                    results[split[2]] = {'status': Constants.STATUS_SUCCESS}
+                    summary[Constants.STATUS_SUCCESS] += 1
+                elif line.startswith('not ok'):
+                    check_stacktrace = True
+                    split = line.split(' ', 4)
+                    current_failure = split[4]
+                    stacktrace = ""
+                elif line.endswith('...'):
+                    results[current_failure] = {'status': Constants.STATUS_FAILED, 'stacktrace': stacktrace}
+                    stacktrace = None
+                    current_failure = None
+                    check_stacktrace = False
+                    summary[Constants.STATUS_FAILED] += 1
+                elif check_stacktrace:
+                    stacktrace += "{}\n".format(line)
+            except Exception as e:
+                logger = logging.getLogger("rapid")
+                logger.error("Error parsing TAP data: %s", e)
+                logger.error(traceback.format_exc())
+
+                results["tap_parse_error"] = {
+                    "status": Constants.STATUS_FAILED,
+                    "time": 0,
+                    "stacktrace": "Error parsing TAP data: " + str(e) + "\n" + traceback.format_exc()
+                }
                 summary[Constants.STATUS_FAILED] += 1
-            elif check_stacktrace:
-                stacktrace += "{}\n".format(line)
+                results["__summary__"] = summary
+                return results
 
         results['__summary__'] = summary
         return results

@@ -15,6 +15,9 @@
 """
 from rapid.lib.constants import Constants
 
+import logging
+import traceback
+
 parsers = {}
 
 
@@ -37,18 +40,28 @@ def parse_file(lines, parser=None, workspace=None):
             parser = parsers[lines[0].strip()](workspace=workspace)
             return parser.parse(lines)
         except Exception as exception:
-            import traceback
-            traceback.print_exc()
-            raise exception
+            return handle_parse_error(exception)
     elif parser:
         try:
             return parser.parse(lines, ignore_type_check=True)
         except Exception as exception:
-            import traceback
-            traceback.print_exc()
-            raise exception
+            return handle_parse_error(exception)
     return {}
 
+
+def handle_parse_error(exception):
+    logger = logging.getLogger("rapid")
+    logger.error(f"Error parsing file: {str(exception)}")
+    traceback.print_exc()
+
+    return {
+        "parse_error": {
+            "status": Constants.STATUS_FAILED,
+            "time": 0,
+            "stacktrace": f"Error parsing file: {str(exception)}\n{traceback.format_exc()}"
+        },
+        "__summary__": {Constants.STATUS_FAILED: 1, Constants.STATUS_SUCCESS: 0, Constants.STATUS_SKIPPED: 0, Constants.FAILURES_COUNT: False}
+    }
 
 def get_parser(identifier, workspace=None, failures_only=False, failures_count=False):
     if identifier in parsers:
