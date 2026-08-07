@@ -17,6 +17,7 @@
 import logging
 from typing import Dict, List, Tuple
 
+import sqlalchemy
 from flask_sqlalchemy.query import Query
 
 from rapid.workflow.fields_parser import FieldsParser
@@ -176,23 +177,27 @@ class APIRouter(Injectable):
 
     def list(self, endpoint, version2: bool = False, version_obj = None):
         if self._is_valid(endpoint):
-            for session in get_db_session():
-                query_limit = self._get_limit()
-                clazz = self._get_clazz(endpoint)
-                query = self._get_query(session, clazz)
-                query = self._set_filter(clazz, query)
-                query = self._set_orderby_direction(query, clazz)
-                query = self._set_joins(query)
-                query = self._set_cursor(query, clazz)
-                query = query.limit(query_limit)
-                fields, query = self._get_additional_fields(clazz, query)
+            try:
+                for session in get_db_session():
+                    query_limit = self._get_limit()
+                    clazz = self._get_clazz(endpoint)
+                    query = self._get_query(session, clazz)
+                    query = self._set_filter(clazz, query)
+                    query = self._set_orderby_direction(query, clazz)
+                    query = self._set_joins(query)
+                    query = self._set_cursor(query, clazz)
+                    query = query.limit(query_limit)
+                    fields, query = self._get_additional_fields(clazz, query)
 
-                results = []
-                for result in query.all():
-                    results.append(result.serialize(fields))
-                return Response(json.dumps(results), content_type='application/json', headers=self._get_pagination_header(results, query_limit))
-        else:
-            return Response(status=404)
+                    results = []
+                    for result in query.all():
+                        results.append(result.serialize(fields))
+                    return Response(json.dumps(results), content_type='application/json', headers=self._get_pagination_header(results, query_limit))
+            except sqlalchemy.orm.exc.NoResultFound:
+                return Response(status=404, response=json.dumps({"message": "No results found"}), content_type='application/json')
+            except sqlalchemy.exec.SQLAlchemyError:
+                return Response(status=500, response=json.dumps({"message": "Something went wrong"}), content_type='application/json')
+        return Response(status=404)
 
     @json_response()
     def cancel_pipeline_instance(self, pipeline_instance_id):
