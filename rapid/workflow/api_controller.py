@@ -30,6 +30,7 @@ except ImportError:
 from werkzeug.exceptions import BadRequestKeyError
 from sqlalchemy.orm import joinedload
 from sqlalchemy import desc, asc
+from sqlalchemy.orm.exc import NoResultFound
 from flask import Response
 
 from rapid.lib.http_wrapper import HTTPWrapper
@@ -134,8 +135,12 @@ class APIRouter(Injectable):
                 clazz = self.class_map[endpoint]
                 query = session.query(clazz).filter(clazz.id == _id)
                 allowed_fields, query = self._get_additional_fields(clazz, query)
-                instance = query.one()
+                try:
+                    instance = query.one()
+                except NoResultFound:
+                    return Response(json.dumps({'message': 'Entity not found'}), status=404, content_type='application/json')
                 return Response(json.dumps(instance.serialize(allowed_children=allowed_fields)), content_type='application/json')
+
         return Response("Not Valid", status=404)
 
     def _get_cursor(self) -> int:
