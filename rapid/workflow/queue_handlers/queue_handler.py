@@ -34,4 +34,6 @@ class QueueHandler(ABC):
         ...
 
     def _get_grain_type_split(self, grain):
+        if grain is None:
+            return []
         return grain.split(self._GRAIN_SPLIT, 1)
