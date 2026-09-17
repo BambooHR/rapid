@@ -23,6 +23,9 @@ class TestStandardQueueHandler(TestCase):
     def test_can_process_work_request_fails_with_split(self):
         self.assertFalse(self.handler.can_process_work_request(Mock(grain="a{}b".format(self.handler._GRAIN_SPLIT))))
 
+    def test_get_grain_type_split_null_will_return_empty_array(self):
+        self.assertEqual(self.handler._get_grain_type_split(None), [])
+
     def test_can_process_action_instance_without_grain_split(self):
         self.assertTrue(self.handler.can_process_action_instance({'grain': 'another'}))
 
