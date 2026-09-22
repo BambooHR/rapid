@@ -13,6 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+
+import logging
+import traceback
 from rapid.lib.constants import Constants
 from rapid.client.parsers.xunit_parser import XUnitParser
 from tests.framework.unit_test import UnitTest
@@ -47,6 +50,39 @@ class TestXunitParser(UnitTest):
     raise AssertionError(msg or "%r != %r" % (a, b))
  AssertionError: 13 != 14
 ]]></failure></testcase>
+   </testsuite>
+</testsuites>
+        """
+
+    def __get_malformed_results(self):
+        return """XUnit
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+   <testsuite name="JUnitXmlReporter" errors="0" tests="0" failures="0" time="0" timestamp="2013-05-24T10:23:58" />
+   <testsuite name="JUnitXmlReporter.constructor" errors="0" skipped="1" tests="3" failures="1" time="0.006" timestamp="2013-05-24T10:23:58">
+      <properties>
+         <property name="java.vendor" value="Sun Microsystems Inc." />
+         <property name="compiler.debug" value="on" />
+         <property name="project.jdk.classpath" value="jdk.classpath.1.6" />
+      </properties>
+      <!-- Malformed XML: missing closing tag -->
+      <testcase classname="JUnitXmlReporter.constructor" name="should default path to an empty string" time="0.006">
+         <failure message="test failure">Assertion failed
+      </testcase>
+      <!-- Invalid XML structure: overlapping tags -->
+      <testcase classname="JUnitXmlReporter.constructor" name="should default consolidate to true" time="0">
+         <skipped><error>This is invalid XML</skipped></error>
+      </testcase>
+      <!-- Unclosed CDATA section -->
+      <testcase classname="tests.api.routing.test_api_routing.TestAPIRouting" name="test_configure_routing_features_enabled" time="0.001"><failure type="exceptions.AssertionError" message="13 != 14"><![CDATA[Traceback (most recent call last):
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/unittest/case.py", line 331, in run
+ testMethod()
+  File "/private/tmp/rapidci/workspace/123145312403456/cihub/tests/api/routing/test_api_routing.py", line 29, in test_configure_routing_features_enabled
+     self.assertEqual(13, flask_app.add_url_rule.call_count)
+  File "/private/tmp/rapidci/workspace/123145312403456/cihub/env/lib/python2.7/site-packages/nose/tools/trivial.py", line 29, in self.assertEqual
+    raise AssertionError(msg or "%r != %r" % (a, b))
+ AssertionError: 13 != 14
+</failure></testcase>
    </testsuite>
 </testsuites>
         """
@@ -94,3 +130,12 @@ class TestXunitParser(UnitTest):
         parser = XUnitParser('/home/trial')
 
         self.assertEqual({'__summary__': {'FAILED': 1, 'SKIPPED': 0, 'SUCCESS': 0, Constants.FAILURES_COUNT: False}, '/testing.php~should default path to an empty string': {'status': 'FAILED', 'stacktrace': 'Assertion failed', 'time': '0.006'}}, parser.parse(['<testsuite name="trial">', '<testcase classname="/home/trial/testing.php" name="/home/trialshould default path to an empty string" time="0.006">', '<failure message="test failure">Assertion failed</failure>', '</testcase>', "</testsuite>"], True))
+
+    def test_parser_should_handle_malformed_xml_output(self):
+        parser = XUnitParser()
+        results = parser.parse(self.__get_malformed_results().split("\n"))
+
+        self.assertIn('xml_parse_error', results)
+        self.assertEqual(Constants.STATUS_FAILED, results['xml_parse_error']['status'])
+        self.assertIn('Error parsing XML data:', results['xml_parse_error']['stacktrace'])
+        self.assertGreaterEqual(results['__summary__']['FAILED'], 1)
