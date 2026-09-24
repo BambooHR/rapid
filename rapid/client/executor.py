@@ -25,6 +25,7 @@ import threading
 
 from rapid import testmapper
 from rapid.client.communicator.client_communicator import ClientCommunicator
+from rapid.lib.command_color import apply_command_colors
 from rapid.lib.communication import Communication
 from rapid.lib.constants import Constants
 from rapid.lib.exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
@@ -375,6 +376,7 @@ class Executor(object):
         env['slice'] = str(self.work_request.slice)
         env['RAPID_FEATURES'] = ",".join(Features.get_enabled_features())
         env['WORKSPACE'] = self.workspace
+        apply_command_colors(env)
 
         return env
 

@@ -2,8 +2,9 @@ import datetime
 from abc import ABC, abstractmethod
 from typing import Dict, List, Union
 
-from rapid.master.master_configuration import MasterConfiguration
+from rapid.lib.command_color import command_color_entries
 from rapid.lib.work_request import WorkRequest
+from rapid.master.master_configuration import MasterConfiguration
 from rapid.workflow.queue_handlers.queue_handler import QueueHandler
 from rapid.workflow.action_instances_service import ActionInstanceService
 
@@ -54,6 +55,8 @@ class ContainerHandler(QueueHandler, ABC):
         self.action_instance_service.edit_action_instance(action_instance_id, changes)
 
     def get_default_environment(self, work_request: WorkRequest) -> List[Dict[str, str]]:
-        return [{'name': 'action_instance_id', 'value': str(work_request.action_instance_id)},
+        environment = [{'name': 'action_instance_id', 'value': str(work_request.action_instance_id)},
          {'name': 'workflow_instance_id', 'value': str(work_request.workflow_instance_id)},
          {'name': 'pipeline_instance_id', 'value': str(work_request.pipeline_instance_id)}]
+        environment.extend(command_color_entries(getattr(work_request, 'environment', None)))
+        return environment

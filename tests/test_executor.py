@@ -176,6 +176,34 @@ class TestExecutor(UnitTest):
         self.assertEqual('2', executor.get_environment()['pipeline_instance_id'])
         self.assertEqual('true', executor.get_environment()['PYTHONUNBUFFERED'])
 
+    @patch.dict(os.environ, {}, clear=True)
+    def test_get_environment_enables_command_colors(self):
+        executor = Executor(WorkRequest({
+            'action_instance_id': 1,
+            'pipeline_instance_id': 2,
+            'workflow_instance_id': 3,
+            'slice': '1/1',
+        }), None)
+        env = executor.get_environment()
+        self.assertEqual('1', env['FORCE_COLOR'])
+        self.assertEqual('1', env['PY_COLORS'])
+        self.assertEqual('1', env['CLICOLOR_FORCE'])
+        self.assertEqual('xterm-256color', env['TERM'])
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_get_environment_respects_no_color_from_the_job(self):
+        executor = Executor(WorkRequest({
+            'action_instance_id': 1,
+            'pipeline_instance_id': 2,
+            'workflow_instance_id': 3,
+            'slice': '1/1',
+            'environment': {'NO_COLOR': '1'},
+        }), None)
+        env = executor.get_environment()
+        self.assertNotIn('FORCE_COLOR', env)
+        self.assertNotIn('PY_COLORS', env)
+        self.assertEqual('1', env['NO_COLOR'])
+
     def test_verify_work_request_no_action_instance_id(self):
         """
         rapid-unit: Rapid Client:Remote Execution:Can remotely execute code on client

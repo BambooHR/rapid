@@ -91,7 +91,11 @@ class TestECSQueueHandler(TestCase):
         self.handler._inject_work_request_parameters(task_definition, work_request)
         self.assertEqual([{'name': 'bar\n', 'environment': [{'name': 'action_instance_id', 'value': '1'},
                                                             {'name': 'workflow_instance_id', 'value': '2'},
-                                                            {'name': 'pipeline_instance_id', 'value': '3'}]}], mock_check)
+                                                            {'name': 'pipeline_instance_id', 'value': '3'},
+                                                            {'name': 'FORCE_COLOR', 'value': '1'},
+                                                            {'name': 'PY_COLORS', 'value': '1'},
+                                                            {'name': 'CLICOLOR_FORCE', 'value': '1'},
+                                                            {'name': 'TERM', 'value': 'xterm-256color'}]}], mock_check)
         task_definition_key.assert_called_with(task_definition, 'overrides:dict.containerOverrides:list')
         get_grain_split.assert_called_with('foo')
         get_sub_value.assert_called_with(work_request, 'bar')
