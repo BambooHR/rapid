@@ -186,9 +186,32 @@ class TestExecutor(UnitTest):
         }), None)
         env = executor.get_environment()
         self.assertEqual('1', env['FORCE_COLOR'])
-        self.assertEqual('1', env['PY_COLORS'])
         self.assertEqual('1', env['CLICOLOR_FORCE'])
+        self.assertNotIn('PY_COLORS', env)
         self.assertEqual('xterm-256color', env['TERM'])
+
+    @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
+    def test_get_environment_upgrades_host_dumb_term(self):
+        executor = Executor(WorkRequest({
+            'action_instance_id': 1,
+            'pipeline_instance_id': 2,
+            'workflow_instance_id': 3,
+            'slice': '1/1',
+        }), None)
+        self.assertEqual('xterm-256color', executor.get_environment()['TERM'])
+
+    @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
+    def test_get_environment_keeps_job_dumb_term(self):
+        executor = Executor(WorkRequest({
+            'action_instance_id': 1,
+            'pipeline_instance_id': 2,
+            'workflow_instance_id': 3,
+            'slice': '1/1',
+            'environment': {'TERM': 'dumb'},
+        }), None)
+        env = executor.get_environment()
+        self.assertEqual('dumb', env['TERM'])
+        self.assertEqual('1', env['FORCE_COLOR'])
 
     @patch.dict(os.environ, {}, clear=True)
     def test_get_environment_respects_no_color_from_the_job(self):
@@ -379,6 +402,15 @@ class TestExecutor(UnitTest):
         Executor._log(1, "Testing", mock_logger)
 
         mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "Testing"))
+
+    def test_log_strips_ansi(self):
+        mock_logger = Mock()
+        Executor._log(1, "\x1b[31mfailed\x1b[0m", mock_logger)
+        mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "failed"))
+
+        mock_logger.reset_mock()
+        Executor._log(1, b"\x1b[32mok\x1b[0m", mock_logger)
+        mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "ok"))
 
     def test_get_arguments_empty_work_request(self):
         """

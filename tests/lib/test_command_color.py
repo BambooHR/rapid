@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from rapid.lib.command_color import apply_command_colors, command_color_entries
+from rapid.lib.command_color import apply_command_colors, command_color_entries, strip_ansi
 from tests.framework.unit_test import UnitTest
 
 
@@ -24,27 +24,44 @@ class TestCommandColor(UnitTest):
         env = {}
         apply_command_colors(env)
         self.assertEqual('1', env['FORCE_COLOR'])
-        self.assertEqual('1', env['PY_COLORS'])
         self.assertEqual('1', env['CLICOLOR_FORCE'])
+        self.assertNotIn('PY_COLORS', env)
         self.assertEqual('xterm-256color', env['TERM'])
 
-    def test_apply_command_colors_replaces_dumb_term(self):
+    def test_apply_command_colors_replaces_host_dumb_term(self):
         env = {'TERM': 'dumb'}
         apply_command_colors(env)
         self.assertEqual('xterm-256color', env['TERM'])
+
+    def test_apply_command_colors_keeps_job_dumb_term(self):
+        env = {'TERM': 'dumb'}
+        apply_command_colors(env, {'TERM': 'dumb'})
+        self.assertEqual('dumb', env['TERM'])
+        self.assertEqual('1', env['FORCE_COLOR'])
+
+    def test_apply_command_colors_keeps_bytes_job_values(self):
+        env = {b'FORCE_COLOR': b'0', b'TERM': b'dumb', 'PATH': '/bin'}
+        apply_command_colors(env, {'FORCE_COLOR': '0', 'TERM': 'dumb'})
+        self.assertNotIn('FORCE_COLOR', env)
+        self.assertNotIn('TERM', env)
+        self.assertEqual(b'0', env[b'FORCE_COLOR'])
+        self.assertEqual(b'dumb', env[b'TERM'])
+        self.assertEqual('1', env['CLICOLOR_FORCE'])
 
     def test_apply_command_colors_keeps_existing_values(self):
         env = {'FORCE_COLOR': '0', 'TERM': 'xterm-256color'}
         apply_command_colors(env)
         self.assertEqual('0', env['FORCE_COLOR'])
         self.assertEqual('xterm-256color', env['TERM'])
-        self.assertEqual('1', env['PY_COLORS'])
+        self.assertEqual('1', env['CLICOLOR_FORCE'])
+        self.assertNotIn('PY_COLORS', env)
 
     def test_apply_command_colors_respects_no_color(self):
         env = {'NO_COLOR': '1', 'TERM': 'dumb'}
         apply_command_colors(env)
         self.assertNotIn('FORCE_COLOR', env)
         self.assertNotIn('PY_COLORS', env)
+        self.assertNotIn('CLICOLOR_FORCE', env)
         self.assertEqual('dumb', env['TERM'])
 
     def test_apply_command_colors_respects_bytes_no_color(self):
@@ -56,19 +73,23 @@ class TestCommandColor(UnitTest):
         self.assertEqual(
             [
                 {'name': 'FORCE_COLOR', 'value': '1'},
-                {'name': 'PY_COLORS', 'value': '1'},
                 {'name': 'CLICOLOR_FORCE', 'value': '1'},
-                {'name': 'TERM', 'value': 'xterm-256color'},
             ],
             command_color_entries(None),
         )
+        self.assertNotIn('TERM', [entry['name'] for entry in command_color_entries({'TERM': 'dumb'})])
 
     def test_command_color_entries_skip_values_the_job_set(self):
         entries = command_color_entries({'FORCE_COLOR': '0', 'TERM': 'screen'})
         names = [entry['name'] for entry in entries]
         self.assertNotIn('FORCE_COLOR', names)
         self.assertNotIn('TERM', names)
-        self.assertIn('PY_COLORS', names)
+        self.assertNotIn('PY_COLORS', names)
+        self.assertIn('CLICOLOR_FORCE', names)
 
     def test_command_color_entries_respect_no_color(self):
         self.assertEqual([], command_color_entries({'NO_COLOR': ''}))
+
+    def test_strip_ansi(self):
+        self.assertEqual('failed', strip_ansi('\x1b[31mfailed\x1b[0m'))
+        self.assertEqual('ok', strip_ansi('\x1b[1;32mok'))

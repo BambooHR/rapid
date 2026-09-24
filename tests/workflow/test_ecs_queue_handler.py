@@ -93,9 +93,7 @@ class TestECSQueueHandler(TestCase):
                                                             {'name': 'workflow_instance_id', 'value': '2'},
                                                             {'name': 'pipeline_instance_id', 'value': '3'},
                                                             {'name': 'FORCE_COLOR', 'value': '1'},
-                                                            {'name': 'PY_COLORS', 'value': '1'},
-                                                            {'name': 'CLICOLOR_FORCE', 'value': '1'},
-                                                            {'name': 'TERM', 'value': 'xterm-256color'}]}], mock_check)
+                                                            {'name': 'CLICOLOR_FORCE', 'value': '1'}]}], mock_check)
         task_definition_key.assert_called_with(task_definition, 'overrides:dict.containerOverrides:list')
         get_grain_split.assert_called_with('foo')
         get_sub_value.assert_called_with(work_request, 'bar')

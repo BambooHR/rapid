@@ -90,7 +90,7 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         environment['slice'] = str(work_request.slice)
         environment['RAPID_FEATURES'] = ",".join(Features.get_enabled_features())
         environment['WORKSPACE'] = self.rapid_config.workspace
-        apply_command_colors(environment)
+        apply_command_colors(environment, getattr(work_request, 'environment', None))
 
         return environment
 

@@ -330,7 +330,64 @@ class TestK8SQueueHandler(UnitTest):
         self.assertIn({'name': 'DEFAULT_ENV', 'value': 'default_value'}, container_env)
         self.assertIn({'name': 'ENV_VAR1', 'value': 'value1'}, container_env)
         self.assertIn({'name': 'ENV_VAR2', 'value': 'value2'}, container_env)
-        
+
+    @patch.object(K8SQueueHandler, K8SQueueHandler._load_k8s_client.__name__)
+    @patch('rapid.workflow.queue_handlers.handlers.k8s_queue_handler.datetime')
+    @patch.object(K8SQueueHandler, K8SQueueHandler._job_name.__name__)
+    @patch.object(K8SQueueHandler, K8SQueueHandler._set_task_status.__name__)
+    def test_run_task_color_defaults_do_not_override_job_env(self, mock_set_task_status, mock_job_name, mock_datetime, mock_load_client):
+        mock_work_request = Mock(
+            action_instance_id=123,
+            pipeline_instance_id=456,
+            workflow_instance_id=789,
+            environment={'TERM': 'dumb', 'FORCE_COLOR': '0', 'ENV_VAR1': 'value1'}
+        )
+        mock_job = {
+            'metadata': {'name': 'test-job'},
+            'spec': {'template': {'spec': {'containers': [{}]}}}
+        }
+        mock_job_name.return_value = 'test-job-456.123'
+        mock_datetime.datetime.now.return_value = 'mock_datetime'
+        self.handler._batch_api_v1 = Mock()
+
+        self.handler._run_task(mock_work_request, mock_job)
+
+        container_env = mock_job['spec']['template']['spec']['containers'][0]['env']
+        term = [entry for entry in container_env if entry['name'] == 'TERM']
+        force_color = [entry for entry in container_env if entry['name'] == 'FORCE_COLOR']
+        self.assertEqual([{'name': 'TERM', 'value': 'dumb'}], term)
+        self.assertEqual([{'name': 'FORCE_COLOR', 'value': '0'}], force_color)
+        self.assertIn({'name': 'CLICOLOR_FORCE', 'value': '1'}, container_env)
+        self.assertNotIn('PY_COLORS', [entry['name'] for entry in container_env])
+
+    @patch.object(K8SQueueHandler, K8SQueueHandler._load_k8s_client.__name__)
+    @patch('rapid.workflow.queue_handlers.handlers.k8s_queue_handler.datetime')
+    @patch.object(K8SQueueHandler, K8SQueueHandler._job_name.__name__)
+    @patch.object(K8SQueueHandler, K8SQueueHandler._set_task_status.__name__)
+    def test_run_task_no_color_suppresses_color_defaults(self, mock_set_task_status, mock_job_name, mock_datetime, mock_load_client):
+        mock_work_request = Mock(
+            action_instance_id=123,
+            pipeline_instance_id=456,
+            workflow_instance_id=789,
+            environment={'NO_COLOR': ''}
+        )
+        mock_job = {
+            'metadata': {'name': 'test-job'},
+            'spec': {'template': {'spec': {'containers': [{}]}}}
+        }
+        mock_job_name.return_value = 'test-job-456.123'
+        mock_datetime.datetime.now.return_value = 'mock_datetime'
+        self.handler._batch_api_v1 = Mock()
+
+        self.handler._run_task(mock_work_request, mock_job)
+
+        names = [entry['name'] for entry in mock_job['spec']['template']['spec']['containers'][0]['env']]
+        self.assertIn('NO_COLOR', names)
+        self.assertNotIn('FORCE_COLOR', names)
+        self.assertNotIn('CLICOLOR_FORCE', names)
+        self.assertNotIn('PY_COLORS', names)
+        self.assertNotIn('TERM', names)
+
     @patch('rapid.workflow.queue_handlers.handlers.k8s_queue_handler.datetime')
     @patch.object(K8SQueueHandler, K8SQueueHandler._job_name.__name__)
     @patch.object(K8SQueueHandler, K8SQueueHandler._set_task_status.__name__)
