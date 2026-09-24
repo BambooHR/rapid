@@ -6,6 +6,7 @@ from typing import Dict, List
 import yaml
 from yaml.scanner import ScannerError
 
+from rapid.lib.command_color import apply_command_colors
 from rapid.lib.constants import StatusConstants
 from rapid.lib.features import Features
 from rapid.lib.framework.injectable import Injectable
@@ -89,6 +90,7 @@ class DockerQueueHandler(ContainerHandler, Injectable):
         environment['slice'] = str(work_request.slice)
         environment['RAPID_FEATURES'] = ",".join(Features.get_enabled_features())
         environment['WORKSPACE'] = self.rapid_config.workspace
+        apply_command_colors(environment)
 
         return environment
 
