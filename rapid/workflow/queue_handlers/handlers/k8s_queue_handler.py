@@ -8,6 +8,7 @@ import urllib3
 import yaml
 from kubernetes import client, config
 
+from rapid.lib.command_color import command_color_entries
 from rapid.lib.constants import StatusConstants
 from rapid.lib.exceptions import QueueHandlerShouldSleep, K8SServiceUnavailable, K8SConnectionError
 from rapid.lib.framework.injectable import Injectable
@@ -113,7 +114,19 @@ class K8SQueueHandler(ContainerHandler, Injectable):
                 for container in job['spec']['template']['spec']['containers']:
                     container['env'] = self.get_default_environment(work_request)
                     if work_request.environment:
-                        container['env'].extend([{'name': key, 'value': str(value)} for key, value in work_request.environment.items()])
+                        # TERM is written only when the job set it, so an omitted
+                        # TERM does not replace the image's value. A job TERM=dumb
+                        # is replaced in place so the name is not duplicated.
+                        job_env = work_request.environment if isinstance(work_request.environment, dict) else {}
+                        replacements = {
+                            entry['name']: entry['value']
+                            for entry in command_color_entries(job_env)
+                            if entry['name'] in job_env
+                        }
+                        container['env'].extend([
+                            {'name': key, 'value': replacements.get(key, str(value))}
+                            for key, value in work_request.environment.items()
+                        ])
 
                 self.batch_api_v1.create_namespaced_job(namespace='cihub', body=job)
                 self._set_task_status(work_request.action_instance_id, status_id, assigned_to=self._ASSIGNED_TO_PREFIX + job_name,

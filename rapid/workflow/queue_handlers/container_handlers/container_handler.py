@@ -58,5 +58,13 @@ class ContainerHandler(QueueHandler, ABC):
         environment = [{'name': 'action_instance_id', 'value': str(work_request.action_instance_id)},
          {'name': 'workflow_instance_id', 'value': str(work_request.workflow_instance_id)},
          {'name': 'pipeline_instance_id', 'value': str(work_request.pipeline_instance_id)}]
-        environment.extend(command_color_entries(getattr(work_request, 'environment', None)))
+        job_env = getattr(work_request, 'environment', None)
+        job_env = job_env if isinstance(job_env, dict) else {}
+        # A replacement such as TERM=dumb is written with the job's own entry so
+        # the name is not duplicated. Kubernetes keeps the last value for a
+        # repeated name.
+        for entry in command_color_entries(job_env):
+            if entry['name'] in job_env:
+                continue
+            environment.append(entry)
         return environment

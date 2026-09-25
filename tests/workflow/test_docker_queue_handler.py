@@ -30,9 +30,10 @@ class TestDockerQueueHandler(TestCase):
         env = self.handler.get_environment(self._work_request({'FORCE_COLOR': '0', 'TERM': 'dumb'}))
         self.assertEqual(b'0', env[b'FORCE_COLOR'])
         self.assertNotIn('FORCE_COLOR', env)
-        self.assertEqual(b'dumb', env[b'TERM'])
-        self.assertEqual('dumb', env['TERM'])
+        self.assertEqual(b'xterm-256color', env[b'TERM'])
+        self.assertEqual('xterm-256color', env['TERM'])
         self.assertEqual('1', env['CLICOLOR_FORCE'])
+        self.assertEqual('1', env['PY_COLORS'])
 
     @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
     def test_get_environment_upgrades_host_dumb_term(self):

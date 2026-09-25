@@ -25,7 +25,7 @@ import threading
 
 from rapid import testmapper
 from rapid.client.communicator.client_communicator import ClientCommunicator
-from rapid.lib.command_color import apply_command_colors, strip_ansi
+from rapid.lib.command_color import apply_command_colors
 from rapid.lib.communication import Communication
 from rapid.lib.constants import Constants
 from rapid.lib.exceptions import ThresholdException, ResultsFileNotFoundException, ResultsFileNotParsedException
@@ -344,7 +344,8 @@ class Executor(object):
         try:
             if isinstance(message, bytes):
                 message = message.decode('utf-8')
-            message = strip_ansi(message)
+            # Escape sequences stay in the log. CIHub's log viewer renders them,
+            # which is how forced color shows up for a non-TTY command.
             try:
                 logger.info(u"__RCI_{}__ - {} - {}".format(action_instance_id, os.getpid(), message))
             except:
@@ -377,7 +378,7 @@ class Executor(object):
         env['slice'] = str(self.work_request.slice)
         env['RAPID_FEATURES'] = ",".join(Features.get_enabled_features())
         env['WORKSPACE'] = self.workspace
-        apply_command_colors(env, getattr(self.work_request, 'environment', None))
+        apply_command_colors(env)
 
         return env
 

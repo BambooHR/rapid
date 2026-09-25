@@ -176,19 +176,20 @@ class TestExecutor(UnitTest):
         self.assertEqual('2', executor.get_environment()['pipeline_instance_id'])
         self.assertEqual('true', executor.get_environment()['PYTHONUNBUFFERED'])
 
-    @patch.dict(os.environ, {}, clear=True)
+    @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
     def test_get_environment_enables_command_colors(self):
         executor = Executor(WorkRequest({
             'action_instance_id': 1,
             'pipeline_instance_id': 2,
             'workflow_instance_id': 3,
             'slice': '1/1',
-        }), None)
+        }), None, workspace='/tmp/workspace')
         env = executor.get_environment()
         self.assertEqual('1', env['FORCE_COLOR'])
+        self.assertEqual('1', env['PY_COLORS'])
         self.assertEqual('1', env['CLICOLOR_FORCE'])
-        self.assertNotIn('PY_COLORS', env)
         self.assertEqual('xterm-256color', env['TERM'])
+        self.assertEqual('/tmp/workspace', env['WORKSPACE'])
 
     @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
     def test_get_environment_upgrades_host_dumb_term(self):
@@ -201,7 +202,7 @@ class TestExecutor(UnitTest):
         self.assertEqual('xterm-256color', executor.get_environment()['TERM'])
 
     @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
-    def test_get_environment_keeps_job_dumb_term(self):
+    def test_get_environment_replaces_job_dumb_term(self):
         executor = Executor(WorkRequest({
             'action_instance_id': 1,
             'pipeline_instance_id': 2,
@@ -210,10 +211,24 @@ class TestExecutor(UnitTest):
             'environment': {'TERM': 'dumb'},
         }), None)
         env = executor.get_environment()
-        self.assertEqual('dumb', env['TERM'])
+        self.assertEqual('xterm-256color', env['TERM'])
         self.assertEqual('1', env['FORCE_COLOR'])
 
-    @patch.dict(os.environ, {}, clear=True)
+    @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
+    def test_get_environment_empty_no_color_is_unset(self):
+        executor = Executor(WorkRequest({
+            'action_instance_id': 1,
+            'pipeline_instance_id': 2,
+            'workflow_instance_id': 3,
+            'slice': '1/1',
+            'environment': {'NO_COLOR': ''},
+        }), None)
+        env = executor.get_environment()
+        self.assertEqual('1', env['FORCE_COLOR'])
+        self.assertEqual('xterm-256color', env['TERM'])
+        self.assertEqual('', env['NO_COLOR'])
+
+    @patch.dict(os.environ, {'TERM': 'dumb'}, clear=True)
     def test_get_environment_respects_no_color_from_the_job(self):
         executor = Executor(WorkRequest({
             'action_instance_id': 1,
@@ -223,9 +238,11 @@ class TestExecutor(UnitTest):
             'environment': {'NO_COLOR': '1'},
         }), None)
         env = executor.get_environment()
+        self.assertEqual('1', env['NO_COLOR'])
         self.assertNotIn('FORCE_COLOR', env)
         self.assertNotIn('PY_COLORS', env)
-        self.assertEqual('1', env['NO_COLOR'])
+        self.assertNotIn('CLICOLOR_FORCE', env)
+        self.assertEqual('dumb', env['TERM'])
 
     def test_verify_work_request_no_action_instance_id(self):
         """
@@ -403,14 +420,25 @@ class TestExecutor(UnitTest):
 
         mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "Testing"))
 
-    def test_log_strips_ansi(self):
+    def test_log_keeps_ansi(self):
         mock_logger = Mock()
-        Executor._log(1, "\x1b[31mfailed\x1b[0m", mock_logger)
-        mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "failed"))
+        kept = [
+            "\x1b[31mfailed\x1b[0m",
+            "plain",
+            "\x1b[?25lhide\x1b[?25h",
+            "\x1b[38:2:255:0:0mred\x1b[0m",
+            "\x1b(B\x1b[mreset",
+            "\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\",
+        ]
+        for line in kept:
+            Executor._log(1, line, mock_logger)
+        logged = [call.args[0] for call in mock_logger.info.call_args_list]
+        for line in kept:
+            self.assertIn("__RCI_{}__ - {} - {}".format(1, os.getpid(), line), logged)
 
         mock_logger.reset_mock()
-        Executor._log(1, b"\x1b[32mok\x1b[0m", mock_logger)
-        mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), "ok"))
+        Executor._log(1, kept[0].encode('utf-8'), mock_logger)
+        mock_logger.info.assert_called_with("__RCI_{}__ - {} - {}".format(1, os.getpid(), kept[0]))
 
     def test_get_arguments_empty_work_request(self):
         """
