@@ -43,7 +43,7 @@ version = '0.0.0'
 # https://packaging.python.org/guides/single-sourcing-package-version/
 dependencies = [
     'flask==2.3.2',
-    'requests==2.32.3',
+    'requests==2.32.4',
     "futures;python_version<'3.9'",
     'psutil',
     'jsonpickle',
