@@ -17,6 +17,7 @@
 import datetime
 from unittest.mock import MagicMock, call
 
+from ddt import ddt, data, unpack
 from mock.mock import patch, Mock
 from sqlalchemy import Boolean
 
@@ -27,6 +28,7 @@ from rapid.workflow.data.models import ActionInstance, PipelineParameters, Pipel
 from tests.framework.unit_test import UnitTest
 
 
+@ddt
 class TestActionDal(UnitTest):
 
     @patch('rapid.workflow.action_dal.get_db_session')
@@ -262,6 +264,51 @@ class TestActionDal(UnitTest):
         mock_workflow.complete_an_action.assert_called_with(123455, StatusConstants.CANCELED)
         mock_constants.cancel_worker.assert_called_with(get_action_instance().serialize())
 
+    @data(StatusConstants.SUCCESS, StatusConstants.CANCELED)
+    @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_cancel_action_instance_leaves_finished_instance_unchanged(self, status_id, workflow_engine, db_session, get_action_instance):
+        result, session, queue_constants = self._cancel(db_session, get_action_instance, status_id, True)
+
+        self.assertEqual('already_finished', result['outcome'])
+        workflow_engine.assert_not_called()
+        queue_constants.cancel_worker.assert_not_called()
+        session.commit.assert_not_called()
+
+    @data((True, 'requested'), (False, 'worker_stop_failed'))
+    @unpack
+    @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_cancel_action_instance_reports_running_worker_stop(self, worker_stopped, outcome, workflow_engine, db_session, get_action_instance):
+        result, session, _ = self._cancel(db_session, get_action_instance, StatusConstants.INPROGRESS, worker_stopped)
+
+        self.assertEqual(outcome, result['outcome'])
+        workflow_engine.return_value.complete_an_action.assert_called_once_with(12, StatusConstants.CANCELED)
+        session.commit.assert_called_once_with()
+
+    @patch('rapid.workflow.action_dal.ActionDal.get_action_instance_by_id')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    def test_cancel_action_instance_cancels_unassigned_ready_instance(self, workflow_engine, db_session, get_action_instance):
+        result, session, _ = self._cancel(db_session, get_action_instance, StatusConstants.READY, False)
+
+        self.assertEqual('requested', result['outcome'])
+        workflow_engine.return_value.complete_an_action.assert_called_once_with(12, StatusConstants.CANCELED)
+        session.commit.assert_called_once_with()
+
+    @staticmethod
+    def _cancel(db_session, get_action_instance, status_id, worker_stopped):
+        session = Mock()
+        db_session.return_value = [session]
+        get_action_instance.return_value = Mock(status_id=status_id)
+        queue_constants = Mock()
+        queue_constants.cancel_worker.return_value = worker_stopped
+
+        result = ActionDal(flask_app=Mock(), queue_constants=queue_constants).cancel_action_instance(12)
+        return result, session, queue_constants
+
     @patch('rapid.workflow.action_dal.get_db_session')
     @patch('rapid.workflow.action_dal.ActionInstance')
     @patch.object(ActionDal, ActionDal._get_loaded_pipeline_instance.__name__)
@@ -316,6 +363,84 @@ class TestActionDal(UnitTest):
 
         mock_session.query().options.assert_called_with('foobar', 'foobie')
         mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
+
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_reset_single_action_instance_resets_target_and_qa_results_in_one_commit(self, get_db_session, workflow_engine):
+        action_instance = self._finished_action_instance()
+        session = self._locked_session(get_db_session, action_instance)
+        qa_module = Mock()
+        qa_module.reset_results.side_effect = lambda *args, **kwargs: session.commit.assert_not_called()
+        dal = ActionDal(qa_module=qa_module, status_dal=Mock())
+
+        self.assertEqual({"action_instance_id": 12, "outcome": "reset"}, dal.reset_single_action_instance(12))
+
+        workflow_engine.assert_called_once_with(dal.status_dal, action_instance.pipeline_instance)
+        workflow_engine.return_value.reset_single_action_instance.assert_called_once_with(action_instance)
+        qa_module.reset_results.assert_called_once_with(12, session, commit=False)
+        session.commit.assert_called_once_with()
+
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_reset_single_action_instance_returns_404_when_not_found(self, get_db_session, workflow_engine):
+        self._assert_reset_single_rejected(get_db_session, workflow_engine, None, 404)
+
+    @data(StatusConstants.READY, StatusConstants.INPROGRESS)
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_reset_single_action_instance_rejects_unfinished_instance(self, status_id, get_db_session, workflow_engine):
+        action_instance = self._finished_action_instance()
+        action_instance.status_id = status_id
+
+        self._assert_reset_single_rejected(get_db_session, workflow_engine, action_instance, 409)
+
+    @data(datetime.timedelta(days=3), datetime.timedelta(days=30), None)
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_reset_single_action_instance_accepts_finished_instance_regardless_of_pipeline_age(self, pipeline_age, get_db_session, workflow_engine):
+        action_instance = self._finished_action_instance()
+        action_instance.pipeline_instance.created_date = None if pipeline_age is None else datetime.datetime.utcnow() - pipeline_age
+        session = self._locked_session(get_db_session, action_instance)
+
+        self.assertEqual({"action_instance_id": 12, "outcome": "reset"}, ActionDal(qa_module=Mock(), status_dal=Mock()).reset_single_action_instance(12))
+
+        workflow_engine.return_value.reset_single_action_instance.assert_called_once_with(action_instance)
+        session.commit.assert_called_once_with()
+
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.get_db_session')
+    def test_reset_single_action_instance_does_not_commit_when_qa_cleanup_fails(self, get_db_session, workflow_engine):
+        session = self._locked_session(get_db_session, self._finished_action_instance())
+        qa_module = Mock()
+        qa_module.reset_results.side_effect = Exception("QA cleanup failed")
+
+        with self.assertRaises(Exception):
+            ActionDal(qa_module=qa_module, status_dal=Mock()).reset_single_action_instance(12)
+
+        session.commit.assert_not_called()
+
+    def _assert_reset_single_rejected(self, get_db_session, workflow_engine, action_instance, code):
+        session = self._locked_session(get_db_session, action_instance)
+        qa_module = Mock()
+
+        with self.assertRaises(InvalidObjectException) as exception:
+            ActionDal(qa_module=qa_module, status_dal=Mock()).reset_single_action_instance(12)
+
+        self.assertEqual(code, exception.exception.code)
+        workflow_engine.assert_not_called()
+        qa_module.reset_results.assert_not_called()
+        session.commit.assert_not_called()
+
+    @staticmethod
+    def _locked_session(get_db_session, action_instance):
+        session = Mock()
+        session.query.return_value.with_for_update.return_value.filter.return_value.first.return_value = action_instance
+        get_db_session.return_value = [session]
+        return session
+
+    @staticmethod
+    def _finished_action_instance():
+        return Mock(id=12, status_id=StatusConstants.FAILED)
 
 
 

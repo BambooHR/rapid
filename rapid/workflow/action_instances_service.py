@@ -35,6 +35,9 @@ class ActionInstanceService(Injectable):
     def reset_action_instance(self, _id, complete_reset=False, check_status=False):
         return self.action_dal.reset_action_instance(_id, complete_reset, check_status)
 
+    def reset_single_action_instance(self, _id):
+        return self.action_dal.reset_single_action_instance(_id)
+
     def reset_pipeline_instance(self, pipeline_instance_id):
         return self.action_dal.reset_pipeline_instance(pipeline_instance_id)
 

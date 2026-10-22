@@ -24,11 +24,12 @@ class QaModule(ABC):
         ...
 
     @abstractmethod
-    def reset_results(self, action_instance_id, session):
+    def reset_results(self, action_instance_id, session, commit=True):
         """
         Reset Stacktrace and QaTestHistory entries for action_instance
         :param action_instance_id: int
         :param session:
+        :param commit: bool, False leaves the deletes in the caller's open transaction
         :return:
         """
         ...

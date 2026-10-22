@@ -241,19 +241,40 @@ class ActionDal(GeneralDal, Injectable):
                 session.commit()
         return True
 
+    def reset_single_action_instance(self, _id: int):
+        for session in get_db_session():
+            action_instance = session.query(ActionInstance).with_for_update().filter(ActionInstance.id == _id).first()
+            if action_instance is None:
+                raise InvalidObjectException("Action Instance not found", 404)
+            if action_instance.status_id <= StatusConstants.INPROGRESS:
+                raise InvalidObjectException("Action Instance has not finished", 409)
+
+            InstanceWorkflowEngine(self.status_dal, action_instance.pipeline_instance).reset_single_action_instance(action_instance)
+            if self.qa_module is not None:
+                self.qa_module.reset_results(action_instance.id, session, commit=False)
+
+            session.commit()
+        return {"action_instance_id": _id, "outcome": "reset"}
+
     def cancel_action_instance(self, action_instance_id: int):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
 
             if action_instance:
+                if action_instance.status_id > StatusConstants.INPROGRESS:
+                    return {"message": "Action Instance has already finished.", "outcome": "already_finished"}
+
+                worker_assigned = action_instance.status_id == StatusConstants.INPROGRESS
                 serialized = action_instance.serialize()
                 instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
                 instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
-                self.queue_constants.cancel_worker(serialized)
+                worker_stopped = self.queue_constants.cancel_worker(serialized)
                 session.commit()
             else:
                 raise InvalidObjectException("Action Instance not found", 404)
-        return {"message": "Action Instance has been canceled."}
+        if worker_assigned and not worker_stopped:
+            return {"message": "Action Instance has been canceled, but its worker could not be stopped.", "outcome": "worker_stop_failed"}
+        return {"message": "Action Instance has been canceled.", "outcome": "requested"}
 
     def reconcile_pipeline_instances(self):
         for session in get_db_session():
