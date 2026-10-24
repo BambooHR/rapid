@@ -36,7 +36,7 @@ class StandardQueueHandler(QueueHandler, Injectable):
         """
         1. Find a client that can do the work based off the label
           1a. If no label, any client that takes something that is not restricted to only its type
-          1b. If label, only clients that that have at least that label, or only restricted to that type
+          1b. If label, only clients that have at least that label, or only restricted to that type
           1c. First client to respond
         2. Save who was assigned the work
           2a. Store IP and set status to INPROGRESS
