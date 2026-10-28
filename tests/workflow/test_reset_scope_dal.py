@@ -2,7 +2,6 @@ import datetime
 from unittest.mock import Mock, patch
 import pytest
 from rapid.lib.constants import StatusConstants as S
-from rapid.lib.exceptions import InvalidObjectException
 from rapid.workflow.action_dal import ActionDal
 from tests.workflow.test_reset_scope import build
 
@@ -23,9 +22,7 @@ def setup_dal(age=datetime.timedelta(hours=71)):
 def test_single_retry_rejects_expired_or_unknown_pipeline_age(age):
     dal, session, target, _ = setup_dal(age)
     with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
-        with pytest.raises(InvalidObjectException) as error:
-            dal.reset_action_instance(target.id, reset_single_slice=True)
-    assert error.value.code == 409
+        assert dal.reset_action_instance(target.id, reset_single_slice=True) is False
     session.commit.assert_not_called()
     dal.qa_module.reset_results.assert_not_called()
 
@@ -35,9 +32,7 @@ def test_single_retry_rejects_unfinished_target(status):
     dal, session, target, _ = setup_dal()
     target.status_id = status
     with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
-        with pytest.raises(InvalidObjectException) as error:
-            dal.reset_action_instance(target.id, reset_single_slice=True)
-    assert error.value.code == 409
+        assert dal.reset_action_instance(target.id, reset_single_slice=True) is False
     session.commit.assert_not_called()
 
 

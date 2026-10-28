@@ -383,8 +383,8 @@ class TestActionDal(UnitTest):
 
     @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
     @patch('rapid.workflow.action_dal.get_db_session')
-    def test_reset_single_action_instance_returns_404_when_not_found(self, get_db_session, workflow_engine):
-        self._assert_reset_single_rejected(get_db_session, workflow_engine, None, 404)
+    def test_reset_single_action_instance_returns_false_when_not_found(self, get_db_session, workflow_engine):
+        self._assert_reset_single_rejected(get_db_session, workflow_engine, None)
 
     @data(StatusConstants.READY, StatusConstants.INPROGRESS)
     @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
@@ -393,7 +393,7 @@ class TestActionDal(UnitTest):
         action_instance = self._finished_action_instance()
         action_instance.status_id = status_id
 
-        self._assert_reset_single_rejected(get_db_session, workflow_engine, action_instance, 409)
+        self._assert_reset_single_rejected(get_db_session, workflow_engine, action_instance)
 
     @data(datetime.timedelta(days=3), datetime.timedelta(days=30), None)
     @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
@@ -401,7 +401,7 @@ class TestActionDal(UnitTest):
     def test_reset_single_action_instance_rejects_expired_or_unknown_age(self, pipeline_age, get_db_session, workflow_engine):
         action_instance = self._finished_action_instance()
         action_instance.pipeline_instance.created_date = None if pipeline_age is None else datetime.datetime.utcnow() - pipeline_age
-        self._assert_reset_single_rejected(get_db_session, workflow_engine, action_instance, 409)
+        self._assert_reset_single_rejected(get_db_session, workflow_engine, action_instance)
 
     @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
     @patch('rapid.workflow.action_dal.get_db_session')
@@ -416,14 +416,11 @@ class TestActionDal(UnitTest):
 
         session.commit.assert_not_called()
 
-    def _assert_reset_single_rejected(self, get_db_session, workflow_engine, action_instance, code):
+    def _assert_reset_single_rejected(self, get_db_session, workflow_engine, action_instance):
         session = self._locked_session(get_db_session, action_instance)
         qa_module = Mock()
 
-        with self.assertRaises(InvalidObjectException) as exception:
-            ActionDal(qa_module=qa_module, status_dal=Mock()).reset_action_instance(12, reset_single_slice=True)
-
-        self.assertEqual(code, exception.exception.code)
+        self.assertFalse(ActionDal(qa_module=qa_module, status_dal=Mock()).reset_action_instance(12, reset_single_slice=True))
         workflow_engine.assert_not_called()
         qa_module.reset_results.assert_not_called()
         session.commit.assert_not_called()

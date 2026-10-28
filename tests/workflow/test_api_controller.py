@@ -10,7 +10,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.test import Client
 
 from rapid.lib.constants import Constants
-from rapid.lib.exceptions import InvalidObjectException
 from tests.framework.unit_test import UnitTest
 from rapid.workflow.api_controller import APIRouter
 
@@ -108,14 +107,13 @@ class TestAPIController(UnitTest):
         service.reset_action_instance.assert_called_once_with(12, False, reset_single_slice=True)
         service.reset_single_action_instance.assert_not_called()
 
-    @data(404, 409)
-    def test_reset_single_action_instance_route_preserves_error_status(self, code):
-        self.controller.action_instance_service.reset_action_instance.side_effect = InvalidObjectException('Rejected', code)
+    def test_reset_single_action_instance_route_rejects_unsuccessful_reset(self):
+        self.controller.action_instance_service.reset_action_instance.return_value = False
 
         response = self._post_reset_single('rapid-key')
 
-        self.assertEqual(code, response.status_code)
-        self.assertEqual({'message': 'Rejected'}, json.loads(response.get_data(as_text=True)))
+        self.assertEqual(409, response.status_code)
+        self.assertEqual({'message': 'Unable to reset slice: it must exist, be finished, and belong to a pipeline less than three days old'}, json.loads(response.get_data(as_text=True)))
 
     def test_reset_single_action_instance_route_requires_api_key(self):
         response = self._post_reset_single('wrong-key')

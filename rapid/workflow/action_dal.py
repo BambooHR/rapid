@@ -218,10 +218,9 @@ class ActionDal(GeneralDal, Injectable):
         for session in get_db_session():
             action_instance = session.query(ActionInstance).with_for_update().filter(ActionInstance.id == _id).first()
             if action_instance is None:
-                raise InvalidObjectException("Action Instance not found", 404)
-            if check_status:
-                if action_instance.status_id != StatusConstants.INPROGRESS:
-                    return False
+                return False
+            if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
+                return False
             if reset_single_slice:
                 return self._reset_single_action_instance(action_instance, session)
 
@@ -236,10 +235,10 @@ class ActionDal(GeneralDal, Injectable):
 
     def _reset_single_action_instance(self, action_instance, session):
         if action_instance.status_id <= StatusConstants.INPROGRESS:
-            raise InvalidObjectException("Action Instance has not finished", 409)
+            return False
         created = action_instance.pipeline_instance.created_date
         if created is None or datetime.datetime.utcnow() - created >= datetime.timedelta(days=3):
-            raise InvalidObjectException("Pipeline must be less than three days old", 409)
+            return False
         pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance)
         InstanceWorkflowEngine(self.status_dal, pipeline_instance).reset_single_action_instance(
             action_instance)
