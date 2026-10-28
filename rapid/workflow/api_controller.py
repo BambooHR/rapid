@@ -369,13 +369,13 @@ class APIRouter(Injectable):
         if complete_reset and reset_single_slice:
             return Response(json.dumps({"message": "A single-slice reset cannot request complete_reset"}), content_type='application/json', status=400)
         result = self.action_instance_service.reset_action_instance(_id, complete_reset, reset_single_slice=reset_single_slice)
-        if reset_single_slice:
-            if result:
-                return result
-            return Response(json.dumps({"message": "Unable to reset slice: it must exist, be finished, and belong to a pipeline less than three days old"}), content_type='application/json', status=409)
         if result:
-            return {"message": "Action instance reset"}
-        return Response(json.dumps({"message": "Unable to reset instance"}), content_type='application/json', status=505)
+            return result if reset_single_slice else {"message": "Action instance reset"}
+
+        message = "Unable to reset instance"
+        if reset_single_slice:
+            message = "Unable to reset slice: it must exist, be finished, and belong to a pipeline less than three days old"
+        return Response(json.dumps({"message": message}), content_type='application/json', status=409 if reset_single_slice else 505)
 
     @json_response()
     def reset_capabilities(self, _id):
