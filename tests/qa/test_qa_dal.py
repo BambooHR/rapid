@@ -13,11 +13,35 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from mock.mock import Mock
+from sqlalchemy.orm import Session
+
+from rapid.qa.data.dals.qa_dal import QaDal
 from rapid.testmapper import PythonFile
 from tests.framework.unit_test import UnitTest
 
 
 class TestQaDal(UnitTest):
+
+    def test_reset_results_commits_by_default(self):
+        session = self._reset_results()
+
+        self.assertEqual(3, session.execute.call_count)
+        self.assertEqual(2, session.commit.call_count)
+
+    def test_reset_results_without_commit_leaves_transaction_open(self):
+        session = self._reset_results(commit=False)
+
+        self.assertEqual(3, session.execute.call_count)
+        session.commit.assert_not_called()
+
+    @staticmethod
+    def _reset_results(**kwargs):
+        session = Session()
+        session.execute = Mock()
+        session.commit = Mock()
+        QaDal().reset_results(12, session, **kwargs)
+        return session
 
     def test_parse_action(self):
         python_file = PythonFile(None, None)
