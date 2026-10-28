@@ -3,14 +3,19 @@ try:
 except ImportError:
     import json
 
+from ddt import ddt, data
+from flask import Flask
 from mock.mock import MagicMock, patch
 from sqlalchemy.orm.exc import NoResultFound
+from werkzeug.test import Client
 
 from rapid.lib.constants import Constants
+from rapid.lib.exceptions import InvalidObjectException
 from tests.framework.unit_test import UnitTest
 from rapid.workflow.api_controller import APIRouter
 
 
+@ddt
 class TestAPIController(UnitTest):
 
     def setUp(self):
@@ -91,3 +96,53 @@ class TestAPIController(UnitTest):
             response = self.controller.list_single_object('not_a_thing', 1)
 
         self.assertEqual(404, response.status_code)
+
+    def test_reset_single_action_instance_route_returns_outcome(self):
+        service = self.controller.action_instance_service
+        service.reset_action_instance.return_value = {'action_instance_id': 12, 'outcome': 'reset'}
+
+        response = self._post_reset_single('rapid-key')
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({'action_instance_id': 12, 'outcome': 'reset'}, json.loads(response.get_data(as_text=True)))
+        service.reset_action_instance.assert_called_once_with(12, False, reset_single_slice=True)
+        service.reset_single_action_instance.assert_not_called()
+
+    @data(404, 409)
+    def test_reset_single_action_instance_route_preserves_error_status(self, code):
+        self.controller.action_instance_service.reset_action_instance.side_effect = InvalidObjectException('Rejected', code)
+
+        response = self._post_reset_single('rapid-key')
+
+        self.assertEqual(code, response.status_code)
+        self.assertEqual({'message': 'Rejected'}, json.loads(response.get_data(as_text=True)))
+
+    def test_reset_single_action_instance_route_requires_api_key(self):
+        response = self._post_reset_single('wrong-key')
+
+        self.assertEqual(401, response.status_code)
+        self.controller.action_instance_service.reset_single_action_instance.assert_not_called()
+
+    def _post_reset_single(self, api_key, payload=None):
+        flask_app = Flask(__name__)
+        flask_app.rapid_config = MagicMock(api_key='rapid-key')
+        self.controller.register_url_rules(flask_app)
+        from flask import request
+        self.controller.http_wrapper.current_request.side_effect = lambda: request
+        return Client(flask_app).post('/api/action_instances/12/reset', json={'reset_single_slice': True} if payload is None else payload, headers={'X-Rapidci-Api-Key': api_key})
+
+
+    @data({'complete_reset': 'false'}, {'reset_single_slice': 'false'}, {'reset_single_slice': 0}, {'complete_reset': True, 'reset_single_slice': True})
+    def test_reset_rejects_missing_or_non_boolean_scope(self, payload):
+        self.controller.http_wrapper.current_request.return_value.get_json.return_value = payload
+        response = self._post_reset_single('rapid-key', payload)
+        self.assertEqual(400, response.status_code)
+        self.controller.action_instance_service.reset_action_instance.assert_not_called()
+
+    @data({}, {'complete_reset': False}, {'complete_reset': True}, {'reset_single_slice': False})
+    def test_legacy_reset_payload_keeps_existing_behavior(self, payload):
+        self.controller.action_instance_service.reset_action_instance.return_value = True
+        response = self._post_reset_single('rapid-key', payload)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({'message': 'Action instance reset'}, json.loads(response.get_data(as_text=True)))
+        self.controller.action_instance_service.reset_action_instance.assert_called_once_with(12, payload.get('complete_reset', False), reset_single_slice=False)
