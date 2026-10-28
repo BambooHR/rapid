@@ -302,7 +302,7 @@ class TestActionDal(UnitTest):
     def _cancel(db_session, get_action_instance, status_id, worker_stopped):
         session = Mock()
         db_session.return_value = [session]
-        get_action_instance.return_value = Mock(status_id=status_id)
+        get_action_instance.return_value = Mock(status_id=status_id, assigned_to=None)
         queue_constants = Mock()
         queue_constants.cancel_worker.return_value = worker_stopped
 
@@ -435,7 +435,7 @@ class TestActionDal(UnitTest):
 
     @staticmethod
     def _finished_action_instance():
-        return Mock(id=12, status_id=StatusConstants.FAILED, pipeline_instance=Mock(created_date=datetime.datetime.utcnow()))
+        return Mock(id=12, slice="3/4", status_id=StatusConstants.FAILED, pipeline_instance=Mock(created_date=datetime.datetime.utcnow()))
 
 
 

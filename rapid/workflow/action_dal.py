@@ -234,6 +234,12 @@ class ActionDal(GeneralDal, Injectable):
         return True
 
     def _reset_single_action_instance(self, action_instance, session):
+        try:
+            slice_number, slice_count = map(int, (action_instance.slice or '').split('/'))
+        except ValueError:
+            return False
+        if not 1 <= slice_number <= slice_count or slice_count <= 1:
+            return False
         if action_instance.status_id <= StatusConstants.INPROGRESS:
             return False
         created = action_instance.pipeline_instance.created_date
@@ -252,13 +258,15 @@ class ActionDal(GeneralDal, Injectable):
             action_instance = self.get_action_instance_by_id(action_instance_id, session)
 
             if action_instance:
-                if action_instance.status_id > StatusConstants.INPROGRESS:
+                retry_worker_stop = action_instance.status_id == StatusConstants.CANCELED and bool(action_instance.assigned_to)
+                if action_instance.status_id > StatusConstants.INPROGRESS and not retry_worker_stop:
                     return {"message": "Action Instance has already finished.", "outcome": "already_finished"}
 
-                worker_assigned = action_instance.status_id == StatusConstants.INPROGRESS
+                worker_assigned = action_instance.status_id == StatusConstants.INPROGRESS or retry_worker_stop
                 serialized = action_instance.serialize()
-                instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
-                instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
+                if not retry_worker_stop:
+                    instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
+                    instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
                 worker_stopped = self.queue_constants.cancel_worker(serialized)
                 session.commit()
             else:

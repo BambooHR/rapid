@@ -105,7 +105,6 @@ class TestAPIController(UnitTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual({'action_instance_id': 12, 'outcome': 'reset'}, json.loads(response.get_data(as_text=True)))
         service.reset_action_instance.assert_called_once_with(12, False, reset_single_slice=True)
-        service.reset_single_action_instance.assert_not_called()
 
     def test_reset_single_action_instance_route_rejects_unsuccessful_reset(self):
         self.controller.action_instance_service.reset_action_instance.return_value = False
@@ -113,13 +112,13 @@ class TestAPIController(UnitTest):
         response = self._post_reset_single('rapid-key')
 
         self.assertEqual(409, response.status_code)
-        self.assertEqual({'message': 'Unable to reset slice: it must exist, be finished, and belong to a pipeline less than three days old'}, json.loads(response.get_data(as_text=True)))
+        self.assertEqual({'message': 'Unable to reset slice: it must be a finished slice in a multi-slice group and belong to a pipeline less than three days old'}, json.loads(response.get_data(as_text=True)))
 
     def test_reset_single_action_instance_route_requires_api_key(self):
         response = self._post_reset_single('wrong-key')
 
         self.assertEqual(401, response.status_code)
-        self.controller.action_instance_service.reset_single_action_instance.assert_not_called()
+        self.controller.action_instance_service.reset_action_instance.assert_not_called()
 
     def _post_reset_single(self, api_key, payload=None):
         flask_app = Flask(__name__)
@@ -144,3 +143,11 @@ class TestAPIController(UnitTest):
         self.assertEqual(200, response.status_code)
         self.assertEqual({'message': 'Action instance reset'}, json.loads(response.get_data(as_text=True)))
         self.controller.action_instance_service.reset_action_instance.assert_called_once_with(12, payload.get('complete_reset', False), reset_single_slice=False)
+
+
+    @patch('rapid.workflow.api_controller.logger')
+    def test_reset_logs_unexpected_service_failure(self, logger):
+        self.controller.action_instance_service.reset_action_instance.side_effect = RuntimeError('database failure')
+        response = self._post_reset_single('rapid-key')
+        self.assertEqual(500, response.status_code)
+        logger.exception.assert_called_once_with('Reset failed for action instance %s', 12)

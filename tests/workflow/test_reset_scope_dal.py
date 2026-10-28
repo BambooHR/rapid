@@ -9,6 +9,7 @@ from tests.workflow.test_reset_scope import build
 def setup_dal(age=datetime.timedelta(hours=71)):
     engine, actions = build(['1:4,1', '1:1'])
     target = actions[2]
+    target.slice = "3/4"
     target.pipeline_instance = engine.pipeline
     target.pipeline_instance.created_date = None if age is None else datetime.datetime.utcnow() - age
     session = Mock()
@@ -77,3 +78,30 @@ def test_default_slice_option_keeps_legacy_reset_selection(complete_reset):
         assert actions[-1].status_id == S.SUCCESS
     else:
         assert actions[-1].status_id == S.NEW
+
+
+@pytest.mark.parametrize('slice_value', [None, '', '1/1', 'bad', '1/x', '1/2/3', '0/4', '5/4'])
+def test_single_retry_rejects_non_grouped_or_invalid_slice(slice_value):
+    dal, session, target, _ = setup_dal()
+    target.slice = slice_value
+    with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
+        assert dal.reset_action_instance(target.id, reset_single_slice=True) is False
+    session.commit.assert_not_called()
+    dal.qa_module.reset_results.assert_not_called()
+    assert target.status_id == S.SUCCESS
+
+
+@pytest.mark.parametrize('second_stop', [True, False])
+def test_cancel_retries_worker_stop_without_completing_action_again(second_stop):
+    session = Mock()
+    target = Mock(status_id=S.INPROGRESS, assigned_to='worker-12')
+    queue = Mock()
+    queue.cancel_worker.side_effect = [False, second_stop]
+    dal = ActionDal(queue_constants=queue)
+    dal.get_action_instance_by_id = Mock(return_value=target)
+    with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]), patch('rapid.workflow.action_dal.InstanceWorkflowEngine') as engine:
+        engine.return_value.complete_an_action.side_effect = lambda *args: setattr(target, 'status_id', S.CANCELED)
+        assert dal.cancel_action_instance(12)['outcome'] == 'worker_stop_failed'
+        assert dal.cancel_action_instance(12)['outcome'] == ('requested' if second_stop else 'worker_stop_failed')
+        engine.return_value.complete_an_action.assert_called_once_with(12, S.CANCELED)
+    assert queue.cancel_worker.call_count == 2
