@@ -84,26 +84,15 @@ class ActionDal(GeneralDal, Injectable):
             .where(action_alias.end_date == None)\
             .correlate(ActionInstance) \
             .correlate(WorkflowInstance)
-        isolated = aliased(ActionInstance)
-        isolated_stage = aliased(StageInstance)
-        isolated_pipeline = exists().where(
-            isolated_stage.pipeline_instance_id == ActionInstance.pipeline_instance_id
-        ).where(isolated_stage.suppress_downstream.is_(True))
-        isolated_workflow = exists().where(
-            isolated.workflow_instance_id == ActionInstance.workflow_instance_id
-        ).where(isolated.isolated_retry.is_(True))
         for action_instance, pipeline_parameters, action_instance_config in session.query(ActionInstance, PipelineParameters, ActionInstanceConfig) \
                 .join(PipelineInstance, PipelineInstance.id == ActionInstance.pipeline_instance_id) \
                 .join(WorkflowInstance, WorkflowInstance.id == ActionInstance.workflow_instance_id) \
-                .join(StageInstance, StageInstance.id == WorkflowInstance.stage_instance_id) \
                 .outerjoin(PipelineParameters, PipelineParameters.pipeline_instance_id == ActionInstance.pipeline_instance_id) \
                 .outerjoin(ActionInstanceConfig, ActionInstanceConfig.action_instance_id == ActionInstance.id) \
                 .filter(ActionInstance.status_id == StatusConstants.NEW) \
                 .filter(ActionInstance.manual == 0) \
                 .filter(PipelineInstance.status_id == StatusConstants.INPROGRESS) \
                 .filter(inner_query) \
-                .filter(~isolated_pipeline | StageInstance.status_id.in_([StatusConstants.READY, StatusConstants.INPROGRESS])) \
-                .filter(~isolated_workflow) \
                 .order_by(PipelineInstance.priority.desc(),
                           PipelineInstance.created_date.asc(),
                           PipelineInstance.id.asc(),
@@ -233,30 +222,27 @@ class ActionDal(GeneralDal, Injectable):
             if check_status:
                 if action_instance.status_id != StatusConstants.INPROGRESS:
                     return False
-                # Recovery retains the scope of an already isolated attempt.
-                reset_single_slice = reset_single_slice or bool(action_instance.isolated_retry)
             if reset_single_slice:
-                return self._reset_single_action_instance(action_instance, session, check_status)
+                return self._reset_single_action_instance(action_instance, session)
 
             pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance)
             reset_ids = InstanceWorkflowEngine(self.status_dal, pipeline_instance).reset_action(
-                action_instance, complete_reset=complete_reset, preserve_stage_scope=check_status)
+                action_instance, complete_reset=complete_reset)
             if self.qa_module is not None:
                 for action_instance_id in reset_ids:
                     self.qa_module.reset_results(action_instance_id, session, commit=False)
             session.commit()
         return True
 
-    def _reset_single_action_instance(self, action_instance, session, recovering=False):
-        if not recovering:
-            if action_instance.status_id <= StatusConstants.INPROGRESS:
-                raise InvalidObjectException("Action Instance has not finished", 409)
-            created = action_instance.pipeline_instance.created_date
-            if created is None or datetime.datetime.utcnow() - created >= datetime.timedelta(days=3):
-                raise InvalidObjectException("Pipeline must be less than three days old", 409)
+    def _reset_single_action_instance(self, action_instance, session):
+        if action_instance.status_id <= StatusConstants.INPROGRESS:
+            raise InvalidObjectException("Action Instance has not finished", 409)
+        created = action_instance.pipeline_instance.created_date
+        if created is None or datetime.datetime.utcnow() - created >= datetime.timedelta(days=3):
+            raise InvalidObjectException("Pipeline must be less than three days old", 409)
         pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance)
         InstanceWorkflowEngine(self.status_dal, pipeline_instance).reset_single_action_instance(
-            action_instance, preserve_stage_scope=recovering)
+            action_instance)
         if self.qa_module is not None:
             self.qa_module.reset_results(action_instance.id, session, commit=False)
         session.commit()

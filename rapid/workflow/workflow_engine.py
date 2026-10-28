@@ -121,9 +121,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
             self._mark_action_instance_complete(action_instance, status_id)
 
             action_instances = self._get_actions_by_workflow_id(action_instance.workflow_instance_id)
-            if self._has_isolated_retry(action_instance.workflow_instance):
-                self._complete_isolated_workflow(action_instance.workflow_instance)
-            elif self._can_continue_workflow(action_instances):
+            if self._can_continue_workflow(action_instances):
                 if self._activate_next_action_all_complete(action_instances):
                     self.complete_a_workflow(action_instance.workflow_instance_id, StatusConstants.SUCCESS)
             else:
@@ -141,8 +139,7 @@ class InstanceWorkflowEngine(WorkflowEngine):
         self._mark_workflow_instance_complete(workflow_instance, status_id)
 
         # Are all the other workflows complete?
-        all_complete, all_passed, failed_type = self._check_completion_statuses(
-            self._get_workflows_by_stage_id(workflow_instance.stage_instance_id), workflow_instance.stage_instance.suppress_downstream)
+        all_complete, all_passed, failed_type = self._check_and_verify_statuses(self._get_workflows_by_stage_id(workflow_instance.stage_instance_id))
 
         if all_complete:
             self.complete_a_stage(workflow_instance.stage_instance_id,
@@ -153,22 +150,16 @@ class InstanceWorkflowEngine(WorkflowEngine):
         self._mark_stage_instance_complete(stage_instance, status_id)
 
         if self._reconciled_stages(self._load_pipeline(), stage_instance):
-            all_complete, all_passed, failed_type = self._check_completion_statuses(
-                self._get_stages(self.pipeline), stage_instance.suppress_downstream)
+            all_complete, all_passed, failed_type = self._check_and_verify_statuses(self._get_stages(self.pipeline))
 
             if all_complete:
-                missing_stages = (stage_instance.suppress_downstream
-                                  and len(self.pipeline.stage_instances) < len(self.pipeline.pipeline.stages))
-                successful_status = StatusConstants.CANCELED if missing_stages else StatusConstants.SUCCESS
-                self.complete_a_pipeline(successful_status if all_passed else failed_type.id)
+                self.complete_a_pipeline(StatusConstants.SUCCESS if all_passed else failed_type.id)
 
     def complete_a_pipeline(self, status_id):
         pipeline_instance = self._load_pipeline()
         self._mark_pipeline_instance_complete(pipeline_instance, status_id)
 
     def _reconciled_stages(self, pipeline_instance, stage_instance):
-        if stage_instance.suppress_downstream:
-            return True
         if StatusConstants.SUCCESS == stage_instance.status_id and len(self._get_stages(pipeline_instance)) < len(pipeline_instance.pipeline.stages):
             _next = False
             for stage in pipeline_instance.pipeline.stages:
@@ -331,7 +322,6 @@ class InstanceWorkflowEngine(WorkflowEngine):
         now = datetime.datetime.utcnow() if now is None else now
 
         stage.status_id = StatusConstants.READY if first_stage else StatusConstants.NEW
-        stage.suppress_downstream = False
         stage.created_date = now
         stage.start_date = now if first_stage else None
         stage.end_date = None
@@ -357,24 +347,13 @@ class InstanceWorkflowEngine(WorkflowEngine):
                         return action
         return None
 
-    def reset_action(self, action, first_stage=False, complete_reset=True, preserve_stage_scope=False):
+    def reset_action(self, action, first_stage=False, complete_reset=True):
         action.workflow_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
         action.workflow_instance.end_date = None
         action.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS if first_stage else StatusConstants.NEW
         action.workflow_instance.stage_instance.end_date = None
 
-        if not preserve_stage_scope:
-            for stage in self.pipeline.stage_instances:
-                stage.suppress_downstream = False
-            for instance in action.workflow_instance.action_instances:
-                instance.isolated_retry = False
-
-        reset_ids = self.reset_action_instances(action, action.workflow_instance.action_instances, first_stage, complete_reset=complete_reset)
-        if preserve_stage_scope and any(stage.suppress_downstream for stage in self.pipeline.stage_instances):
-            # Recovery must remain dispatchable and included in isolated completion.
-            action.workflow_instance.status_id = StatusConstants.INPROGRESS
-            action.workflow_instance.stage_instance.status_id = StatusConstants.INPROGRESS
-        return reset_ids
+        return self.reset_action_instances(action, action.workflow_instance.action_instances, first_stage, complete_reset=complete_reset)
 
     def reset_action_instances(self, action_instance, action_instances, first_stage=False, complete_reset=False):
         reset_ids = []
@@ -401,7 +380,6 @@ class InstanceWorkflowEngine(WorkflowEngine):
                     instance.start_date = None
                     instance.assigned_to = None
                     instance.end_date = None
-                    instance.isolated_retry = False
                     reset_ids.append(instance.id)
                 elif instance.order == current_order:
                     continue
@@ -412,7 +390,6 @@ class InstanceWorkflowEngine(WorkflowEngine):
                 instance.start_date = None
                 instance.assigned_to = None
                 instance.end_date = None
-                instance.isolated_retry = False
                 reset_ids.append(instance.id)
 
         if reset_ids:
@@ -422,36 +399,15 @@ class InstanceWorkflowEngine(WorkflowEngine):
         return reset_ids
 
 
-    def reset_single_action_instance(self, action_instance, preserve_stage_scope=False):
+    def reset_single_action_instance(self, action_instance):
         action_instance.status_id = StatusConstants.READY
         action_instance.start_date = None
         action_instance.assigned_to = None
         action_instance.end_date = None
-        action_instance.isolated_retry = True
-        stage = action_instance.workflow_instance.stage_instance
-        if not preserve_stage_scope:
-            stage.suppress_downstream = True
-        for parent in (action_instance.workflow_instance, stage, self.pipeline):
+        for parent in (action_instance.workflow_instance, action_instance.workflow_instance.stage_instance, self.pipeline):
             parent.status_id = StatusConstants.INPROGRESS
             parent.end_date = None
         return [action_instance.id]
-
-    @staticmethod
-    def _has_isolated_retry(workflow):
-        return any(instance.isolated_retry for instance in workflow.action_instances)
-
-    def _check_completion_statuses(self, instances, isolated=False):
-        included = [instance for instance in instances if not isolated or instance.status_id != StatusConstants.NEW]
-        all_complete, all_passed, failed_type = self._check_and_verify_statuses(included)
-        if all_complete and all_passed and len(included) != len(instances):
-            return True, False, self._get_status(StatusConstants.CANCELED)
-        return all_complete, all_passed, failed_type
-
-    def _complete_isolated_workflow(self, workflow):
-        # Excluded NEW steps stay untouched and cannot turn an incomplete pipeline green.
-        all_complete, all_passed, failed_type = self._check_completion_statuses(workflow.action_instances, isolated=True)
-        if all_complete:
-            self.complete_a_workflow(workflow.id, StatusConstants.SUCCESS if all_passed else failed_type.id)
 
     @staticmethod
     def _mark_action_instance_complete(action_instance, status_id):

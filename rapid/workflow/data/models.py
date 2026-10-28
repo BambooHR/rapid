@@ -83,7 +83,6 @@ class ActionInstance(DateModel, BaseModel, Base):
     grain = Column(String(100))
     assigned_to = Column(String(150), nullable=True)
     slice = Column(String(25), default='')
-    isolated_retry = Column(Boolean, nullable=False, default=False, server_default='0')
 
     status_id = Column(Integer, ForeignKey('statuses.id'), nullable=False, index=True)
     action_id = Column(Integer, ForeignKey('actions.id'), nullable=False, index=True)
@@ -192,7 +191,6 @@ class Stage(ActiveModel, Base):
 
 
 class StageInstance(BaseModel, DateModel, Base):
-    suppress_downstream = Column(Boolean, nullable=False, default=False, server_default='0')
     order = Column(Integer, nullable=False, default=0, index=True)
     status_id = Column(Integer, ForeignKey("statuses.id"), nullable=False, index=True)
     pipeline_instance_id = Column(Integer, ForeignKey("pipeline_instances.id"), nullable=False, index=True)

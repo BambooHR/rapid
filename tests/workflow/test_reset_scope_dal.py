@@ -60,16 +60,13 @@ def test_cleanup_failure_never_commits_reset():
     session.commit.assert_not_called()
 
 
-def test_worker_recovery_preserves_isolation_even_after_age_limit():
+def test_worker_recovery_keeps_existing_workflow_reset_behavior():
     dal, session, target, actions = setup_dal(datetime.timedelta(days=4))
     target.status_id = S.INPROGRESS
-    target.isolated_retry = True
     with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
-        dal.reset_action_instance(target.id, check_status=True)
-    assert target.status_id == S.READY
-    assert target.isolated_retry is True
-    assert actions[0].status_id == S.SUCCESS
-    dal.qa_module.reset_results.assert_called_once_with(target.id, session, commit=False)
+        assert dal.reset_action_instance(target.id, check_status=True) is True
+    assert all(action.status_id == S.NEW for action in actions)
+    assert [call.args[0] for call in dal.qa_module.reset_results.call_args_list] == [a.id for a in actions]
 
 
 @pytest.mark.parametrize('complete_reset', [False, True])
@@ -81,7 +78,6 @@ def test_default_slice_option_keeps_legacy_reset_selection(complete_reset):
         dal.reset_action_instance(target.id, complete_reset=complete_reset)
     expected = actions[:4] if complete_reset else actions
     assert [call.args[0] for call in dal.qa_module.reset_results.call_args_list] == [a.id for a in expected]
-    assert all(a.isolated_retry is False for a in expected)
     if complete_reset:
         assert actions[-1].status_id == S.SUCCESS
     else:

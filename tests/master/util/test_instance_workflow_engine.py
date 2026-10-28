@@ -469,7 +469,7 @@ class TestInstanceWorkflowEngine(UnitTest):
         self.assertEqual(StatusConstants.SUCCESS, pipeline_instance.status_id)
         self.assertIsNotNone(pipeline_instance.end_date)
 
-    def test_reset_single_action_instance_completion_preserves_existing_downstream_stage(self):
+    def test_reset_single_action_instance_completion_uses_existing_downstream_progression(self):
         pipeline_instance = self._build_pipeline_instance(['1:2', '1:1'], True)
         target = pipeline_instance.stage_instances[0].workflow_instances[0].action_instances[0]
         target.status_id = StatusConstants.FAILED
@@ -479,9 +479,9 @@ class TestInstanceWorkflowEngine(UnitTest):
         workflow_engine.reset_single_action_instance(target)
         workflow_engine.complete_an_action(target.id, StatusConstants.SUCCESS)
 
-        self.assertEqual(StatusConstants.SUCCESS, pipeline_instance.stage_instances[1].status_id)
-        self.assertEqual(StatusConstants.SUCCESS, downstream_workflow.status_id)
-        self.assertEqual(StatusConstants.SUCCESS, downstream_workflow.action_instances[0].status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, pipeline_instance.stage_instances[1].status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, downstream_workflow.status_id)
+        self.assertEqual(StatusConstants.READY, downstream_workflow.action_instances[0].status_id)
 
     @staticmethod
     def _instance_state(instance):

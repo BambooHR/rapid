@@ -80,7 +80,7 @@ class TestActionDal(UnitTest):
 
         action_dal.get_workable_work_requests()
 
-        self.assertEqual(10, len(session.filter_args))
+        self.assertEqual(8, len(session.filter_args))
 
         filter_1 = session.filter_args[0]
         filter_2 = session.filter_args[1]
@@ -320,7 +320,7 @@ class TestActionDal(UnitTest):
         mock_engine = Mock()
         mock_session = Mock()
         mock_get_session.return_value = [mock_session]
-        mock_instance = Mock(status_id=StatusConstants.INPROGRESS, isolated_retry=False)
+        mock_instance = Mock(status_id=StatusConstants.INPROGRESS)
         mock_pi_instance = Mock(action_instances=[mock_instance])
 
         mock_session.query().with_for_update().filter().first.return_value = mock_instance
@@ -377,7 +377,7 @@ class TestActionDal(UnitTest):
         self.assertEqual({"action_instance_id": 12, "outcome": "reset"}, dal.reset_action_instance(12, reset_single_slice=True))
 
         workflow_engine.assert_called_once_with(dal.status_dal, action_instance.pipeline_instance)
-        workflow_engine.return_value.reset_single_action_instance.assert_called_once_with(action_instance, preserve_stage_scope=False)
+        workflow_engine.return_value.reset_single_action_instance.assert_called_once_with(action_instance)
         qa_module.reset_results.assert_called_once_with(12, session, commit=False)
         session.commit.assert_called_once_with()
 
