@@ -62,6 +62,14 @@ def test_single_retry_rejects_slice_followed_by_later_action():
     assert target.status_id == StatusConstants.SUCCESS
 
 
+@pytest.mark.parametrize('earlier_status, allowed', [(StatusConstants.FAILED, False), (StatusConstants.SUCCESS, True)])
+def test_single_retry_requires_earlier_actions_to_succeed(earlier_status, allowed):
+    dal, session, target, actions = setup_dal(layout=('1:1,4',))
+    actions[0].status_id = earlier_status
+    target.status_id = StatusConstants.CANCELED
+    assert reset_single(dal, session, target) is allowed
+
+
 def test_single_retry_rejects_slice_once_a_later_stage_exists():
     dal, session, target, _ = setup_dal(layout=('1:4', '1:1'))
     assert reset_single(dal, session, target) is False

@@ -259,6 +259,9 @@ class ActionDal(GeneralDal, Injectable):
         workflow_instance = action_instance.workflow_instance
         if any(instance.order > action_instance.order for instance in workflow_instance.action_instances):
             return False
+        if any(instance.order < action_instance.order and instance.status_id != StatusConstants.SUCCESS
+               for instance in workflow_instance.action_instances):
+            return False
         if any(stage.order > workflow_instance.stage_instance.order for stage in pipeline_instance.stage_instances):
             return False
         if pipeline_instance.status_id == StatusConstants.CANCELED and any(
