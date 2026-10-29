@@ -364,7 +364,7 @@ class APIRouter(Injectable):
             return Response(json.dumps({"message": "Reset options must be an object"}), content_type='application/json', status=400)
         complete_reset = payload.get('complete_reset', False)
         reset_single_slice = payload.get('reset_single_slice', False)
-        if type(complete_reset) is not bool or type(reset_single_slice) is not bool:
+        if not isinstance(complete_reset, bool) or not isinstance(reset_single_slice, bool):
             return Response(json.dumps({"message": "Reset options must be booleans"}), content_type='application/json', status=400)
         if complete_reset and reset_single_slice:
             return Response(json.dumps({"message": "A single-slice reset cannot request complete_reset"}), content_type='application/json', status=400)
@@ -372,13 +372,13 @@ class APIRouter(Injectable):
             result = self.action_instance_service.reset_action_instance(_id, complete_reset, reset_single_slice=reset_single_slice)
         except Exception:
             logger.exception("Reset failed for action instance %s", _id)
-            raise
+            return Response(json.dumps({"message": "Something was wrong"}), content_type='application/json', status=500)
         if result:
             return result if reset_single_slice else {"message": "Action instance reset"}
 
         message = "Unable to reset instance"
         if reset_single_slice:
-            message = "Unable to reset slice: it must be a finished slice in a multi-slice group and belong to a pipeline less than three days old"
+            message = "Unable to reset slice: it must be a finished slice in a multi-slice group with no later actions in its workflow, and belong to a pipeline less than three days old that was not canceled with other actions still queued or running"
         return Response(json.dumps({"message": message}), content_type='application/json', status=409 if reset_single_slice else 505)
 
     @json_response()

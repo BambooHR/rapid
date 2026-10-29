@@ -112,7 +112,7 @@ class TestAPIController(UnitTest):
         response = self._post_reset_single('rapid-key')
 
         self.assertEqual(409, response.status_code)
-        self.assertEqual({'message': 'Unable to reset slice: it must be a finished slice in a multi-slice group and belong to a pipeline less than three days old'}, json.loads(response.get_data(as_text=True)))
+        self.assertEqual({'message': 'Unable to reset slice: it must be a finished slice in a multi-slice group with no later actions in its workflow, and belong to a pipeline less than three days old that was not canceled with other actions still queued or running'}, json.loads(response.get_data(as_text=True)))
 
     def test_reset_single_action_instance_route_requires_api_key(self):
         response = self._post_reset_single('wrong-key')
@@ -129,11 +129,16 @@ class TestAPIController(UnitTest):
         return Client(flask_app).post('/api/action_instances/12/reset', json={'reset_single_slice': True} if payload is None else payload, headers={'X-Rapidci-Api-Key': api_key})
 
 
-    @data({'complete_reset': 'false'}, {'reset_single_slice': 'false'}, {'reset_single_slice': 0}, {'complete_reset': True, 'reset_single_slice': True})
-    def test_reset_rejects_missing_or_non_boolean_scope(self, payload):
-        self.controller.http_wrapper.current_request.return_value.get_json.return_value = payload
+    @data({'complete_reset': 'false'}, {'reset_single_slice': 0}, {'complete_reset': True, 'reset_single_slice': True})
+    def test_reset_rejects_non_boolean_or_conflicting_options(self, payload):
         response = self._post_reset_single('rapid-key', payload)
         self.assertEqual(400, response.status_code)
+        self.controller.action_instance_service.reset_action_instance.assert_not_called()
+
+    def test_reset_rejects_non_object_options(self):
+        response = self._post_reset_single('rapid-key', [True])
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({'message': 'Reset options must be an object'}, json.loads(response.get_data(as_text=True)))
         self.controller.action_instance_service.reset_action_instance.assert_not_called()
 
     @data({}, {'complete_reset': False}, {'complete_reset': True}, {'reset_single_slice': False})
@@ -150,4 +155,16 @@ class TestAPIController(UnitTest):
         self.controller.action_instance_service.reset_action_instance.side_effect = RuntimeError('database failure')
         response = self._post_reset_single('rapid-key')
         self.assertEqual(500, response.status_code)
+        self.assertEqual({'message': 'Something was wrong'}, json.loads(response.get_data(as_text=True)))
         logger.exception.assert_called_once_with('Reset failed for action instance %s', 12)
+
+    @data('rapid-key', 'wrong-key')
+    def test_reset_capabilities_requires_api_key(self, api_key):
+        flask_app = Flask(__name__)
+        flask_app.rapid_config = MagicMock(api_key='rapid-key')
+        self.controller.register_url_rules(flask_app)
+        response = Client(flask_app).get('/api/action_instances/12/reset', headers={'X-Rapidci-Api-Key': api_key})
+        self.assertEqual(200 if api_key == 'rapid-key' else 401, response.status_code)
+        if api_key == 'rapid-key':
+            self.assertEqual({'reset_single_slice': True}, json.loads(response.get_data(as_text=True)))
+        self.controller.action_instance_service.reset_action_instance.assert_not_called()
