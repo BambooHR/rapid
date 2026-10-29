@@ -80,7 +80,6 @@ class APIRouter(Injectable):
         flask_app.add_url_rule('/api/<path:endpoint>/<int:_id>', 'list_object', api_key_required(self.list_single_object), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/done', 'finish_action_instance', api_key_required(self.finish_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/callback', 'callback_action_instance', api_key_required(self.callback_action_instance), methods=['POST'])
-        flask_app.add_url_rule('/api/action_instances/<int:_id>/reset', 'reset_capabilities', api_key_required(self.reset_capabilities), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/reset', 'reset_action_instance', api_key_required(self.reset_action_instance), methods=['POST'])
         flask_app.add_url_rule('/api/action_instances/<int:_id>/results', 'action_instance_results', api_key_required(self.action_instance_results), methods=['GET'])
         flask_app.add_url_rule('/api/action_instances/<int:action_instance_id>/work_request', 'action_instance_work_request', api_key_required(self.action_instance_work_request), methods=['GET'])
@@ -357,33 +356,19 @@ class APIRouter(Injectable):
                 return Response(json.dumps(instance.serialize()), content_type='application/json')
         return Response(status=404)
 
-    @json_response()
     def reset_action_instance(self, _id):
-        payload = self.http_wrapper.current_request().get_json(silent=True) or {}
-        if not isinstance(payload, dict):
-            return Response(json.dumps({"message": "Reset options must be an object"}), content_type='application/json', status=400)
-        complete_reset = payload.get('complete_reset', False)
-        reset_single_slice = payload.get('reset_single_slice', False)
-        if not isinstance(complete_reset, bool) or not isinstance(reset_single_slice, bool):
-            return Response(json.dumps({"message": "Reset options must be booleans"}), content_type='application/json', status=400)
-        if complete_reset and reset_single_slice:
-            return Response(json.dumps({"message": "A single-slice reset cannot request complete_reset"}), content_type='application/json', status=400)
         try:
-            result = self.action_instance_service.reset_action_instance(_id, complete_reset, reset_single_slice=reset_single_slice)
-        except Exception:
-            logger.exception("Reset failed for action instance %s", _id)
-            return Response(json.dumps({"message": "Something was wrong"}), content_type='application/json', status=500)
-        if result:
-            return result if reset_single_slice else {"message": "Action instance reset"}
+            _json = self.http_wrapper.current_request().get_json(silent=True)
+            reset_single_slice = bool(_json and _json.get('reset_single_slice'))
+            if self.action_instance_service.reset_action_instance(_id, _json['complete_reset'] if _json and 'complete_reset' in _json else False, reset_single_slice=reset_single_slice):
+                return Response(json.dumps({"message": "Action instance reset"}), content_type='application/json')
+            if reset_single_slice:
+                return Response(json.dumps({"message": "Unable to reset slice: it must be a finished slice in a multi-slice group, be the last action in its workflow, have no later stage started, and belong to a pipeline less than three days old that was not canceled with other actions still queued or running"}), content_type='application/json', status=409)
+            return Response(json.dumps({"message": "Unable to reset instance"}), content_type='application/json', status=505)
+        except Exception as exception:
+            logger.error(exception)
 
-        message = "Unable to reset instance"
-        if reset_single_slice:
-            message = "Unable to reset slice: it must be a finished slice in a multi-slice group with no later actions in its workflow, and belong to a pipeline less than three days old that was not canceled with other actions still queued or running"
-        return Response(json.dumps({"message": message}), content_type='application/json', status=409 if reset_single_slice else 505)
-
-    @json_response()
-    def reset_capabilities(self, _id):
-        return {"reset_single_slice": True}
+        return Response(json.dumps({"message": "Something was wrong"}), content_type='application/json', status=500)
 
     def callback_action_instance(self, _id):
         return Response(json.dumps(self.action_instance_service.callback(_id, self.http_wrapper.current_request().get_json())), content_type='application/json')

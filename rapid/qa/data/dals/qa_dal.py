@@ -32,29 +32,25 @@ from rapid.workflow.data.models import PipelineInstance
 
 
 class QaDal(GeneralDal, Injectable):
-    def reset_results(self, action_instance_id, session, commit=True):
+    def reset_results(self, action_instance_id, session):
         """
 
         :param action_instance_id:
         :type action_instance_id:
         :param session:
         :type session: sqlalchemy.orm.session.Session
-        :param commit: False leaves the deletes in the caller's open transaction
-        :type commit: bool
         :return:
         :rtype:
         """
         session.execute(Stacktrace.__table__.delete().where(Stacktrace.qa_test_history_id.in_(
             session.query(QaTestHistory.id).filter(QaTestHistory.action_instance_id == action_instance_id))))
 
-        if commit:
-            session.commit()
+        session.commit()
 
         session.execute(QaTestHistory.__table__.delete().where(QaTestHistory.action_instance_id == action_instance_id))
         session.execute(QaStatusSummary.__table__.delete().where(QaStatusSummary.action_instance_id == action_instance_id))
 
-        if commit:
-            session.commit()
+        session.commit()
 
     def save_results(self, action_instance, session, post_data):
         return self._save_results(action_instance, session, post_data)

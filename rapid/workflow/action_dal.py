@@ -23,12 +23,12 @@ from typing import Dict, List
 
 from flask import Flask
 from sqlalchemy import func, and_, asc
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.orm.scoping import ScopedSession
 from sqlalchemy.sql.expression import exists
 
 from rapid.lib.queue_handler_constants import QueueHandlerConstants
+from rapid.lib.filters import ObjectFilters
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.store_service import StoreService
 from rapid.lib.constants import StatusConstants, StatusTypes
@@ -168,15 +168,12 @@ class ActionDal(GeneralDal, Injectable):
     def complete_action_instance(self, _id: int, post_data: Dict):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(_id, session)
+            action_instance.end_date = datetime.datetime.utcnow()
 
             self.store_service.set_completing(_id)
             self._save_statistics(action_instance, session, post_data)
-            session.commit()
-            try:
-                self._save_status_information(action_instance, session, post_data)
-            finally:
-                self.store_service.clear_completing(_id)
-            action_instance.end_date = datetime.datetime.utcnow()
+            self._save_status_information(action_instance, session, post_data)
+            self.store_service.clear_completing(_id)
 
             session.commit()
 
@@ -189,7 +186,11 @@ class ActionDal(GeneralDal, Injectable):
 
     def reset_pipeline_instance(self, pipeline_instance_id: int):
         for session in get_db_session():
-            pipeline_instance = self._get_loaded_pipeline_instance(session, pipeline_instance_id)
+            pipeline_instance = session.query(PipelineInstance)\
+                                              .options(
+                                                  joinedload(PipelineInstance.stage_instances)
+                                                  .joinedload(StageInstance.workflow_instances)
+                                                  .joinedload(WorkflowInstance.action_instances)).filter(PipelineInstance.id == pipeline_instance_id).first()
 
             instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
             instance_workflow_engine.reset_pipeline()
@@ -206,37 +207,47 @@ class ActionDal(GeneralDal, Injectable):
                 for action_instance in workflow_instance.action_instances:
                     print("    action: {}, Status: {}, Start Date: {}, End Date: {}, Order: {}, Slice: {}".format(action_instance.id, action_instance.status_id, action_instance.start_date, action_instance.end_date, action_instance.order, action_instance.slice))
 
-    def _get_loaded_pipeline_instance(self, session: ScopedSession, pipeline_instance_id: int) -> PipelineInstance:
-        with session.no_autoflush:
-            session.query(PipelineInstance.id).filter(PipelineInstance.id == pipeline_instance_id).with_for_update().one()
-            # A locking read bypasses an earlier MySQL repeatable-read snapshot.
-            return session.query(PipelineInstance).options(
-                joinedload(PipelineInstance.parameters),
-                joinedload(PipelineInstance.stage_instances)
-                .joinedload(StageInstance.workflow_instances)
-                .joinedload(WorkflowInstance.action_instances)
-            ).filter(PipelineInstance.id == pipeline_instance_id).populate_existing().with_for_update().one()
+    def _get_loaded_pipeline_instance(self, session: ScopedSession, action_instance: ActionInstance) -> PipelineInstance:
+        return session.query(PipelineInstance) \
+            .options(
+            joinedload(PipelineInstance.action_instances),
+            joinedload(PipelineInstance.stage_instances) \
+                .joinedload(StageInstance.workflow_instances) \
+                .joinedload(WorkflowInstance.action_instances)).get(action_instance.pipeline_instance_id)
 
-    def reset_action_instance(self, _id: int, complete_reset: bool = False, check_status: bool = False, reset_single_slice: bool = False):
+    def reset_action_instance(self, _id: int, complete_reset: bool = False, check_status: bool = False, reset_single_slice: bool = False):  # pylint: disable=unused-argument
         for session in get_db_session():
             action_instance = session.query(ActionInstance).get(_id)
-            if action_instance is None:
-                return False
-            pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance.pipeline_instance_id)
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
                 return False
-            if reset_single_slice:
-                return self._reset_single_action_instance(action_instance, pipeline_instance, session)
 
-            reset_ids = InstanceWorkflowEngine(self.status_dal, pipeline_instance).reset_action(
-                action_instance, complete_reset=complete_reset)
-            if self.qa_module is not None:
-                for action_instance_id in reset_ids:
-                    self.qa_module.reset_results(action_instance_id, session, commit=False)
+            pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance)
+
+            action_instances = ObjectFilters.by_attribute('id', action_instance.id, pipeline_instance.action_instances)
+            if not action_instances:
+                return False
+
+            action_instance =  action_instances[0]
+
+            instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
+            if reset_single_slice:
+                if not self._can_reset_single_slice(action_instance, pipeline_instance):
+                    return False
+                reset_ids = instance_workflow_engine.reset_single_action_instance(action_instance)
+            else:
+                reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
+
             session.commit()
+
+            if self.qa_module is not None and reset_ids:
+                for action_instance_id in reset_ids:
+                    self.qa_module.reset_results(action_instance_id, session)
+
+                session.commit()
         return True
 
-    def _reset_single_action_instance(self, action_instance: ActionInstance, pipeline_instance: PipelineInstance, session: ScopedSession):
+    @staticmethod
+    def _can_reset_single_slice(action_instance: ActionInstance, pipeline_instance: PipelineInstance) -> bool:
         try:
             slice_number, slice_count = map(int, (action_instance.slice or '').split('/'))
         except ValueError:
@@ -245,7 +256,10 @@ class ActionDal(GeneralDal, Injectable):
             return False
         if action_instance.status_id <= StatusConstants.INPROGRESS:
             return False
-        if any(instance.order > action_instance.order for instance in action_instance.workflow_instance.action_instances):
+        workflow_instance = action_instance.workflow_instance
+        if any(instance.order > action_instance.order for instance in workflow_instance.action_instances):
+            return False
+        if any(stage.order > workflow_instance.stage_instance.order for stage in pipeline_instance.stage_instances):
             return False
         if pipeline_instance.status_id == StatusConstants.CANCELED and any(
                 StatusConstants.READY <= action.status_id <= StatusConstants.INPROGRESS
@@ -254,14 +268,7 @@ class ActionDal(GeneralDal, Injectable):
                 for action in workflow.action_instances):
             return False
         created = pipeline_instance.created_date
-        if created is None or datetime.datetime.utcnow() - created >= datetime.timedelta(days=3):
-            return False
-        InstanceWorkflowEngine(self.status_dal, pipeline_instance).reset_single_action_instance(
-            action_instance)
-        if self.qa_module is not None:
-            self.qa_module.reset_results(action_instance.id, session, commit=False)
-        session.commit()
-        return {"action_instance_id": action_instance.id, "outcome": "reset"}
+        return created is not None and datetime.datetime.utcnow() - created < datetime.timedelta(days=3)
 
     def cancel_action_instance(self, action_instance_id: int):
         for session in get_db_session():
@@ -269,14 +276,10 @@ class ActionDal(GeneralDal, Injectable):
 
             if action_instance:
                 serialized = action_instance.serialize()
-                pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance.pipeline_instance_id)
-                instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
+                instance_workflow_engine = InstanceWorkflowEngine(StatusDal(session), action_instance.pipeline_instance)
                 instance_workflow_engine.complete_an_action(action_instance_id, StatusConstants.CANCELED)
+                self.queue_constants.cancel_worker(serialized)
                 session.commit()
-                try:
-                    self.queue_constants.cancel_worker(serialized)
-                except Exception:
-                    logger.exception('Unable to stop worker for action %s', action_instance_id)
             else:
                 raise InvalidObjectException("Action Instance not found", 404)
         return {"message": "Action Instance has been canceled."}
@@ -288,19 +291,11 @@ class ActionDal(GeneralDal, Injectable):
                 .filter(~exists().where(PipelineInstance.id == action_query.c.pipeline_instance_id))
             
             for pipeline_instance in pipeline_instances.all():
-                pipeline_instance = self._get_loaded_pipeline_instance(session, pipeline_instance.id)
-                if pipeline_instance.status_id != StatusConstants.INPROGRESS or any(
-                        action.status_id <= StatusConstants.INPROGRESS
-                        for stage in pipeline_instance.stage_instances
-                        for workflow in stage.workflow_instances
-                        for action in workflow.action_instances):
-                    session.commit()
-                    continue
                 query = session.query(StageInstance, WorkflowInstance, ActionInstance).filter(and_(
                     StageInstance.pipeline_instance_id == pipeline_instance.id,
                     WorkflowInstance.stage_instance_id == StageInstance.id,
                     ActionInstance.workflow_instance_id == WorkflowInstance.id
-                )).order_by(asc(StageInstance.id), asc(WorkflowInstance.id), asc(ActionInstance.id)).with_for_update()
+                )).order_by(asc(StageInstance.id), asc(WorkflowInstance.id), asc(ActionInstance.id))
 
                 highest_status_id = None
                 highest_end_date = None
@@ -343,7 +338,7 @@ class ActionDal(GeneralDal, Injectable):
                     pipeline_instance.status_id = highest_status_id
                     pipeline_instance.end_date = highest_end_date
 
-                session.commit()
+            session.commit()
 
     def _wait_for_parallel_calculations(self, action_instance: ActionInstance):
         is_calculating = StoreService.is_calculating_workflow(action_instance.pipeline_instance_id)
@@ -364,7 +359,11 @@ class ActionDal(GeneralDal, Injectable):
 
             self._wait_for_parallel_calculations(action_instance)
 
-            pipeline_instance = self._get_loaded_pipeline_instance(session, action_instance.pipeline_instance_id)
+            pipeline_instance = session.query(PipelineInstance).options(
+                joinedload(PipelineInstance.stage_instances)
+                .joinedload(StageInstance.workflow_instances)
+                .joinedload(WorkflowInstance.action_instances)
+            ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
             workflow_engine.complete_an_action(action_instance.id, status.id)
             for instance in workflow_engine.instances_to_add:
@@ -390,14 +389,9 @@ class ActionDal(GeneralDal, Injectable):
         self.store_service.set_completing(check)
         try:
             self._save_status(action_instance, session, post_data)
-        except SQLAlchemyError:
-            session.rollback()
-            raise
         except Exception as exception:
-            session.rollback()
             logger.error(exception)
-        finally:
-            self.store_service.clear_completing(check)
+        self.store_service.clear_completing(check)
 
     def _save_parameters(self, pipeline_instance_id: int , session: ScopedSession, post_data: Dict):
         if 'parameters' in post_data:

@@ -31,8 +31,8 @@ def test_retry_persists_and_dispatches_only_selected_slice_on_existing_schema(ki
         qa = Mock()
         with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
             result = ActionDal(qa_module=qa, status_dal=Mock()).reset_action_instance(12, reset_single_slice=True)
-        assert result == {'action_instance_id': 12, 'outcome': 'reset'}
-        qa.reset_results.assert_called_once_with(12, session, commit=False)
+        assert result is True
+        qa.reset_results.assert_called_once_with(12, session)
     with Session(database) as session:
         selected = session.get(ActionInstance, 12)
         assert selected.status_id == StatusConstants.READY

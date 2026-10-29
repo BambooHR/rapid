@@ -29,8 +29,8 @@ class QaService(Injectable, QaModule):
         """
         self.qa_dal = qa_dal
 
-    def reset_results(self, action_instance_id, session, commit=True):
-        return self.qa_dal.reset_results(action_instance_id, session, commit)
+    def reset_results(self, action_instance_id, session):
+        return self.qa_dal.reset_results(action_instance_id, session)
 
     def save_results(self, action_instance, session, post_data):
         return self.qa_dal.save_results(action_instance, session, post_data)

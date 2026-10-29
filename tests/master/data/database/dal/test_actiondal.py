@@ -256,7 +256,6 @@ class TestActionDal(UnitTest):
 
         mock_constants = Mock()
         action_dal = ActionDal(flask_app=Mock(), queue_constants=mock_constants)
-        action_dal._get_loaded_pipeline_instance = Mock()
 
         self.assertEqual("Action Instance has been canceled.", action_dal.cancel_action_instance(123455)['message'])
 
@@ -288,21 +287,35 @@ class TestActionDal(UnitTest):
         mock_session.query.assert_called_with(mock_action_instance)
         mock_session.commit.assert_called_with()
         
-        mock_loaded_pipeline_instance.assert_called_with(mock_session, mock_instance.pipeline_instance_id)
+        mock_loaded_pipeline_instance.assert_called_with(mock_session, mock_instance)
         mock_instance_engine.assert_called_with(dal.status_dal, mock_pi_instance)
 
-    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
-    @patch('rapid.workflow.action_dal.get_db_session')
-    def test_reset_single_action_instance_returns_false_when_not_found(self, get_db_session, workflow_engine):
-        session = Mock()
-        session.query.return_value.get.return_value = None
-        get_db_session.return_value = [session]
-        qa_module = Mock()
+    @patch('rapid.workflow.action_dal.PipelineInstance')
+    @patch('rapid.workflow.action_dal.StageInstance')
+    @patch('rapid.workflow.action_dal.WorkflowInstance')
+    @patch('rapid.workflow.action_dal.joinedload')
+    def test_get_loaded_pipeline_instance_contract(self, mock_load,
+                                                   mock_workflow,
+                                                   mock_stage,
+                                                   mock_pipeline):
+        mock_session = Mock()
+        mock_action_instance = Mock()
 
-        self.assertFalse(ActionDal(qa_module=qa_module, status_dal=Mock()).reset_action_instance(12, reset_single_slice=True))
-        workflow_engine.assert_not_called()
-        qa_module.reset_results.assert_not_called()
-        session.commit.assert_not_called()
+        mock_load_second = Mock()
+        mock_load_second.joinedload().joinedload.return_value = 'foobie'
+        mock_load.side_effect = ['foobar', mock_load_second]
+
+        dal = ActionDal()
+
+        dal._get_loaded_pipeline_instance(mock_session, mock_action_instance)
+
+        mock_session.query.assert_called_with(mock_pipeline)
+
+        mock_load_second.joinedload.assert_called_with(mock_stage.workflow_instances)
+        mock_load_second.joinedload().joinedload.assert_called_with(mock_workflow.action_instances)
+
+        mock_session.query().options.assert_called_with('foobar', 'foobie')
+        mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
 
 
 
