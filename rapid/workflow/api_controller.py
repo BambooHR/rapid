@@ -359,8 +359,11 @@ class APIRouter(Injectable):
     def reset_action_instance(self, _id):
         try:
             _json = self.http_wrapper.current_request().get_json(silent=True)
-            if self.action_instance_service.reset_action_instance(_id, _json['complete_reset'] if _json and 'complete_reset' in _json else False):
+            reset_single_slice = bool(_json and _json.get('reset_single_slice'))
+            if self.action_instance_service.reset_action_instance(_id, _json['complete_reset'] if _json and 'complete_reset' in _json else False, reset_single_slice=reset_single_slice):
                 return Response(json.dumps({"message": "Action instance reset"}), content_type='application/json')
+            if reset_single_slice:
+                return Response(json.dumps({"message": "Unable to reset slice: it must be a finished slice in a multi-slice group, be the last action in its workflow after earlier actions passed, have no later stage started, and belong to a pipeline less than three days old that was not canceled with other actions still queued or running"}), content_type='application/json', status=409)
             return Response(json.dumps({"message": "Unable to reset instance"}), content_type='application/json', status=505)
         except Exception as exception:
             logger.error(exception)

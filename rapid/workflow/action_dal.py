@@ -215,7 +215,7 @@ class ActionDal(GeneralDal, Injectable):
                 .joinedload(StageInstance.workflow_instances) \
                 .joinedload(WorkflowInstance.action_instances)).get(action_instance.pipeline_instance_id)
 
-    def reset_action_instance(self, _id: int, complete_reset: bool = False, check_status: bool = False):  # pylint: disable=unused-argument
+    def reset_action_instance(self, _id: int, complete_reset: bool = False, check_status: bool = False, reset_single_slice: bool = False):  # pylint: disable=unused-argument
         for session in get_db_session():
             action_instance = session.query(ActionInstance).get(_id)
             if check_status and action_instance.status_id != StatusConstants.INPROGRESS:
@@ -230,7 +230,12 @@ class ActionDal(GeneralDal, Injectable):
             action_instance =  action_instances[0]
 
             instance_workflow_engine = InstanceWorkflowEngine(self.status_dal, pipeline_instance)
-            reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
+            if reset_single_slice:
+                if not self._can_reset_single_slice(action_instance, pipeline_instance):
+                    return False
+                reset_ids = instance_workflow_engine.reset_single_action_instance(action_instance)
+            else:
+                reset_ids = instance_workflow_engine.reset_action(action_instance, complete_reset=complete_reset)
 
             session.commit()
 
@@ -240,6 +245,33 @@ class ActionDal(GeneralDal, Injectable):
 
                 session.commit()
         return True
+
+    @staticmethod
+    def _can_reset_single_slice(action_instance: ActionInstance, pipeline_instance: PipelineInstance) -> bool:
+        try:
+            slice_number, slice_count = map(int, (action_instance.slice or '').split('/'))
+        except ValueError:
+            return False
+        if not 1 <= slice_number <= slice_count or slice_count <= 1:
+            return False
+        if action_instance.status_id <= StatusConstants.INPROGRESS:
+            return False
+        workflow_instance = action_instance.workflow_instance
+        if any(instance.order > action_instance.order for instance in workflow_instance.action_instances):
+            return False
+        if any(instance.order < action_instance.order and instance.status_id != StatusConstants.SUCCESS
+               for instance in workflow_instance.action_instances):
+            return False
+        if any(stage.order > workflow_instance.stage_instance.order for stage in pipeline_instance.stage_instances):
+            return False
+        if pipeline_instance.status_id == StatusConstants.CANCELED and any(
+                StatusConstants.READY <= action.status_id <= StatusConstants.INPROGRESS
+                for stage in pipeline_instance.stage_instances
+                for workflow in stage.workflow_instances
+                for action in workflow.action_instances):
+            return False
+        created = pipeline_instance.created_date
+        return created is not None and datetime.datetime.utcnow() - created < datetime.timedelta(days=3)
 
     def cancel_action_instance(self, action_instance_id: int):
         for session in get_db_session():
