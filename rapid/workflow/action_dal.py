@@ -264,7 +264,7 @@ class ActionDal(GeneralDal, Injectable):
         if any(stage.order > workflow_instance.stage_instance.order for stage in pipeline_instance.stage_instances):
             return False
         if pipeline_instance.status_id == StatusConstants.CANCELED:
-            if any(StatusConstants.READY <= action.status_id <= StatusConstants.INPROGRESS for action in pipeline_instance.action_instances):
+            if any(action.status_id in (StatusConstants.READY, StatusConstants.INPROGRESS) for action in pipeline_instance.action_instances):
                 return False
         created = pipeline_instance.created_date
         return created is not None and datetime.datetime.utcnow() - created < datetime.timedelta(days=3)
