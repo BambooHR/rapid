@@ -399,6 +399,16 @@ class InstanceWorkflowEngine(WorkflowEngine):
         return reset_ids
 
 
+    def reset_single_action_instance(self, action_instance):
+        action_instance.status_id = StatusConstants.READY
+        action_instance.start_date = None
+        action_instance.assigned_to = None
+        action_instance.end_date = None
+        for parent in (action_instance.workflow_instance, action_instance.workflow_instance.stage_instance, self.pipeline):
+            parent.status_id = StatusConstants.INPROGRESS
+            parent.end_date = None
+        return [action_instance.id]
+
     @staticmethod
     def _mark_action_instance_complete(action_instance, status_id):
         action_instance.status_id = status_id
