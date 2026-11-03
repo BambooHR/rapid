@@ -28,8 +28,10 @@ def reset_single(dal, session, target):
         return dal.reset_action_instance(target.id, reset_single_slice=True)
 
 
-def test_single_retry_resets_only_target_and_its_qa_results():
+@pytest.mark.parametrize('slice_value', ['3/4', '1/1'])
+def test_single_retry_resets_only_target_and_its_qa_results(slice_value):
     dal, session, target, actions = setup_dal()
+    target.slice = slice_value
     target.status_id = StatusConstants.FAILED
 
     assert reset_single(dal, session, target) is True
@@ -86,8 +88,8 @@ def test_single_retry_on_canceled_pipeline_requires_no_leftover_work(sibling_sta
     assert reset_single(dal, session, target) is allowed
 
 
-@pytest.mark.parametrize('slice_value', [None, '1/1', 'bad', '1/x', '0/4', '5/4'])
-def test_single_retry_rejects_non_grouped_or_invalid_slice(slice_value):
+@pytest.mark.parametrize('slice_value', [None, 'bad', '1/x', '0/4', '5/4'])
+def test_single_retry_rejects_invalid_slice(slice_value):
     dal, session, target, _ = setup_dal()
     target.slice = slice_value
     assert reset_single(dal, session, target) is False

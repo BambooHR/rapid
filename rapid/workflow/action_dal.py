@@ -252,24 +252,20 @@ class ActionDal(GeneralDal, Injectable):
             slice_number, slice_count = map(int, (action_instance.slice or '').split('/'))
         except ValueError:
             return False
-        if not 1 <= slice_number <= slice_count or slice_count <= 1:
+        if not 1 <= slice_number <= slice_count:
             return False
         if action_instance.status_id <= StatusConstants.INPROGRESS:
             return False
         workflow_instance = action_instance.workflow_instance
         if any(instance.order > action_instance.order for instance in workflow_instance.action_instances):
             return False
-        if any(instance.order < action_instance.order and instance.status_id != StatusConstants.SUCCESS
-               for instance in workflow_instance.action_instances):
+        if any(instance.order < action_instance.order and instance.status_id != StatusConstants.SUCCESS for instance in workflow_instance.action_instances):
             return False
         if any(stage.order > workflow_instance.stage_instance.order for stage in pipeline_instance.stage_instances):
             return False
-        if pipeline_instance.status_id == StatusConstants.CANCELED and any(
-                StatusConstants.READY <= action.status_id <= StatusConstants.INPROGRESS
-                for stage in pipeline_instance.stage_instances
-                for workflow in stage.workflow_instances
-                for action in workflow.action_instances):
-            return False
+        if pipeline_instance.status_id == StatusConstants.CANCELED:
+            if any(StatusConstants.READY <= action.status_id <= StatusConstants.INPROGRESS for action in pipeline_instance.action_instances):
+                return False
         created = pipeline_instance.created_date
         return created is not None and datetime.datetime.utcnow() - created < datetime.timedelta(days=3)
 
