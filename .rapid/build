@@ -83,7 +83,7 @@ function setup() {
 }
 
 function run_tox_tests() {
-    tox -e py39
+    tox -e py310
     if [[ $? -ne 0 ]]
     then
         fail "Failed to run tox tests"
