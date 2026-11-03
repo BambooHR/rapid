@@ -91,3 +91,33 @@ class TestAPIController(UnitTest):
             response = self.controller.list_single_object('not_a_thing', 1)
 
         self.assertEqual(404, response.status_code)
+
+    def test_reset_single_slice_forwards_flag(self):
+        service = self.controller.action_instance_service
+        service.reset_action_instance.return_value = True
+
+        response = self._reset({'reset_single_slice': True})
+
+        self.assertEqual(200, response.status_code)
+        service.reset_action_instance.assert_called_once_with(12, False, reset_single_slice=True)
+
+    def test_reset_single_slice_rejected_returns_409(self):
+        self.controller.action_instance_service.reset_action_instance.return_value = False
+
+        response = self._reset({'reset_single_slice': True})
+
+        self.assertEqual(409, response.status_code)
+        self.assertIn('Unable to reset slice', json.loads(response.get_data(as_text=True))['message'])
+
+    def test_legacy_reset_keeps_existing_response(self):
+        service = self.controller.action_instance_service
+        service.reset_action_instance.return_value = False
+
+        response = self._reset({'complete_reset': True})
+
+        self.assertEqual(505, response.status_code)
+        service.reset_action_instance.assert_called_once_with(12, True, reset_single_slice=False)
+
+    def _reset(self, payload):
+        self.controller.http_wrapper.current_request.return_value.get_json.return_value = payload
+        return self.controller.reset_action_instance(12)
