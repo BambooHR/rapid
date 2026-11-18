@@ -69,11 +69,41 @@ class TestGithubController(UnitTest):
 
         self.assertNotIn('commit_message', parameters['parameters'])
 
-    def test_build_request_parameters_replaces_a_configured_full_message(self):
+    def test_build_request_parameters_uses_the_first_nonempty_line(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': '\n\nReal subject\nbody'},
+        })
+
+        self.assertEqual('Real subject', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_drops_emoji_and_shell_characters(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': 'Ship it 🚀; rm -rf / `curl evil`'},
+        })
+
+        self.assertEqual('Ship it rm -rf / curl evil', parameters['parameters']['commit_message'])
+        self.assertNotIn('🚀', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_keeps_a_configured_commit_message(self):
+        controller = self._controller('commit_message:sender.login')
+
+        parameters = controller._build_request_parameters({
+            'sender': {'login': 'octocat'},
+            'head_commit': {'message': 'Fix the list\n\nbody'},
+        })
+
+        self.assertEqual('octocat', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_makes_a_configured_message_safe(self):
         controller = self._controller('commit_message:head_commit.message')
 
         parameters = controller._build_request_parameters({
-            'head_commit': {'message': 'Subject\n\nbody'},
+            'head_commit': {'message': '\n\nSubject $(reboot) 🎉\n\nbody'},
         })
 
-        self.assertEqual('Subject', parameters['parameters']['commit_message'])
+        self.assertEqual('Subject reboot', parameters['parameters']['commit_message'])
+        self.assertLessEqual(len(parameters['parameters']['commit_message']), COMMIT_MESSAGE_LIMIT)

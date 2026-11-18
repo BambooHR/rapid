@@ -14,6 +14,7 @@
  limitations under the License.
 """
 import logging
+import re
 
 from functools import wraps
 
@@ -29,22 +30,32 @@ from rapid.lib.modules import WorkflowModule
 
 logger = logging.getLogger("rapid")
 
-# pipeline_parameters.value is VARCHAR(4000). A longer value fails the run insert.
+# GitHub subjects are 70 characters. pipeline_parameters.value is VARCHAR(4000).
 COMMIT_MESSAGE_PARAMETER = "commit_message"
-COMMIT_MESSAGE_LIMIT = 4000
+COMMIT_MESSAGE_LIMIT = 70
+# ASCII words only, so emoji and shell metacharacters never reach a job environment.
+_COMMIT_MESSAGE_CHARACTERS = re.compile(r"[^A-Za-z0-9 .,_:/@+-]")
+
+
+def safe_commit_message(message: object) -> str:
+    """First line that still has text once emoji and shell characters are gone."""
+    if not isinstance(message, str):
+        return ""
+    for line in message.splitlines():
+        cleaned = " ".join(_COMMIT_MESSAGE_CHARACTERS.sub("", line).split())
+        if cleaned:
+            return cleaned[:COMMIT_MESSAGE_LIMIT]
+    return ""
 
 
 def commit_subject(request_json: dict) -> str:
-    """First line of the push payload's head commit, capped at the parameter column."""
+    """Safe subject of the push payload's head commit."""
     if not isinstance(request_json, dict):
         return ""
     head = request_json.get("head_commit")
     if not isinstance(head, dict):
         return ""
-    message = head.get("message")
-    if not isinstance(message, str):
-        return ""
-    return message.split("\n", 1)[0].strip()[:COMMIT_MESSAGE_LIMIT]
+    return safe_commit_message(head.get("message"))
 
 
 class GithubController(Injectable):
@@ -96,9 +107,16 @@ class GithubController(Injectable):
     def _build_request_parameters(self, request_json):
         parameters = {'branch': GithubHelper.get_branch_from_ref(request_json['ref']) if 'ref' in request_json else None}
         parameters.update(self._load_default_parameters(request_json))
+        configured = parameters.get(COMMIT_MESSAGE_PARAMETER)
+        if isinstance(configured, str):
+            safe = safe_commit_message(configured)
+            if safe:
+                parameters[COMMIT_MESSAGE_PARAMETER] = safe
+            else:
+                del parameters[COMMIT_MESSAGE_PARAMETER]
         subject = commit_subject(request_json)
         if subject:
-            parameters[COMMIT_MESSAGE_PARAMETER] = subject
+            parameters.setdefault(COMMIT_MESSAGE_PARAMETER, subject)
 
         return {'parameters': parameters}
 
