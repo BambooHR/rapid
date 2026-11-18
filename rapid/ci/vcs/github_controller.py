@@ -29,6 +29,23 @@ from rapid.lib.modules import WorkflowModule
 
 logger = logging.getLogger("rapid")
 
+# pipeline_parameters.value is VARCHAR(4000). A longer value fails the run insert.
+COMMIT_MESSAGE_PARAMETER = "commit_message"
+COMMIT_MESSAGE_LIMIT = 4000
+
+
+def commit_subject(request_json: dict) -> str:
+    """First line of the push payload's head commit, capped at the parameter column."""
+    if not isinstance(request_json, dict):
+        return ""
+    head = request_json.get("head_commit")
+    if not isinstance(head, dict):
+        return ""
+    message = head.get("message")
+    if not isinstance(message, str):
+        return ""
+    return message.split("\n", 1)[0].strip()[:COMMIT_MESSAGE_LIMIT]
+
 
 class GithubController(Injectable):
 
@@ -79,6 +96,9 @@ class GithubController(Injectable):
     def _build_request_parameters(self, request_json):
         parameters = {'branch': GithubHelper.get_branch_from_ref(request_json['ref']) if 'ref' in request_json else None}
         parameters.update(self._load_default_parameters(request_json))
+        subject = commit_subject(request_json)
+        if subject:
+            parameters[COMMIT_MESSAGE_PARAMETER] = subject
 
         return {'parameters': parameters}
 
