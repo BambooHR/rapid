@@ -38,14 +38,12 @@ _COMMIT_MESSAGE_CHARACTERS = re.compile(r"[^A-Za-z0-9 .,_:/@+-]")
 
 
 def safe_commit_message(message: object) -> str:
-    """First line that still has text once emoji and shell characters are gone."""
+    """Commit text with newlines flattened and emoji and shell characters removed."""
     if not isinstance(message, str):
         return ""
-    for line in message.splitlines():
-        cleaned = " ".join(_COMMIT_MESSAGE_CHARACTERS.sub("", line).split())
-        if cleaned:
-            return cleaned[:COMMIT_MESSAGE_LIMIT]
-    return ""
+    flattened = " ".join(message.splitlines())
+    cleaned = " ".join(_COMMIT_MESSAGE_CHARACTERS.sub("", flattened).split())
+    return cleaned[:COMMIT_MESSAGE_LIMIT]
 
 
 def commit_subject(request_json: dict) -> str:

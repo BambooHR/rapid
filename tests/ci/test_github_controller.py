@@ -51,7 +51,7 @@ class TestGithubController(UnitTest):
         })
 
         self.assertEqual('main', parameters['parameters']['branch'])
-        self.assertEqual('Fix the list', parameters['parameters']['commit_message'])
+        self.assertEqual('Fix the list More detail', parameters['parameters']['commit_message'])
 
     def test_build_request_parameters_caps_commit_subject(self):
         controller = self._controller()
@@ -69,14 +69,14 @@ class TestGithubController(UnitTest):
 
         self.assertNotIn('commit_message', parameters['parameters'])
 
-    def test_build_request_parameters_uses_the_first_nonempty_line(self):
+    def test_build_request_parameters_flattens_newlines(self):
         controller = self._controller()
 
         parameters = controller._build_request_parameters({
             'head_commit': {'message': '\n\nReal subject\nbody'},
         })
 
-        self.assertEqual('Real subject', parameters['parameters']['commit_message'])
+        self.assertEqual('Real subject body', parameters['parameters']['commit_message'])
 
     def test_build_request_parameters_drops_emoji_and_shell_characters(self):
         controller = self._controller()
@@ -105,5 +105,5 @@ class TestGithubController(UnitTest):
             'head_commit': {'message': '\n\nSubject $(reboot) 🎉\n\nbody'},
         })
 
-        self.assertEqual('Subject reboot', parameters['parameters']['commit_message'])
+        self.assertEqual('Subject reboot body', parameters['parameters']['commit_message'])
         self.assertLessEqual(len(parameters['parameters']['commit_message']), COMMIT_MESSAGE_LIMIT)
