@@ -317,6 +317,53 @@ class TestActionDal(UnitTest):
         mock_session.query().options.assert_called_with('foobar', 'foobie')
         mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
 
+    @patch('rapid.workflow.action_dal.InstanceWorkflowEngine')
+    @patch('rapid.workflow.action_dal.StatusDal')
+    def test_save_status_commits_and_locks_pipeline_before_loading(self, mock_status_dal_cls, mock_engine_cls):
+        events = []
+        session = MagicMock()
+
+        def record_commit():
+            events.append('commit')
+
+        def query_side_effect(model):
+            query_mock = MagicMock()
+            if model is PipelineInstance.id:
+                def record_for_update():
+                    events.append('for_update')
+                    return query_mock
+                query_mock.filter.return_value = query_mock
+                query_mock.with_for_update.side_effect = record_for_update
+            else:
+                def record_load(pid):
+                    events.append(('load_pipeline', pid))
+                    return loaded_pipeline
+                query_mock.options.return_value = query_mock
+                query_mock.get.side_effect = record_load
+            return query_mock
+
+        loaded_pipeline = Mock()
+        session.commit.side_effect = record_commit
+        session.query.side_effect = query_side_effect
+
+        status = Mock(id=StatusConstants.SUCCESS)
+        mock_status_dal_cls.return_value = Mock()
+
+        engine = Mock(instances_to_add=[])
+        mock_engine_cls.return_value = engine
+
+        event_service = Mock()
+        dal = ActionDal(event_service=event_service)
+        dal.get_status_by_name = Mock(return_value=status)
+        dal._wait_for_parallel_calculations = Mock()
+
+        action_instance = Mock(id=42, pipeline_instance_id=99, assigned_to='worker')
+        dal._save_status(action_instance, session, {'status': 'SUCCESS'}, allow_save=True)
+
+        self.assertEqual(['commit', 'for_update', ('load_pipeline', 99), 'commit'], events)
+        engine.complete_an_action.assert_called_once_with(42, StatusConstants.SUCCESS)
+        event_service.trigger_possible_event.assert_called_once_with(loaded_pipeline, action_instance, session)
+
 
 
 

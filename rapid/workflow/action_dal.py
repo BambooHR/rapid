@@ -358,13 +358,24 @@ class ActionDal(GeneralDal, Injectable):
 
             self._wait_for_parallel_calculations(action_instance)
 
+            action_instance_id = action_instance.id
+            pipeline_instance_id = action_instance.pipeline_instance_id
+            status_id = status.id
+
+            # End the pre-lock transaction before acquiring FOR UPDATE so InnoDB
+            # REPEATABLE READ starts its snapshot after any concurrent writer commits.
+            session.commit()
+            session.query(PipelineInstance.id).filter(
+                PipelineInstance.id == pipeline_instance_id
+            ).with_for_update().first()
+
             pipeline_instance = session.query(PipelineInstance).options(
                 joinedload(PipelineInstance.stage_instances)
                 .joinedload(StageInstance.workflow_instances)
                 .joinedload(WorkflowInstance.action_instances)
-            ).options(joinedload(PipelineInstance.parameters)).get(action_instance.pipeline_instance_id)
+            ).options(joinedload(PipelineInstance.parameters)).get(pipeline_instance_id)
             workflow_engine = InstanceWorkflowEngine(StatusDal(session), pipeline_instance)
-            workflow_engine.complete_an_action(action_instance.id, status.id)
+            workflow_engine.complete_an_action(action_instance_id, status_id)
             for instance in workflow_engine.instances_to_add:
                 session.add(instance)
             session.commit()

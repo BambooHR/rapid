@@ -149,6 +149,55 @@ class TestInstanceWorkflowEngine(UnitTest):
         self.assertEqual(StatusConstants.SUCCESS, pipeline_instance.status_id)
         self.assertTrue(pipeline_instance.end_date is not None)
 
+    def test_reconciled_stages_reopens_failed_pipeline_when_creating_next_stage(self):
+        now = datetime.datetime.utcnow()
+        stage_one_def = Stage(id=1, order=0)
+        stage_two_def = Stage(id=2, order=1, workflows=[
+            Workflow(id=20, order=0, actions=[
+                Action(id=200, order=0, cmd='run', executable='sh', args='', slices=1)
+            ])
+        ])
+        stage_one = StageInstance(id=1, stage_id=1, order=0, status_id=StatusConstants.SUCCESS, end_date=now)
+        pipeline_instance = PipelineInstance(
+            id=10,
+            status_id=StatusConstants.FAILED,
+            end_date=now,
+            stage_instances=[stage_one],
+            pipeline=Pipeline(id=1, stages=[stage_one_def, stage_two_def]),
+        )
+        engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        engine._load_pipeline()
+
+        self.assertFalse(engine._reconciled_stages(pipeline_instance, stage_one))
+        self.assertEqual(StatusConstants.INPROGRESS, pipeline_instance.status_id)
+        self.assertIsNone(pipeline_instance.end_date)
+        added_stages = [i for i in engine.instances_to_add if isinstance(i, StageInstance)]
+        self.assertEqual(1, len(added_stages))
+        self.assertEqual(2, added_stages[0].stage_id)
+
+    def test_reconciled_stages_reopens_failed_pipeline_when_activating_existing_next_stage(self):
+        now = datetime.datetime.utcnow()
+        stage_one = StageInstance(id=1, stage_id=1, order=0, status_id=StatusConstants.SUCCESS, end_date=now)
+        next_action = ActionInstance(id=200, order=0, status_id=StatusConstants.NEW)
+        next_workflow = WorkflowInstance(id=20, order=0, status_id=StatusConstants.NEW, action_instances=[next_action])
+        stage_two = StageInstance(id=2, stage_id=2, order=1, status_id=StatusConstants.NEW, workflow_instances=[next_workflow])
+        pipeline_instance = PipelineInstance(
+            id=10,
+            status_id=StatusConstants.FAILED,
+            end_date=now,
+            stage_instances=[stage_one, stage_two],
+            pipeline=Pipeline(id=1, stages=[Stage(id=1, order=0), Stage(id=2, order=1)]),
+        )
+        engine = InstanceWorkflowEngine(self._get_mocked_dal(), pipeline_instance)
+        engine._load_pipeline()
+
+        self.assertTrue(engine._reconciled_stages(pipeline_instance, stage_one))
+        self.assertEqual(StatusConstants.INPROGRESS, pipeline_instance.status_id)
+        self.assertIsNone(pipeline_instance.end_date)
+        self.assertEqual(StatusConstants.INPROGRESS, stage_two.status_id)
+        self.assertEqual(StatusConstants.INPROGRESS, next_workflow.status_id)
+        self.assertEqual(StatusConstants.READY, next_action.status_id)
+
     def test_can_continue_workflow_status_not_in_severity(self):
         workflow_engine = InstanceWorkflowEngine(Mock(), Mock())
         workflow_engine.status_cache[StatusConstants.SUCCESS] = Status(id=StatusConstants.SUCCESS, type=StatusTypes.SUCCESS)

@@ -177,6 +177,8 @@ class InstanceWorkflowEngine(WorkflowEngine):
                         new_instance.workflow_instances.append(w_instance)
                         self.instances_to_add.append(w_instance)
                     self.instances_to_add.append(new_instance)
+                    pipeline_instance.status_id = StatusConstants.INPROGRESS
+                    pipeline_instance.end_date = None
                     break
             return False
         if StatusConstants.SUCCESS == stage_instance.status_id:
@@ -195,6 +197,8 @@ class InstanceWorkflowEngine(WorkflowEngine):
                             if first_order < 0 or first_order == action.order:
                                 action.status_id = StatusConstants.READY
                                 first_order = action.order
+                    pipeline_instance.status_id = StatusConstants.INPROGRESS
+                    pipeline_instance.end_date = None
                     break
                 if s_instance.id == stage_instance.id:
                     found = True
