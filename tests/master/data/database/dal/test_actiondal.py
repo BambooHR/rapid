@@ -18,10 +18,12 @@ import datetime
 from unittest.mock import MagicMock, call
 
 from mock.mock import patch, Mock
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, create_engine
+from sqlalchemy.orm import Session
 
 from rapid.lib.exceptions import InvalidObjectException
 from rapid.lib.constants import StatusConstants
+from rapid.qa.data.models import QaTest
 from rapid.workflow.action_dal import ActionDal
 from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig, AppConfiguration
 from tests.framework.unit_test import UnitTest
@@ -316,6 +318,24 @@ class TestActionDal(UnitTest):
 
         mock_session.query().options.assert_called_with('foobar', 'foobie')
         mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
+
+    def test_save_statistics_rolls_back_session_on_error(self):
+        database = create_engine('sqlite://')
+        QaTest.__table__.create(database)
+
+        def fail_flush(action_instance, session, post_data):
+            session.add(QaTest(name=None))
+            session.flush()
+
+        qa_module = Mock()
+        qa_module.save_results.side_effect = fail_flush
+
+        with Session(database) as session:
+            with self.assertLogs('rapid', level='ERROR') as logs:
+                ActionDal(qa_module=qa_module)._save_statistics(Mock(pipeline_instance_id=1), session, {})
+
+            self.assertEqual(0, session.query(QaTest).count())
+            self.assertIn('Traceback', logs.output[0])
 
 
 

@@ -378,7 +378,8 @@ class ActionDal(GeneralDal, Injectable):
             if self.qa_module is not None:
                 self.qa_module.save_results(action_instance, session, post_data)
         except Exception as exception:
-            logger.error(exception)
+            logger.exception(exception)
+            session.rollback()
 
     def _save_status_information(self, action_instance: ActionInstance, session: ScopedSession, post_data: Dict):
         check = '{}__{}'.format(action_instance.pipeline_instance_id, action_instance.action_id)
