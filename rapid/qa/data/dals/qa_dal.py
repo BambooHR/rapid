@@ -14,6 +14,10 @@
  limitations under the License.
 """
 # pylint: disable=bare-except,too-many-locals,unused-import,unused-variable,too-many-branches,too-many-statements,too-many-nested-blocks
+import logging
+import re
+import unicodedata
+
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import func
@@ -29,6 +33,17 @@ from rapid.qa.data.models import QaTestHistory, QaStatusSummary, Stacktrace, QaT
 from rapid.workflow.data.models import Status
 from rapid.ci.data.models import Vcs
 from rapid.workflow.data.models import PipelineInstance
+
+logger = logging.getLogger('rapid')
+
+QA_TEST_LOOKUP_CHUNK_SIZE = 1000
+NON_ASCII_LOG_LIMIT = 20
+
+
+def _normalize_test_name(name):
+    # Whitespace is collapsed before control characters are stripped so wrapped lines keep a word break.
+    name = re.sub(r'\s+', ' ', name)
+    return ' '.join(''.join(char for char in name if unicodedata.category(char) != 'Cc').split())
 
 
 class QaDal(GeneralDal, Injectable):
@@ -278,65 +293,73 @@ class QaDal(GeneralDal, Injectable):
 
     def _save_results(self, action_instance, session, post_data):
         if 'results' in post_data:
+            failures_count = False
             try:
-                failures_count = False
-                try:
-                    failures_count = self._get_summary_results(post_data['results'])[Constants.FAILURES_COUNT]
-                except:
-                    pass
-
-                results = self._save_summary(action_instance, post_data['results'], session)
-
-                should_create = dict(results)
-                test_cache = {}
-                for qa_test in session.query(QaTest).filter(QaTest.name.in_(list(results.keys()))):
-                    if qa_test.name in should_create:
-                        del should_create[qa_test.name]
-                        test_cache[qa_test.name] = qa_test
-
-                for name in should_create.keys():
-                    qa_test = QaTest(name=name)
-                    session.add(qa_test)
-                    test_cache[qa_test.name] = qa_test
-
-                session.flush()
-
-                status_cache = {}
-                for test, value in results.items():
-                    status_id = None
-                    if 'status' not in value:
-                        status_id = StatusConstants.UNKNOWN
-
-                    if 'status' in value:
-                        _check_status = value['status'].lower()
-                        if _check_status not in status_cache:
-                            status = session.query(Status).filter(func.lower(Status.name) == func.lower(_check_status)).first()
-                            if status:
-                                status_id = status.id
-                                status_cache[status.name.lower()] = status
-                            else:
-                                status_id = StatusConstants.UNKNOWN
-                        else:
-                            status_id = status_cache[_check_status].id
-
-                    if not failures_count or status_id == StatusConstants.FAILED:
-                        qa_test_history = QaTestHistory(test_id=test_cache[test].id,
-                                                        pipeline_instance_id=action_instance.pipeline_instance_id,
-                                                        action_instance_id=action_instance.id,
-                                                        status_id=status_id,
-                                                        duration=value['time'] if 'time' in value and value['time'] else 0)
-
-                        session.add(qa_test_history)
-
-                        session.flush()
-
-                        if 'stacktrace' in value:
-                            session.add(Stacktrace(qa_test_history_id=qa_test_history.id, stacktrace=value['stacktrace']))
-
-                session.commit()
+                failures_count = self._get_summary_results(post_data['results'])[Constants.FAILURES_COUNT]
             except:
-                import traceback
-                traceback.print_exc()
+                pass
+
+            results = self._save_summary(action_instance, post_data['results'], session)
+            normalized_results = [(_normalize_test_name(test), value) for test, value in results.items()]
+
+            should_create = dict.fromkeys(test for test, _ in normalized_results)
+            test_names = list(should_create)
+            test_cache = {}
+            for index in range(0, len(test_names), QA_TEST_LOOKUP_CHUNK_SIZE):
+                chunk = test_names[index:index + QA_TEST_LOOKUP_CHUNK_SIZE]
+                try:
+                    for qa_test in session.query(QaTest).filter(QaTest.name.in_(chunk)):
+                        if qa_test.name in should_create:
+                            del should_create[qa_test.name]
+                            test_cache[qa_test.name] = qa_test
+                except Exception:
+                    non_ascii = [name for name in chunk if not name.isascii()]
+                    logger.exception("QA test lookup failed for action instance %s: "
+                                     "chunk size %s, first name %r, %s non-ASCII names %r",
+                                     action_instance.id, len(chunk), chunk[0], len(non_ascii),
+                                     non_ascii[:NON_ASCII_LOG_LIMIT])
+                    raise
+
+            for name in should_create.keys():
+                qa_test = QaTest(name=name)
+                session.add(qa_test)
+                test_cache[qa_test.name] = qa_test
+
+            session.flush()
+
+            status_cache = {}
+            for test, value in normalized_results:
+                status_id = None
+                if 'status' not in value:
+                    status_id = StatusConstants.UNKNOWN
+
+                if 'status' in value:
+                    _check_status = value['status'].lower()
+                    if _check_status not in status_cache:
+                        status = session.query(Status).filter(func.lower(Status.name) == func.lower(_check_status)).first()
+                        if status:
+                            status_id = status.id
+                            status_cache[status.name.lower()] = status
+                        else:
+                            status_id = StatusConstants.UNKNOWN
+                    else:
+                        status_id = status_cache[_check_status].id
+
+                if not failures_count or status_id == StatusConstants.FAILED:
+                    qa_test_history = QaTestHistory(test_id=test_cache[test].id,
+                                                    pipeline_instance_id=action_instance.pipeline_instance_id,
+                                                    action_instance_id=action_instance.id,
+                                                    status_id=status_id,
+                                                    duration=value['time'] if 'time' in value and value['time'] else 0)
+
+                    session.add(qa_test_history)
+
+                    session.flush()
+
+                    if 'stacktrace' in value:
+                        session.add(Stacktrace(qa_test_history_id=qa_test_history.id, stacktrace=value['stacktrace']))
+
+            session.commit()
 
     def get_qa_testmap_coverage(self, pipeline_instance_id):
         objects = []
