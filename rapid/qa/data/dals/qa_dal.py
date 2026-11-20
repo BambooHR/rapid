@@ -38,12 +38,19 @@ logger = logging.getLogger('rapid')
 
 QA_TEST_LOOKUP_CHUNK_SIZE = 1000
 NON_ASCII_LOG_LIMIT = 20
+ANSI_ESCAPE_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 
 
 def _normalize_test_name(name):
-    # Whitespace is collapsed before control characters are stripped so wrapped lines keep a word break.
+    # Strip ANSI sequences and collapse whitespace before stripping Cc so wrapped lines keep a word break.
+    name = ANSI_ESCAPE_RE.sub('', name)
     name = re.sub(r'\s+', ' ', name)
     return ' '.join(''.join(char for char in name if unicodedata.category(char) != 'Cc').split())
+
+
+def _chunked(items, size=QA_TEST_LOOKUP_CHUNK_SIZE):
+    for index in range(0, len(items), size):
+        yield items[index:index + size]
 
 
 class QaDal(GeneralDal, Injectable):
@@ -176,10 +183,11 @@ class QaDal(GeneralDal, Injectable):
                     bp_keys.append(_bp)
                     bp_mapper[_bp] = {'result': tests, 'model': None}
                     for test in tests:
-                        test_keys.append(test['name'])
+                        normalized_name = _normalize_test_name(test['name'])
+                        test_keys.append(normalized_name)
                         test['__key__'] = "{}:{}:{}".format(area, feature, _bp)
                         test['model'] = None
-                        test_mapper[test['name']] = test
+                        test_mapper[normalized_name] = test
 
         if area_keys:
             for area in session.query(QaArea).filter(QaArea.name.in_(area_keys))\
@@ -240,24 +248,25 @@ class QaDal(GeneralDal, Injectable):
         session.flush()
 
         if test_keys:
-            for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
-                    .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
-                    .filter(QaTest.name.in_(test_keys)).all():
-                if test.name in test_mapper:
-                    (area, feature, _bp) = test_mapper[test.name]['__key__'].split(':', 2)
-                    if qa_test_mapping is None:
-                        qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
-                                                        test_id=test.id,
-                                                        feature_id=feature_mapper[feature]['model'].id,
-                                                        behavior_id=bp_mapper[_bp]['model'].id)
-                        session.add(qa_test_mapping)
-                    else:
-                        if qa_test_mapping.area_id != area_mapper[area]['model'].id:
-                            qa_test_mapping.area_id = area_mapper[area]['model'].id
-                        if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
-                            qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
-                        if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
-                            qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
+            for chunk in _chunked(list(dict.fromkeys(test_keys))):
+                for test, qa_test_mapping in session.query(QaTest, QaTestMapping) \
+                        .outerjoin(QaTestMapping, QaTest.id == QaTestMapping.test_id) \
+                        .filter(QaTest.name.in_(chunk)).all():
+                    if test.name in test_mapper:
+                        (area, feature, _bp) = test_mapper[test.name]['__key__'].split(':', 2)
+                        if qa_test_mapping is None:
+                            qa_test_mapping = QaTestMapping(area_id=area_mapper[area]['model'].id,
+                                                            test_id=test.id,
+                                                            feature_id=feature_mapper[feature]['model'].id,
+                                                            behavior_id=bp_mapper[_bp]['model'].id)
+                            session.add(qa_test_mapping)
+                        else:
+                            if qa_test_mapping.area_id != area_mapper[area]['model'].id:
+                                qa_test_mapping.area_id = area_mapper[area]['model'].id
+                            if qa_test_mapping.feature_id != feature_mapper[feature]['model'].id:
+                                qa_test_mapping.feature_id = feature_mapper[feature]['model'].id
+                            if qa_test_mapping.behavior_id != bp_mapper[_bp]['model'].id:
+                                qa_test_mapping.behavior_id = bp_mapper[_bp]['model'].id
 
         session.flush()
         session.commit()
@@ -303,10 +312,8 @@ class QaDal(GeneralDal, Injectable):
             normalized_results = [(_normalize_test_name(test), value) for test, value in results.items()]
 
             should_create = dict.fromkeys(test for test, _ in normalized_results)
-            test_names = list(should_create)
             test_cache = {}
-            for index in range(0, len(test_names), QA_TEST_LOOKUP_CHUNK_SIZE):
-                chunk = test_names[index:index + QA_TEST_LOOKUP_CHUNK_SIZE]
+            for chunk in _chunked(list(should_create)):
                 try:
                     for qa_test in session.query(QaTest).filter(QaTest.name.in_(chunk)):
                         if qa_test.name in should_create:

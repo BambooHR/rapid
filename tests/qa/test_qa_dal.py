@@ -19,16 +19,16 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
 from rapid.qa.data.dals.qa_dal import QaDal
-from rapid.qa.data.models import QaTest, QaTestHistory, Stacktrace
+from rapid.qa.data.models import QaArea, QaBehaviorPoint, QaFeature, QaTest, QaTestHistory, QaTestMapping, Stacktrace
 from rapid.testmapper import PythonFile
 from tests.framework.unit_test import UnitTest
 
 
 class TestQaDal(UnitTest):
 
-    def _create_database(self):
+    def _create_database(self, models=(QaTest, QaTestHistory, Stacktrace)):
         database = create_engine('sqlite://')
-        for model in (QaTest, QaTestHistory, Stacktrace):
+        for model in models:
             model.__table__.create(database)
         return database
 
@@ -51,6 +51,7 @@ class TestQaDal(UnitTest):
                 'Test:\n    returns null on 409': {'time': 3},
                 'foo\x00bar': {'time': 4},
                 'foo\x1bbar': {'time': 5},
+                '\x1b[31mfoo\x1b[39mbar': {'time': 6},
             }})
 
             self.assertEqual({'File: get-body-sections. spec.js', 'Test: returns null on 409', 'foobar'},
@@ -59,8 +60,30 @@ class TestQaDal(UnitTest):
             self.assertEqual(existing.id,
                              session.query(QaTest).filter(QaTest.name == 'Test: returns null on 409').one().id)
             self.assertEqual([('File: get-body-sections. spec.js', 1), ('File: get-body-sections. spec.js', 2),
-                              ('Test: returns null on 409', 3), ('foobar', 4), ('foobar', 5)],
+                              ('Test: returns null on 409', 3), ('foobar', 4), ('foobar', 5), ('foobar', 6)],
                              sorted((history.test.name, history.duration) for history in session.query(QaTestHistory)))
+
+    def test_get_area_mapper_normalizes_and_chunks_qa_test_lookup(self):
+        database = self._create_database((QaArea, QaFeature, QaBehaviorPoint, QaTest, QaTestMapping))
+        lookup_sizes = []
+
+        @event.listens_for(database, 'before_cursor_execute')
+        def record_lookup(conn, cursor, statement, parameters, context, executemany):
+            if statement.startswith('SELECT') and 'FROM qa_tests' in statement:
+                lookup_sizes.append(len(parameters))
+
+        with Session(database) as session:
+            existing = QaTest(name='Test: returns null on 409')
+            session.add(existing)
+            session.commit()
+
+            tests = [{'name': 'Test:\n    returns null on 409'}]
+            tests.extend({'name': 'test {}'.format(index)} for index in range(1000))
+            QaDal()._get_area_mapper(session, 1, {'Area': {'Feature': {'Behavior': tests}}})
+
+            self.assertEqual([1000, 1], lookup_sizes)
+            mapping = session.query(QaTestMapping).one()
+            self.assertEqual(existing.id, mapping.test_id)
 
     def test_save_results_chunks_qa_test_lookup(self):
         database = self._create_database()
