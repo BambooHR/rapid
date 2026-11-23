@@ -103,7 +103,11 @@ class ORMUtil(object):
 
                         parent_name = final_column.parent.mapper.class_
                         if parent_name not in joined_classes:
-                            query = query.join(final_column.parent.mapper.class_)
+                            # Join on the relationship, not the target class. A class-only join makes
+                            # SQLAlchemy guess the ON clause from foreign keys: it cannot follow an
+                            # association table (PipelineInstance.commit), and with several candidate
+                            # foreign keys it can pick the wrong one (Release.steps.integrations).
+                            query = query.join(attr)
                             joined_classes.append(parent_name)
 
                         current_class = final_column.parent.mapper.class_
@@ -116,6 +120,9 @@ class ORMUtil(object):
                         query = ORMUtil.get_column_filter(clazz, column_name, _op, value, query)
                     else:
                         logger.info("Not found: {}".format(_m.group(1)))
+            if joined_classes:
+                # A join to a collection returns the root row once per matching child row.
+                query = query.distinct()
         return query
 
     @staticmethod
