@@ -15,7 +15,7 @@ limitations under the License.
 """
 from mock.mock import MagicMock
 
-from rapid.ci.vcs.github_controller import GithubController
+from rapid.ci.vcs.github_controller import COMMIT_MESSAGE_LIMIT, GithubController
 from tests.framework.unit_test import UnitTest
 
 
@@ -36,3 +36,74 @@ class TestGithubController(UnitTest):
         controller = GithubController(MagicMock(), MagicMock(), MagicMock())
 
         self.assertEqual('wrapped_json_response', controller.process_webhooks_pipeline.__func__.__name__)
+
+    def _controller(self, default_parameters=None):
+        config = MagicMock()
+        config.github_default_parameters = default_parameters
+        return GithubController(MagicMock(), config, MagicMock())
+
+    def test_build_request_parameters_stores_commit_subject(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'ref': 'refs/heads/main',
+            'head_commit': {'message': 'Fix the list\n\nMore detail'},
+        })
+
+        self.assertEqual('main', parameters['parameters']['branch'])
+        self.assertEqual('Fix the list More detail', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_caps_commit_subject(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': 'x' * (COMMIT_MESSAGE_LIMIT + 1)},
+        })
+
+        self.assertEqual(COMMIT_MESSAGE_LIMIT, len(parameters['parameters']['commit_message']))
+
+    def test_build_request_parameters_skips_a_missing_commit_message(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({'head_commit': None, 'ref': 'refs/heads/main'})
+
+        self.assertNotIn('commit_message', parameters['parameters'])
+
+    def test_build_request_parameters_flattens_newlines(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': '\n\nReal subject\nbody'},
+        })
+
+        self.assertEqual('Real subject body', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_drops_emoji_and_shell_characters(self):
+        controller = self._controller()
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': 'Ship it 🚀; rm -rf / `curl evil`'},
+        })
+
+        self.assertEqual('Ship it rm -rf / curl evil', parameters['parameters']['commit_message'])
+        self.assertNotIn('🚀', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_keeps_a_configured_commit_message(self):
+        controller = self._controller('commit_message:sender.login')
+
+        parameters = controller._build_request_parameters({
+            'sender': {'login': 'octocat'},
+            'head_commit': {'message': 'Fix the list\n\nbody'},
+        })
+
+        self.assertEqual('octocat', parameters['parameters']['commit_message'])
+
+    def test_build_request_parameters_makes_a_configured_message_safe(self):
+        controller = self._controller('commit_message:head_commit.message')
+
+        parameters = controller._build_request_parameters({
+            'head_commit': {'message': '\n\nSubject $(reboot) 🎉\n\nbody'},
+        })
+
+        self.assertEqual('Subject reboot body', parameters['parameters']['commit_message'])
+        self.assertLessEqual(len(parameters['parameters']['commit_message']), COMMIT_MESSAGE_LIMIT)
