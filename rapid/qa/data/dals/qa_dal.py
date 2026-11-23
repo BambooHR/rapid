@@ -321,10 +321,10 @@ class QaDal(GeneralDal, Injectable):
                             test_cache[qa_test.name] = qa_test
                 except Exception:
                     non_ascii = [name for name in chunk if not name.isascii()]
-                    logger.exception("QA test lookup failed for action instance %s: "
-                                     "chunk size %s, first name %r, %s non-ASCII names %r",
-                                     action_instance.id, len(chunk), chunk[0], len(non_ascii),
-                                     non_ascii[:NON_ASCII_LOG_LIMIT])
+                    logger.error("QA test lookup failed for action instance %s: "
+                                 "chunk size %s, first name %r, %s non-ASCII names %r",
+                                 action_instance.id, len(chunk), chunk[0], len(non_ascii),
+                                 non_ascii[:NON_ASCII_LOG_LIMIT])
                     raise
 
             for name in should_create.keys():

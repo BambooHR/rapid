@@ -168,10 +168,12 @@ class ActionDal(GeneralDal, Injectable):
     def complete_action_instance(self, _id: int, post_data: Dict):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(_id, session)
-            action_instance.end_date = datetime.datetime.utcnow()
+            end_date = datetime.datetime.utcnow()
+            action_instance.end_date = end_date
 
             self.store_service.set_completing(_id)
             self._save_statistics(action_instance, session, post_data)
+            action_instance.end_date = end_date
             self._save_status_information(action_instance, session, post_data)
             self.store_service.clear_completing(_id)
 
