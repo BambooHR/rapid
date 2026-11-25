@@ -18,12 +18,14 @@ import datetime
 from unittest.mock import MagicMock, call
 
 from mock.mock import patch, Mock
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, create_engine
+from sqlalchemy.orm import Session
 
 from rapid.lib.exceptions import InvalidObjectException
-from rapid.lib.constants import StatusConstants
+from rapid.lib.constants import StatusConstants, StatusTypes
+from rapid.qa.data.models import QaTest
 from rapid.workflow.action_dal import ActionDal
-from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig, AppConfiguration
+from rapid.workflow.data.models import ActionInstance, PipelineParameters, PipelineInstance, ActionInstanceConfig, AppConfiguration, Status
 from tests.framework.unit_test import UnitTest
 
 
@@ -316,6 +318,56 @@ class TestActionDal(UnitTest):
 
         mock_session.query().options.assert_called_with('foobar', 'foobie')
         mock_session.query().options().get.assert_called_with(mock_action_instance.pipeline_instance_id)
+
+    def test_save_statistics_rolls_back_session_on_error(self):
+        database = create_engine('sqlite://')
+        QaTest.__table__.create(database)
+
+        def fail_flush(action_instance, session, post_data):
+            session.add(QaTest(name=None))
+            session.flush()
+
+        qa_module = Mock()
+        qa_module.save_results.side_effect = fail_flush
+
+        with Session(database) as session:
+            with self.assertLogs('rapid', level='ERROR') as logs:
+                ActionDal(qa_module=qa_module)._save_statistics(Mock(pipeline_instance_id=1), session, {})
+
+            self.assertEqual(0, session.query(QaTest).count())
+            self.assertIn('Traceback', logs.output[0])
+
+    def test_complete_action_instance_preserves_end_date_after_qa_save_rollback(self):
+        database = create_engine('sqlite://')
+        for model in (Status, ActionInstance, QaTest):
+            model.__table__.create(database)
+
+        with Session(database) as session:
+            session.add(Status(id=StatusConstants.SUCCESS, name='SUCCESS',
+                               type=StatusTypes.SUCCESS, display_name='Success'))
+            session.add(ActionInstance(
+                id=1, cmd='test', executable='test', args='',
+                status_id=StatusConstants.INPROGRESS, action_id=10,
+                workflow_instance_id=1, pipeline_instance_id=1,
+                callback_required=True, assigned_to='worker-1',
+            ))
+            session.commit()
+
+            qa_module = Mock()
+            qa_module.save_results.side_effect = Exception("Illegal mix of collations for operation ' IN '")
+            store_service = Mock()
+            store_service.is_completing.return_value = False
+
+            with patch('rapid.workflow.action_dal.get_db_session', return_value=[session]):
+                with self.assertLogs('rapid', level='ERROR'):
+                    ActionDal(qa_module=qa_module, store_service=store_service).complete_action_instance(
+                        1, {'status': 'SUCCESS'},
+                    )
+
+        with Session(database) as verify_session:
+            persisted = verify_session.get(ActionInstance, 1)
+            self.assertIsNotNone(persisted.end_date)
+            self.assertEqual(StatusConstants.INPROGRESS, persisted.status_id)
 
 
 
