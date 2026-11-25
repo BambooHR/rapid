@@ -168,10 +168,12 @@ class ActionDal(GeneralDal, Injectable):
     def complete_action_instance(self, _id: int, post_data: Dict):
         for session in get_db_session():
             action_instance = self.get_action_instance_by_id(_id, session)
-            action_instance.end_date = datetime.datetime.utcnow()
+            end_date = datetime.datetime.utcnow()
+            action_instance.end_date = end_date
 
             self.store_service.set_completing(_id)
             self._save_statistics(action_instance, session, post_data)
+            action_instance.end_date = end_date
             self._save_status_information(action_instance, session, post_data)
             self.store_service.clear_completing(_id)
 
@@ -378,7 +380,8 @@ class ActionDal(GeneralDal, Injectable):
             if self.qa_module is not None:
                 self.qa_module.save_results(action_instance, session, post_data)
         except Exception as exception:
-            logger.error(exception)
+            logger.exception(exception)
+            session.rollback()
 
     def _save_status_information(self, action_instance: ActionInstance, session: ScopedSession, post_data: Dict):
         check = '{}__{}'.format(action_instance.pipeline_instance_id, action_instance.action_id)
